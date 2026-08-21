@@ -1,0 +1,64 @@
+openapi: 3.0.0
+info:
+  title: Hotel Reviews API
+  description: API para obtener el promedio de calificaciones de hoteles.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8081
+
+paths:
+  /api/hotels/reviews/{hotelIds}:
+    get:
+      summary: Obtener el promedio de calificaciones de los hoteles
+      description: Retorna el promedio de calificaciones de los hoteles cuyo ID se pasa como variable en la ruta.
+      parameters:
+        - name: hotelIds
+          in: path
+          required: true
+          description: Lista de IDs de los hoteles, separados por comas.
+          schema:
+            type: string
+            example: "1,2"
+      responses:
+        '200':
+          description: Lista de promedios de calificaciones para los hoteles.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    hotelId:
+                      type: integer
+                      example: 2
+                    averageCalification:
+                      type: number
+                      format: float
+                      example: 4.5
+        '404':
+          description: No se encontraron hoteles con los IDs proporcionados.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 404
+                  description:
+                    type: string
+                    example: "No se encontraron registros"
+        '500':
+          description: Error interno del servidor.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 500
+                  description:
+                    type: string
+                    example: "Error interno del servidor"

@@ -1,0 +1,28 @@
+version: "3.8"
+
+services:
+  services:
+    image: alexmyruiz/services:latest
+    deploy:
+      resources:
+        limits:
+          memory: 800m
+    ports:
+      - "8080:8080"
+    networks:
+      - amr-networks
+
+  reviews:
+    image: alexmyruiz/reviews:latest
+    deploy:
+      resources:
+        limits:
+          memory: 800m
+    ports:
+      - "8081:8081"
+    networks:
+      - amr-networks
+
+networks:
+  amr-networks:
+    driver: bridge
