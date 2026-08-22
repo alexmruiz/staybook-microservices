@@ -11,7 +11,7 @@
 	<groupId>com.hotelsbook.services</groupId>
 	<artifactId>com-hotelsbook-services</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>com-hotelsbook-services</name>
+	<name>hotels</name>
 	<description>Demo project for Spring Boot</description>
 	<url/>
 	<licenses>
