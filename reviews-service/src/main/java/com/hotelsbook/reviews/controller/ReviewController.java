@@ -1,62 +1,63 @@
 package com.hotelsbook.reviews.controller;
 
-import java.util.List;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.hotelsbook.reviews.dto.ReviewDTO;
-import com.hotelsbook.reviews.response.ErrorResponse;
+import com.hotelsbook.reviews.dto.ReviewRequestDto;
+import com.hotelsbook.reviews.dto.ReviewResponseDto;
 import com.hotelsbook.reviews.service.ReviewService;
+
+import jakarta.validation.Valid;
 
 @CrossOrigin(origins = "http://localhost:4200")
 @RestController
 @RequestMapping("api/hotels")
 public class ReviewController {
 
-    private static final Logger logger = LoggerFactory.getLogger(ReviewController.class);
+    private final ReviewService reviewService;
 
-    @Autowired
-    private ReviewService reviewService;
+    public ReviewController(ReviewService reviewService)
+    {
+        this.reviewService = reviewService;
+    }
 
-    /**
-     * gestiona las resupuestaas http
-     * 
-     * @param hotelIds
-     * @return
-     */
-    @GetMapping("/reviews/{hotelIds}")
-    public ResponseEntity<?> getAverageCalifications(@PathVariable("hotelIds") String hotelIds) {
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public ReviewResponseDto create(@Valid @RequestBody ReviewRequestDto requestDto)
+    {
+        return reviewService.create(requestDto);
+    }
 
-        try {
+    @GetMapping("/{id}")
+    public ResponseEntity<ReviewResponseDto> findById(@PathVariable Long id)
+    {
+        ReviewResponseDto response = reviewService.findById(id);
 
-            logger.info("Recibiendo solicitud para obtener calificaciones promedio para hotelIds: " + hotelIds);
+        return ResponseEntity.ok(response);
+    }
 
-            List<ReviewDTO> response = reviewService.getAverageCalifications(hotelIds);
+    @PutMapping("/{id}")
+    public ResponseEntity<ReviewResponseDto> update(@PathVariable Long id, @Valid @RequestBody ReviewRequestDto request)
+    {
+        ReviewResponseDto responseDto = reviewService.update(id, request);
+        return ResponseEntity.ok(responseDto);
+    }
 
-            if (response.isEmpty()) {
-                return new ResponseEntity<>(new ErrorResponse(404, "No se encontraron registros"),
-                        HttpStatus.NOT_FOUND);
-            }
-
-            return new ResponseEntity<>(response, HttpStatus.OK);
-
-        } catch (Exception e) {
-
-            logger.error("Error al procesar la solicitud: " + e.getMessage());
-
-            ErrorResponse error = new ErrorResponse(500, "Error interno del servidor");
-            return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(@PathVariable Long id)
+    {
+        reviewService.delete(id);
     }
 
 }
