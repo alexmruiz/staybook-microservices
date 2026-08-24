@@ -6,4 +6,5 @@ import com.hotelsbook.reviews.entity.ReviewEntity;
 
 public interface ReviewRepository extends JpaRepository<ReviewEntity, Long> {
 
+    boolean existsByHotelId(Long hotelId);
 }
