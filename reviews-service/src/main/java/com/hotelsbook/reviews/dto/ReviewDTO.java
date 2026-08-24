@@ -3,11 +3,11 @@ package com.hotelsbook.reviews.dto;
 public class ReviewDTO {
 
     private Long hotelId;
-    private Double averageCalification;
+    private Double qualification;
 
-    public ReviewDTO(Long hotelId, Double averageCalification) {
+    public ReviewDTO(Long hotelId, Double qualification) {
         this.hotelId = hotelId;
-        this.averageCalification = averageCalification;
+        this.qualification = qualification;
     }
 
     public Long getHotelId() {
@@ -18,11 +18,11 @@ public class ReviewDTO {
         this.hotelId = hotelId;
     }
 
-    public Double getAverageCalification() {
-        return averageCalification;
+    public Double getQualification() {
+        return qualification;
     }
 
-    public void setAverageCalification(Double averageCalification) {
-        this.averageCalification = averageCalification;
+    public void setQualification(Double qualification) {
+        this.qualification = qualification;
     }
 }

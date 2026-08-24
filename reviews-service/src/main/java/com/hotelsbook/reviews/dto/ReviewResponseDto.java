@@ -13,7 +13,7 @@ public class ReviewResponseDto {
     private Long hotelId;
 
     @Schema(description = "Calificación promedio otorgada al hotel", example = "4.5")
-    private Double averageCalification;
+    private Double qualification;
 
     @Schema(description = "Fecha y hora de creación de la reseña", example = "2026-08-24T17:30:00")
     private LocalDateTime createdAt;
@@ -21,10 +21,10 @@ public class ReviewResponseDto {
     public ReviewResponseDto() {
     }
 
-    public ReviewResponseDto(Long id, Long hotelId, Double averageCalification, LocalDateTime createdAt) {
+    public ReviewResponseDto(Long id, Long hotelId, Double qualification, LocalDateTime createdAt) {
         this.id = id;
         this.hotelId = hotelId;
-        this.averageCalification = averageCalification;
+        this.qualification = qualification;
         this.createdAt = createdAt;
     }
 
@@ -44,12 +44,12 @@ public class ReviewResponseDto {
         this.hotelId = hotelId;
     }
 
-    public Double getAverageCalification() {
-        return averageCalification;
+    public Double getQualification() {
+        return qualification;
     }
 
-    public void setAverageCalification(Double averageCalification) {
-        this.averageCalification = averageCalification;
+    public void setQualification(Double qualification) {
+        this.qualification = qualification;
     }
 
     public LocalDateTime getCreatedAt() {

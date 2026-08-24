@@ -24,7 +24,7 @@ public class HotelAvailableDto {
 
     private List<ServiceDto> services;
 
-    private Double averageCalification;
+    private Double qualification;
 
     // Constructor
     public HotelAvailableDto() {
@@ -114,12 +114,12 @@ public class HotelAvailableDto {
         this.services = services;
     }
 
-    public Double getAverageCalification() {
-        return averageCalification;
+    public Double getQualification() {
+        return qualification;
     }
 
-    public void setAverageCalification(Double averageCalification) {
-        this.averageCalification = averageCalification;
+    public void setQualification(Double qualification) {
+        this.qualification = qualification;
     }
 
 }

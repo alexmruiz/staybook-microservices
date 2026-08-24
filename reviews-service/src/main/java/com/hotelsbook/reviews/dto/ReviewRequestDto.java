@@ -18,14 +18,14 @@ public class ReviewRequestDto {
     @NotNull(message = "La calificación es obligatoria")
     @DecimalMin(value = "0.0", message = "La calificación mínima permitida es 0.0")
     @DecimalMax(value = "5.0", message = "La calificación máxima permitida es 5.0")
-    private Double averageCalification;
+    private Double qualification;
 
     public ReviewRequestDto() {
     }
 
-    public ReviewRequestDto(Long hotelId, Double averageCalification) {
+    public ReviewRequestDto(Long hotelId, Double qualification) {
         this.hotelId = hotelId;
-        this.averageCalification = averageCalification;
+        this.qualification = qualification;
     }
 
     public Long getHotelId() {
@@ -36,11 +36,11 @@ public class ReviewRequestDto {
         this.hotelId = hotelId;
     }
 
-    public Double getAverageCalification() {
-        return averageCalification;
+    public Double getQualification() {
+        return qualification;
     }
 
-    public void setAverageCalification(Double averageCalification) {
-        this.averageCalification = averageCalification;
+    public void setQualification(Double qualification) {
+        this.qualification = qualification;
     }
 }

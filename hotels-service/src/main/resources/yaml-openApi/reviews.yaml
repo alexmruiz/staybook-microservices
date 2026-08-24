@@ -32,7 +32,7 @@ paths:
                     hotelId:
                       type: integer
                       example: 2
-                    averageCalification:
+                    qualification:
                       type: number
                       format: float
                       example: 4.5

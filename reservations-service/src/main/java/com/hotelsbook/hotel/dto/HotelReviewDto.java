@@ -4,7 +4,7 @@ public class HotelReviewDto {
 
     private Long hotelId;
 
-    private Double averageCalification;
+    private Double qualification;
 
     //Getter and Setter
     public Long getHotelId() {
@@ -15,12 +15,12 @@ public class HotelReviewDto {
         this.hotelId = hotelId;
     }
 
-    public Double getAverageCalification() {
-        return averageCalification;
+    public Double getQualification() {
+        return qualification;
     }
 
-    public void setAverageCalification(Double averageCalification) {
-        this.averageCalification = averageCalification;
+    public void setQualification(Double qualification) {
+        this.qualification = qualification;
     }
 
     

@@ -21,8 +21,8 @@ public class ReviewEntity {
     @Column(name = "hotelId", nullable = false)
     private Long hotelId;
 
-    @Column(name = "average_calification", nullable = false)
-    private Double averageCalification;
+    @Column(nullable = false)
+    private Double qualification;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -30,9 +30,9 @@ public class ReviewEntity {
     public ReviewEntity() {
     }
 
-    public ReviewEntity(Long hotelId, Double averageCalification) {
+    public ReviewEntity(Long hotelId, Double qualification) {
         this.hotelId = hotelId;
-        this.averageCalification = averageCalification;
+        this.qualification = qualification;
     }
 
     public Long getId() {
@@ -51,12 +51,12 @@ public class ReviewEntity {
         this.hotelId = hotelId;
     }
 
-    public Double getAverageCalification() {
-        return averageCalification;
+    public Double getQualification() {
+        return qualification;
     }
 
-    public void setAverageCalification(Double averageCalification) {
-        this.averageCalification = averageCalification;
+    public void setQualification(Double qualification) {
+        this.qualification = qualification;
     }
 
     public LocalDateTime getCreatedAt() {
