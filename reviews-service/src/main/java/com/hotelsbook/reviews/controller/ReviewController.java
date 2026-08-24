@@ -47,26 +47,42 @@ public class ReviewController {
     }
 
     @GetMapping("/{id}")
+    @Operation(summary = "Obtener una reseña por ID", description = "Busca una reseña específica según su identificador único.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Reseña encontrada"),
+            @ApiResponse(responseCode = "404", description = "Reseña no encontrada")
+    })
     public ResponseEntity<ReviewResponseDto> findById(@PathVariable Long id) {
-        ReviewResponseDto response = reviewService.findById(id);
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(reviewService.findById(id));
     }
 
-    @GetMapping("/all")
+    @GetMapping
+    @Operation(summary = "Obtener todas las reseñas", description = "Retorna una lista con todas las reseñas registradas.")
+    @ApiResponse(responseCode = "200", description = "Lista de reseñas obtenida con éxito")
     public ResponseEntity<List<ReviewResponseDto>> findAll() {
         return ResponseEntity.ok(reviewService.findAll());
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ReviewResponseDto> update(@PathVariable Long id,
+    @Operation(summary = "Actualizar una reseña", description = "Modifica los datos de una reseña existente.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Reseña actualizada correctamente"),
+            @ApiResponse(responseCode = "400", description = "Datos de petición no válidos"),
+            @ApiResponse(responseCode = "404", description = "Reseña no encontrada")
+    })
+    public ResponseEntity<ReviewResponseDto> update(
+            @PathVariable Long id,
             @Valid @RequestBody ReviewRequestDto request) {
-        ReviewResponseDto responseDto = reviewService.update(id, request);
-        return ResponseEntity.ok(responseDto);
+        return ResponseEntity.ok(reviewService.update(id, request));
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(summary = "Eliminar una reseña", description = "Elimina una reseña de la base de datos por su ID.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Reseña eliminada con éxito"),
+            @ApiResponse(responseCode = "404", description = "Reseña no encontrada")
+    })
     public void delete(@PathVariable Long id) {
         reviewService.delete(id);
     }
