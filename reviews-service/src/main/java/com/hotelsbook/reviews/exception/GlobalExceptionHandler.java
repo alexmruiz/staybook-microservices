@@ -12,22 +12,23 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
  * Captura excepciones de TODOS los controladores
  * GlobalExceptionHandler
  */
-@RestControllerAdvice 
+@RestControllerAdvice
 public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-    // Captura errores cuando NO se encuentra un recurso (RuntimeException de "no encontrado")
-    @ExceptionHandler(RuntimeException.class)
-    public ProblemDetail handleRuntimeException(RuntimeException ex) {
-        log.warn("Recurso no encontrado o error de negocio: {}", ex.getMessage());
-
-        // Devuelve HTTP 404 NOT FOUND con los detalles del error
-        return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+    // Captura errores cuando NO se encuentra un recurso (RuntimeException de "no
+    // encontrado")
+    @ExceptionHandler(ReviewNotFoundException.class)
+    public ProblemDetail handleReviewNotFound(ReviewNotFoundException ex) {
+        return ProblemDetail.forStatusAndDetail(
+                HttpStatus.NOT_FOUND,
+                ex.getMessage());
     }
 
     /**
      * Captura errores de validación de Bean Validation (@Valid en el DTO)
+     * 
      * @param ex
      * @return
      */
@@ -37,9 +38,8 @@ public class GlobalExceptionHandler {
 
         // Devuelve HTTP 400 BAD REQUEST
         return ProblemDetail.forStatusAndDetail(
-            HttpStatus.BAD_REQUEST, 
-            "Los datos enviados en la petición no son válidos"
-        );
+                HttpStatus.BAD_REQUEST,
+                "Los datos enviados en la petición no son válidos");
     }
 
     // Captura cualquier otro error no controlado (ej. fallo de BD)
@@ -49,8 +49,7 @@ public class GlobalExceptionHandler {
 
         // Devuelve HTTP 500 INTERNAL SERVER ERROR
         return ProblemDetail.forStatusAndDetail(
-            HttpStatus.INTERNAL_SERVER_ERROR, 
-            "Ha ocurrido un error interno en el servidor"
-        );
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "Ha ocurrido un error interno en el servidor");
     }
 }
