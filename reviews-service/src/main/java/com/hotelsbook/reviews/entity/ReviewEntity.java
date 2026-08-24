@@ -1,40 +1,74 @@
 package com.hotelsbook.reviews.entity;
 
+import java.time.LocalDateTime;
+
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
 
 @Entity
+@Table(name = "reviews")
 public class ReviewEntity {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "hotelId", nullable = false)
     private Long hotelId;
-    private String hotelName;
+
+    @Column(name = "average_calification", nullable = false)
     private Double averageCalification;
 
-    public ReviewEntity(Long hotelId, String hotelName, Double averageCalification) {
-        super();
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    public ReviewEntity() {
+    }
+
+    public ReviewEntity(Long hotelId, Double averageCalification) {
         this.hotelId = hotelId;
-        this.hotelName = hotelName;
         this.averageCalification = averageCalification;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public Long getHotelId() {
         return hotelId;
     }
+
     public void setHotelId(Long hotelId) {
         this.hotelId = hotelId;
     }
-    public String getHotelName() {
-        return hotelName;
-    }
-    public void setHotelName(String hotelName) {
-        this.hotelName = hotelName;
-    }
+
     public Double getAverageCalification() {
         return averageCalification;
     }
+
     public void setAverageCalification(Double averageCalification) {
         this.averageCalification = averageCalification;
     }
 
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+    }
 }
