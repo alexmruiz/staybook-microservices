@@ -4,8 +4,8 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
-import com.hotelsbook.reviews.dto.ReviewRequestDto;
-import com.hotelsbook.reviews.dto.ReviewResponseDto;
+import com.hotelsbook.reviews.dto.request.ReviewRequestDto;
+import com.hotelsbook.reviews.dto.response.ReviewResponseDto;
 import com.hotelsbook.reviews.entity.ReviewEntity;
 import com.hotelsbook.reviews.exception.ReviewNotFoundException;
 import com.hotelsbook.reviews.mapper.ReviewMapper;
@@ -71,8 +71,8 @@ public class ReviewService {
         ReviewEntity existReview = reviewRepository.findById(id)
                 .orElseThrow(() -> new ReviewNotFoundException("Reseña no encontrada"));
 
-        existReview.setQualification(request.getQualification());
-        existReview.setHotelId(request.getHotelId());
+        existReview.setQualification(request.qualification());
+        existReview.setHotelId(request.hotelId());
 
         ReviewEntity update = reviewRepository.save(existReview);
 

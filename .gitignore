@@ -58,3 +58,6 @@ application-secret.yml
 
 jacoco.exec
 coverage/
+
+.continue
+.github/copilot-instructions.md
