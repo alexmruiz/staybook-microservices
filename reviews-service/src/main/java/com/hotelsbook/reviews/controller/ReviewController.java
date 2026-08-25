@@ -2,61 +2,89 @@ package com.hotelsbook.reviews.controller;
 
 import java.util.List;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.hotelsbook.reviews.dto.ReviewDTO;
-import com.hotelsbook.reviews.response.ErrorResponse;
+import com.hotelsbook.reviews.dto.request.ReviewRequestDto;
+import com.hotelsbook.reviews.dto.response.ReviewResponseDto;
 import com.hotelsbook.reviews.service.ReviewService;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import jakarta.validation.Valid;
 
 @CrossOrigin(origins = "http://localhost:4200")
 @RestController
 @RequestMapping("api/hotels")
 public class ReviewController {
 
-    private static final Logger logger = LoggerFactory.getLogger(ReviewController.class);
+    private final ReviewService reviewService;
 
-    @Autowired
-    private ReviewService reviewService;
+    public ReviewController(ReviewService reviewService) {
+        this.reviewService = reviewService;
+    }
 
-    /**
-     * gestiona las resupuestaas http
-     * 
-     * @param hotelIds
-     * @return
-     */
-    @GetMapping("/reviews/{hotelIds}")
-    public ResponseEntity<?> getAverageCalifications(@PathVariable("hotelIds") String hotelIds) {
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    @Operation(summary = "Crear una nueva reseña", description = "Guarda una nueva reseña en la base de datos.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Reseña creada exitosamente"),
+            @ApiResponse(responseCode = "400", description = "Datos de entrada no válidos")
+    })
+    public ReviewResponseDto create(@Valid @RequestBody ReviewRequestDto request) {
+        return reviewService.create(request);
+    }
 
-        try {
+    @GetMapping("/{id}")
+    @Operation(summary = "Obtener una reseña por ID", description = "Busca una reseña específica según su identificador único.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Reseña encontrada"),
+            @ApiResponse(responseCode = "404", description = "Reseña no encontrada")
+    })
+    public ResponseEntity<ReviewResponseDto> findById(@PathVariable Long id) {
+        return ResponseEntity.ok(reviewService.findById(id));
+    }
 
-            logger.info("Recibiendo solicitud para obtener calificaciones promedio para hotelIds: " + hotelIds);
+    @GetMapping
+    @Operation(summary = "Obtener todas las reseñas", description = "Retorna una lista con todas las reseñas registradas.")
+    @ApiResponse(responseCode = "200", description = "Lista de reseñas obtenida con éxito")
+    public ResponseEntity<List<ReviewResponseDto>> findAll() {
+        return ResponseEntity.ok(reviewService.findAll());
+    }
 
-            List<ReviewDTO> response = reviewService.getAverageCalifications(hotelIds);
+    @PutMapping("/{id}")
+    @Operation(summary = "Actualizar una reseña", description = "Modifica los datos de una reseña existente.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Reseña actualizada correctamente"),
+            @ApiResponse(responseCode = "400", description = "Datos de petición no válidos"),
+            @ApiResponse(responseCode = "404", description = "Reseña no encontrada")
+    })
+    public ResponseEntity<ReviewResponseDto> update(
+            @PathVariable Long id,
+            @Valid @RequestBody ReviewRequestDto request) {
+        return ResponseEntity.ok(reviewService.update(id, request));
+    }
 
-            if (response.isEmpty()) {
-                return new ResponseEntity<>(new ErrorResponse(404, "No se encontraron registros"),
-                        HttpStatus.NOT_FOUND);
-            }
-
-            return new ResponseEntity<>(response, HttpStatus.OK);
-
-        } catch (Exception e) {
-
-            logger.error("Error al procesar la solicitud: " + e.getMessage());
-
-            ErrorResponse error = new ErrorResponse(500, "Error interno del servidor");
-            return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(summary = "Eliminar una reseña", description = "Elimina una reseña de la base de datos por su ID.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Reseña eliminada con éxito"),
+            @ApiResponse(responseCode = "404", description = "Reseña no encontrada")
+    })
+    public void delete(@PathVariable Long id) {
+        reviewService.delete(id);
     }
 
 }

@@ -61,7 +61,7 @@ public class HotelService {
 					.collect(Collectors.toMap(HotelServiceDto::getHotelId, HotelServiceDto::getServices));
 
 			Map<Long, Double> reviewsByHotelId = hotelReviews.stream()
-					.collect(Collectors.toMap(HotelReviewDto::getHotelId, HotelReviewDto::getAverageCalification));
+					.collect(Collectors.toMap(HotelReviewDto::getHotelId, HotelReviewDto::getQualification));
 
 			// Paso 6: Agrupar y mapear los resultados
 			return availableHotels.stream().map(hotel -> {
@@ -69,7 +69,7 @@ public class HotelService {
 				hotel.setPicture(imageUrl);
 				HotelAvailableDto dto = new HotelAvailableDto(hotel);
 				dto.setServices(servicesByHotelId.getOrDefault(hotel.getId(), Collections.emptyList()));
-				dto.setAverageCalification(reviewsByHotelId.getOrDefault(hotel.getId(), null));
+				dto.setQualification(reviewsByHotelId.getOrDefault(hotel.getId(), null));
 				return dto;
 			}).collect(Collectors.toList());
 		}
