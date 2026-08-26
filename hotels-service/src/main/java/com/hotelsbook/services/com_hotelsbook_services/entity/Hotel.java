@@ -38,7 +38,7 @@ public class Hotel {
             joinColumns = @JoinColumn(name = "hotel_id"),
             inverseJoinColumns = @JoinColumn(name = "service_id")
     )
-    private Set<Amenity> services = new HashSet<>();
+    private Set<Amenity> amenities = new HashSet<>();
 
     protected Hotel() {
     }
@@ -102,7 +102,7 @@ public class Hotel {
     }
 
     public Set<Amenity> getServices() {
-        return services;
+        return amenities;
     }
 
     // Métodos de conveniencia para mantener la relación bidireccional coherente
@@ -117,7 +117,7 @@ public class Hotel {
     }
 
     public void addService(Amenity service) {
-        services.add(service);
+        amenities.add(service);
         service.getHotels().add(this);
     }
 }

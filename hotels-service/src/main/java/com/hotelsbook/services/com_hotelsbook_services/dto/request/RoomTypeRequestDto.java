@@ -5,7 +5,7 @@ import com.hotelsbook.services.com_hotelsbook_services.entity.RoomTypeName;
 import jakarta.validation.constraints.NotNull;
 
 public record RoomTypeRequestDto(
-    @NotNull RoomTypeName roomType,
+    @NotNull RoomTypeName type,
     @NotNull Integer quantity
 ) {
     
