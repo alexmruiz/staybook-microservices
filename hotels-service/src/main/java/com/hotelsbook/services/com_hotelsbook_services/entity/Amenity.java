@@ -5,8 +5,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Entity
-@Table(name = "services")
-public class Service {
+@Table(name = "amenities")
+public class Amenity  {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -21,10 +21,10 @@ public class Service {
     @ManyToMany(mappedBy = "services")
     private Set<Hotel> hotels = new HashSet<>();
 
-    protected Service() {
+    protected Amenity() {
     }
 
-    public Service(String name, String description) {
+    public Amenity(String name, String description) {
         this.name = name;
         this.description = description;
     }

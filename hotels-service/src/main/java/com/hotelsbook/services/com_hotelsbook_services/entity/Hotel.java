@@ -24,6 +24,7 @@ public class Hotel {
     @JoinColumn(name = "address_id", nullable = false, unique = true)
     private Address address;
 
+    @Column(nullable = false)
     private Integer stars;
 
     private Integer capacity;
@@ -37,7 +38,7 @@ public class Hotel {
             joinColumns = @JoinColumn(name = "hotel_id"),
             inverseJoinColumns = @JoinColumn(name = "service_id")
     )
-    private Set<Service> services = new HashSet<>();
+    private Set<Amenity> services = new HashSet<>();
 
     protected Hotel() {
     }
@@ -100,7 +101,7 @@ public class Hotel {
         return roomTypes;
     }
 
-    public Set<Service> getServices() {
+    public Set<Amenity> getServices() {
         return services;
     }
 
@@ -115,7 +116,7 @@ public class Hotel {
         roomType.setHotel(null);
     }
 
-    public void addService(Service service) {
+    public void addService(Amenity service) {
         services.add(service);
         service.getHotels().add(this);
     }
