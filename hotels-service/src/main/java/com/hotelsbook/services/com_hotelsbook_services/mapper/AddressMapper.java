@@ -1,9 +1,12 @@
 package com.hotelsbook.services.com_hotelsbook_services.mapper;
 
+import org.springframework.stereotype.Component;
+
 import com.hotelsbook.services.com_hotelsbook_services.dto.request.AddressRequestDto;
 import com.hotelsbook.services.com_hotelsbook_services.entity.Address;
 import com.hotelsbook.services.com_hotelsbook_services.entity.City;
 
+@Component
 public class AddressMapper {
     
     private final CityMapper cityMapper;

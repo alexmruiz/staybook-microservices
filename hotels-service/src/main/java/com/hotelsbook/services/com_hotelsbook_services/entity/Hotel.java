@@ -101,7 +101,7 @@ public class Hotel {
         return roomTypes;
     }
 
-    public Set<Amenity> getServices() {
+    public Set<Amenity> getAmenities() {
         return amenities;
     }
 
