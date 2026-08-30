@@ -4,4 +4,4 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.hotelsbook.services.com_hotelsbook_services.entity.Hotel;
 
-public interface HotelServiceRepository extends JpaRepository<Hotel, Long> {}
+public interface HotelRepository extends JpaRepository<Hotel, Long> {}
