@@ -5,6 +5,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.hotelsbook.services.com_hotelsbook_services.dto.request.HotelRequestDto;
 import com.hotelsbook.services.com_hotelsbook_services.dto.response.HotelResponseDto;
@@ -12,6 +13,7 @@ import com.hotelsbook.services.com_hotelsbook_services.entity.Address;
 import com.hotelsbook.services.com_hotelsbook_services.entity.Amenity;
 import com.hotelsbook.services.com_hotelsbook_services.entity.Hotel;
 import com.hotelsbook.services.com_hotelsbook_services.entity.RoomType;
+import com.hotelsbook.services.com_hotelsbook_services.exception.EntityNotFoundException;
 import com.hotelsbook.services.com_hotelsbook_services.mapper.AddressMapper;
 import com.hotelsbook.services.com_hotelsbook_services.mapper.HotelMapper;
 import com.hotelsbook.services.com_hotelsbook_services.mapper.RoomTypeMapper;
@@ -23,6 +25,7 @@ import com.hotelsbook.services.com_hotelsbook_services.repository.HotelRepositor
  * Implementa la interfaz genérica CrudService.
  */
 @Service
+@Transactional
 public class HotelService implements CrudService<HotelRequestDto, HotelResponseDto> {
 
     private final HotelMapper mapper;
@@ -82,7 +85,7 @@ public class HotelService implements CrudService<HotelRequestDto, HotelResponseD
      * Elimina un registro de hotel existente en la base de datos según su identificador.
      * 
      * @param id Identificador único del hotel a eliminar (Long)
-     * @throws RuntimeException Si el hotel con el ID especificado no existe en la BD
+     * @throws EntityNotFoundException Si el hotel con el ID especificado no existe en la BD
      */
     @Override
     public void deleteById(Long id) {
@@ -91,7 +94,7 @@ public class HotelService implements CrudService<HotelRequestDto, HotelResponseD
         if (existHotel) {
             repository.deleteById(id);
         } else {
-            throw new RuntimeException(HOTEL_NOT_FOUND);
+            throw new EntityNotFoundException(HOTEL_NOT_FOUND);
         }
     }
 
@@ -113,12 +116,12 @@ public class HotelService implements CrudService<HotelRequestDto, HotelResponseD
      * 
      * @param id Identificador único del hotel (Long)
      * @return Objeto DTO con la información del hotel encontrado (HotelResponseDto)
-     * @throws RuntimeException Si no se encuentra ningún hotel con el ID especificado
+     * @throws EntityNotFoundException Si no se encuentra ningún hotel con el ID especificado
      */
     @Override
     public HotelResponseDto findById(Long id) {
         Hotel hotel = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException(HOTEL_NOT_FOUND));
+                .orElseThrow(() -> new EntityNotFoundException(HOTEL_NOT_FOUND));
         return mapper.toResponseDto(hotel);
     }
 
@@ -128,12 +131,12 @@ public class HotelService implements CrudService<HotelRequestDto, HotelResponseD
      * @param id Identificador único del hotel que se desea actualizar (Long)
      * @param request Objeto DTO con los datos actualizados (HotelRequestDto)
      * @return Objeto DTO con la información del hotel tras ser guardado (HotelResponseDto)
-     * @throws RuntimeException Si el hotel a actualizar no existe en la BD
+     * @throws EntityNotFoundException Si el hotel a actualizar no existe en la BD
      */
     @Override
     public HotelResponseDto update(Long id, HotelRequestDto request) {
         Hotel hotel = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException(HOTEL_NOT_FOUND));
+                .orElseThrow(() -> new EntityNotFoundException(HOTEL_NOT_FOUND));
 
         hotel.setName(request.name());
         hotel.setDescription(request.description());
