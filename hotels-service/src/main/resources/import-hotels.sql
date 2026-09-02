@@ -1,0 +1,135 @@
+-- Script de inicialización de datos para la tabla cities
+INSERT INTO cities (name, country) VALUES
+    ('Madrid', 'España'),
+    ('Barcelona', 'España'),
+    ('Sevilla', 'España'),
+    ('Valencia', 'España'),
+    ('Málaga', 'España'),
+    ('París', 'Francia'),
+    ('Lyon', 'Francia'),
+    ('Marsella', 'Francia'),
+    ('Niza', 'Francia'),
+    ('Roma', 'Italia'),
+    ('Milán', 'Italia'),
+    ('Florencia', 'Italia'),
+    ('Venecia', 'Italia'),
+    ('Nápoles', 'Italia'),
+    ('Lisboa', 'Portugal'),
+    ('Oporto', 'Portugal'),
+    ('Londres', 'Reino Unido'),
+    ('Mánchester', 'Reino Unido'),
+    ('Edimburgo', 'Reino Unido'),
+    ('Berlín', 'Alemania'),
+    ('Múnich', 'Alemania'),
+    ('Fráncfort', 'Alemania'),
+    ('Hamburgo', 'Alemania'),
+    ('Ámsterdam', 'Países Bajos'),
+    ('Róterdam', 'Países Bajos'),
+    ('Bruselas', 'Bélgica'),
+    ('Gante', 'Bélgica'),
+    ('Viena', 'Austria'),
+    ('Zúrich', 'Suiza'),
+    ('Ginebra', 'Suiza'),
+    ('Praga', 'República Checa'),
+    ('Budapest', 'Hungría'),
+    ('Varsovia', 'Polonia'),
+    ('Cracovia', 'Polonia'),
+    ('Atenas', 'Grecia'),
+    ('Dublín', 'Irlanda'),
+    ('Copenhague', 'Dinamarca'),
+    ('Estocolmo', 'Suecia'),
+    ('Oslo', 'Noruega'),
+    ('Helsinki', 'Finlandia'),
+    ('Nueva York', 'Estados Unidos'),
+    ('Los Ángeles', 'Estados Unidos'),
+    ('Chicago', 'Estados Unidos'),
+    ('Miami', 'Estados Unidos'),
+    ('Toronto', 'Canadá'),
+    ('Vancouver', 'Canadá'),
+    ('Tokio', 'Japón'),
+    ('Kioto', 'Japón'),
+    ('Sídney', 'Australia'),
+    ('Buenos Aires', 'Argentina');
+
+    -- 1. Inserción de Direcciones (addresses)
+INSERT INTO addresses (street, street_number, postal_code, city_id) VALUES
+    ('Calle Gran Vía', '28', '28013', 1),
+    ('Paseo de la Castellana', '110', '28046', 1),
+    ('Avinguda Diagonal', '405', '08008', 2),
+    ('Rambla de Catalunya', '88', '08007', 2),
+    ('Calle Sierpes', '45', '41004', 3),
+    ('Avenida de la Constitución', '12', '41001', 3),
+    ('Calle de la Paz', '15', '46003', 4),
+    ('Calle Larios', '10', '29005', 5),
+    ('Avenue des Champs-Élysées', '101', '75008', 6),
+    ('Rue de Rivoli', '58', '75004', 6),
+    ('Via del Corso', '220', '00186', 10),
+    ('Via Nazionale', '42', '00184', 10),
+    ('Oxford Street', '150', 'W1D 1BS', 17),
+    ('Regent Street', '85', 'W1B 4EA', 17),
+    ('Unter den Linden', '77', '10117', 20);
+
+-- 2. Inserción de Hoteles (hotels)
+-- Vinculados a los IDs de direcciones creados del 1 al 15
+INSERT INTO hotels (name, description, address_id, stars, capacity) VALUES
+    ('Hotel Gran Vía Central', 'Hotel elegante e histórico en pleno centro de Madrid.', 1, 4, 150),
+    ('Castellana Luxury Suites', 'Alojamiento moderno para viajes de negocios.', 2, 5, 200),
+    ('Diagonal Palace Barcelona', 'Exclusivo hotel con piscina en la azotea y vistas panorámicas.', 3, 5, 180),
+    ('Rambla Boutique Hotel', 'Hotel acogedor en el corazón de Cataluña.', 4, 3, 80),
+    ('Sevilla Santa Cruz Inn', 'Encanto andaluz en el histórico barrio de Santa Cruz.', 5, 3, 60),
+    ('Alfonso XIII Suites', 'Lujo tradicional a pasos de la Catedral.', 6, 5, 120),
+    ('Valencia Plaza Resort', 'Hotel moderno cerca de la Ciudad de las Artes.', 7, 4, 140),
+    ('Larios Sun & Beach', 'Alojamiento céntrico a minutos del puerto marítimo.', 8, 4, 100),
+    ('Paris Élysées Palace', 'Experiencia sofisticada a metros del Arco del Triunfo.', 9, 5, 220),
+    ('Rivoli Boutique Paris', 'Hotel con encanto cerca del Museo del Louvre.', 10, 4, 90),
+    ('Roma Imperial Hotel', 'Estancia clásica cerca del Coliseo Romano.', 11, 4, 110),
+    ('Nazionale Grand Hotel', 'Amplias suites con excelente conexión de transporte.', 12, 3, 130),
+    ('London Oxford Royal', 'Hotel icónico en la zona comercial de Londres.', 13, 4, 250),
+    ('Regent Crown Hotel', 'Lujo victoriano restaurado con estándares modernos.', 14, 5, 160),
+    ('Berlin Linden Plaza', 'Alojamiento de diseño contemporáneo cerca de la Puerta de Brandeburgo.', 15, 4, 175);
+
+-- 3. Inserción opcional de Servicios (amenities)
+INSERT INTO amenities (name, description) VALUES
+    ('Wi-Fi Gratuito', 'Conexión de alta velocidad en todas las habitaciones.'),
+    ('Piscina', 'Piscina al aire libre con zona de solárium.'),
+    ('Gimnasio', 'Centro de fitness equipado 24/7.'),
+    ('Spa & Wellness', 'Servicio de masajes, sauna y circuito de aguas.'),
+    ('Aparcamiento', 'Estacionamiento privado con plazas limitadas.');
+
+-- 4. Relación Muchos a Muchos (hotel_services)
+-- Relaciona los hoteles (1-15) con los servicios (1-5)
+INSERT INTO hotel_services (hotel_id, service_id) VALUES
+    (1, 1), (1, 3), (1, 5),
+    (2, 1), (2, 2), (2, 3), (2, 4), (2, 5),
+    (3, 1), (3, 2), (3, 4),
+    (4, 1),
+    (5, 1), (5, 5),
+    (6, 1), (6, 2), (6, 3), (6, 4),
+    (7, 1), (7, 3),
+    (8, 1), (8, 2),
+    (9, 1), (9, 2), (9, 3), (9, 4), (9, 5),
+    (10, 1), (10, 4),
+    (11, 1), (11, 3),
+    (12, 1), (12, 5),
+    (13, 1), (13, 3), (13, 5),
+    (14, 1), (14, 2), (14, 4), (14, 5),
+    (15, 1), (15, 3);
+
+-- 5. Inserción de Tipos de Habitación (room_types)
+-- Usando los valores exactos del Enum RoomTypeName: SINGLE, DOUBLE, TWIN, SUITE, FAMILY
+INSERT INTO room_types (hotel_id, type, quantity) VALUES
+    (1, 'SINGLE', 20), (1, 'DOUBLE', 50),
+    (2, 'DOUBLE', 60), (2, 'SUITE', 20),
+    (3, 'TWIN', 40), (3, 'SUITE', 15),
+    (4, 'SINGLE', 10), (4, 'FAMILY', 15),
+    (5, 'DOUBLE', 20), (5, 'TWIN', 10),
+    (6, 'DOUBLE', 30), (6, 'SUITE', 10),
+    (7, 'SINGLE', 15), (7, 'DOUBLE', 45),
+    (8, 'DOUBLE', 35), (8, 'FAMILY', 10),
+    (9, 'DOUBLE', 70), (9, 'SUITE', 30),
+    (10, 'SINGLE', 10), (10, 'TWIN', 20),
+    (11, 'DOUBLE', 40), (11, 'FAMILY', 15),
+    (12, 'SINGLE', 25), (12, 'DOUBLE', 35),
+    (13, 'DOUBLE', 80), (13, 'SUITE', 15),
+    (14, 'TWIN', 50), (14, 'SUITE', 20),
+    (15, 'SINGLE', 20), (15, 'FAMILY', 25);
