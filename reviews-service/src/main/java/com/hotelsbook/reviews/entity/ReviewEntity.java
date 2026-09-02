@@ -18,13 +18,13 @@ public class ReviewEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "hotelId", nullable = false)
+    @Column(name = "hotel_id", nullable = false)
     private Long hotelId;
 
     @Column(nullable = false)
     private Double qualification;
 
-    @Column(nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     public ReviewEntity() {
