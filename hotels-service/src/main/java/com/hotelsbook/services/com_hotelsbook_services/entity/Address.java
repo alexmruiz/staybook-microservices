@@ -20,7 +20,7 @@ public class Address {
     @Column(nullable = false)
     private String street;
 
-    @Column(nullable = false)
+    @Column(name = "street_number", nullable = false)
     private String streetNumber;
 
     @Column(name = "postal_code")
