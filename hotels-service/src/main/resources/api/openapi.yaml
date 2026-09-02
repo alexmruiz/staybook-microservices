@@ -1,0 +1,167 @@
+openapi: 3.0.0
+info:
+  title: Hotels Service API
+  version: 1.0.0
+  description: API para la gestión de ciudades en el catálogo de hoteles
+
+servers:
+  - url: http://localhost:8080
+    description: Servidor local
+
+tags:
+  - name: Ciudades
+    description: Endpoints para la gestión del catálogo de ciudades
+
+paths:
+  /api/cities:
+    post:
+      tags:
+        - Ciudades
+      summary: Crear una ciudad
+      description: Registra una nueva ciudad en la base de datos
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CityRequestDto'
+      responses:
+        '201':
+          description: Ciudad creada con éxito
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CityResponseDto'
+        '400':
+          description: Datos de entrada no válidos
+
+    get:
+      tags:
+        - Ciudades
+      summary: Obtener todas las ciudades
+      description: Devuelve una lista con todas las ciudades registradas
+      responses:
+        '200':
+          description: Lista de ciudades obtenida con éxito
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CityResponseDto'
+
+  /api/cities/{id}:
+    get:
+      tags:
+        - Ciudades
+      summary: Obtener ciudad por ID
+      description: Busca los detalles de una ciudad por su ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID de la ciudad
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Ciudad encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CityResponseDto'
+        '404':
+          description: Ciudad no encontrada
+
+    put:
+      tags:
+        - Ciudades
+      summary: Actualizar una ciudad
+      description: Actualiza los datos de una ciudad existente
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID de la ciudad
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CityRequestDto'
+      responses:
+        '200':
+          description: Ciudad actualizada correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CityResponseDto'
+        '400':
+          description: Datos de petición no válidos
+        '404':
+          description: Ciudad no encontrada
+
+    delete:
+      tags:
+        - Ciudades
+      summary: Eliminar una ciudad
+      description: Elimina una ciudad del sistema a partir de su ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID de la ciudad
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Ciudad eliminada correctamente
+        '404':
+          description: Ciudad no encontrada
+
+components:
+  schemas:
+    CityRequestDto:
+      type: object
+      title: CityRequestDto
+      description: DTO para crear o actualizar una ciudad
+      properties:
+        name:
+          type: string
+          description: Nombre de la ciudad
+          example: Madrid
+        country:
+          type: string
+          description: País de la ciudad
+          example: España
+      required:
+        - name
+        - country
+
+    CityResponseDto:
+      type: object
+      title: CityResponseDto
+      description: DTO para la respuesta de una ciudad
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: ID único de la ciudad
+          example: 1
+        name:
+          type: string
+          description: Nombre de la ciudad
+          example: Madrid
+        country:
+          type: string
+          description: País de la ciudad
+          example: España
+      required:
+        - id
+        - name
+        - country
