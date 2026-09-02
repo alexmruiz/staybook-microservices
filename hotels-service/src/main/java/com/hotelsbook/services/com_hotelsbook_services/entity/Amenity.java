@@ -18,7 +18,7 @@ public class Amenity  {
     @Column(length = 500)
     private String description;
 
-    @ManyToMany(mappedBy = "services")
+    @ManyToMany(mappedBy = "amenities")
     private Set<Hotel> hotels = new HashSet<>();
 
     protected Amenity() {
