@@ -13,7 +13,7 @@ public record HotelRequestDto(
     @Positive Integer stars,
     @Positive Integer capacity,
     @NotNull Set<RoomTypeRequestDto> roomTypes,
-    @NotNull Set<AmenityRequestDto> services
+    Set<Long> amenitiesIds 
 ) {
     
 }

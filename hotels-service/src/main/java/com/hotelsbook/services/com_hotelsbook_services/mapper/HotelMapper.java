@@ -47,13 +47,6 @@ public class HotelMapper {
             });
         }
 
-        if (dto.services() != null) {
-            dto.services().forEach(amenityDto -> {
-                Amenity amenity = amenityMapper.toEntity(amenityDto);
-                hotel.addService(amenity);
-            });
-        }
-
         return hotel;
 
     }
@@ -72,7 +65,7 @@ public class HotelMapper {
 
         Set<AmenityResponseDto> listAmenityResponseDto = new HashSet<>();
 
-        for (Amenity amenity : entity.getServices()) {
+        for (Amenity amenity : entity.getAmenities()) {
             AmenityResponseDto amenityResponseDto = amenityMapper.toResponseDto(amenity);
             listAmenityResponseDto.add(amenityResponseDto);
         }

@@ -5,7 +5,6 @@ import java.util.Set;
 
 import jakarta.persistence.*;
 
-
 @Entity
 @Table(name = "hotels")
 public class Hotel {
@@ -33,11 +32,7 @@ public class Hotel {
     private Set<RoomType> roomTypes = new HashSet<>();
 
     @ManyToMany
-    @JoinTable(
-            name = "hotel_services",
-            joinColumns = @JoinColumn(name = "hotel_id"),
-            inverseJoinColumns = @JoinColumn(name = "service_id")
-    )
+    @JoinTable(name = "hotel_services", joinColumns = @JoinColumn(name = "hotel_id"), inverseJoinColumns = @JoinColumn(name = "service_id"))
     private Set<Amenity> amenities = new HashSet<>();
 
     protected Hotel() {
@@ -116,8 +111,29 @@ public class Hotel {
         roomType.setHotel(null);
     }
 
+    public void setRoomTypes(Set<RoomType> newRoomTypes) {
+    this.roomTypes.forEach(roomType -> roomType.setHotel(null));
+    this.roomTypes.clear();
+
+    newRoomTypes.forEach(this::addRoomType);
+}
+
     public void addService(Amenity service) {
         amenities.add(service);
         service.getHotels().add(this);
+    }
+
+    public void removeService(Amenity service) {
+        amenities.remove(service);
+        service.getHotels().remove(this);
+    }
+
+    public void setAmenities(Set<Amenity> newAmenities) {
+        // Remover todos los servicios actuales
+        this.amenities.forEach(service -> service.getHotels().remove(this));
+        this.amenities.clear();
+
+        // Agregar los nuevos servicios
+        newAmenities.forEach(this::addService);
     }
 }
