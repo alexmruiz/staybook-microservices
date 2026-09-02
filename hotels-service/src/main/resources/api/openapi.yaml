@@ -2,7 +2,7 @@ openapi: 3.0.0
 info:
   title: Hotels Service API
   version: 1.0.0
-  description: API para la gestión de ciudades en el catálogo de hoteles
+  description: API para la gestión de ciudades y hoteles en el catálogo
 
 servers:
   - url: http://localhost:8080
@@ -11,6 +11,8 @@ servers:
 tags:
   - name: Ciudades
     description: Endpoints para la gestión del catálogo de ciudades
+  - name: Hoteles
+    description: Endpoints para la gestión del catálogo de hoteles
 
 paths:
   /api/cities:
@@ -124,6 +126,117 @@ paths:
         '404':
           description: Ciudad no encontrada
 
+  /api/hotels:
+    post:
+      tags:
+        - Hoteles
+      summary: Crear un hotel
+      description: Registra un nuevo hotel en la base de datos
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HotelRequestDto'
+      responses:
+        '201':
+          description: Hotel creado con éxito
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HotelResponseDto'
+        '400':
+          description: Datos de entrada no válidos
+
+    get:
+      tags:
+        - Hoteles
+      summary: Obtener todos los hoteles
+      description: Devuelve una lista con todos los hoteles registrados
+      responses:
+        '200':
+          description: Lista de hoteles obtenida con éxito
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HotelResponseDto'
+
+  /api/hotels/{id}:
+    get:
+      tags:
+        - Hoteles
+      summary: Obtener hotel por ID
+      description: Busca los detalles de un hotel por su ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID del hotel
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Hotel encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HotelResponseDto'
+        '404':
+          description: Hotel no encontrado
+
+    put:
+      tags:
+        - Hoteles
+      summary: Actualizar un hotel
+      description: Actualiza los datos de un hotel existente
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID del hotel
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HotelRequestDto'
+      responses:
+        '200':
+          description: Hotel actualizado correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HotelResponseDto'
+        '400':
+          description: Datos de petición no válidos
+        '404':
+          description: Hotel no encontrado
+
+    delete:
+      tags:
+        - Hoteles
+      summary: Eliminar un hotel
+      description: Elimina un hotel del sistema a partir de su ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID del hotel
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Hotel eliminado correctamente
+        '404':
+          description: Hotel no encontrado
+
 components:
   schemas:
     CityRequestDto:
@@ -165,3 +278,55 @@ components:
         - id
         - name
         - country
+
+    HotelRequestDto:
+      type: object
+      title: HotelRequestDto
+      description: DTO para crear o actualizar un hotel
+      properties:
+        name:
+          type: string
+          description: Nombre del hotel
+          example: Grand Hotel Central
+        address:
+          type: string
+          description: Dirección física del hotel
+          example: Calle Gran Vía 12
+        cityId:
+          type: integer
+          format: int64
+          description: ID de la ciudad asignada
+          example: 1
+      required:
+        - name
+        - address
+        - cityId
+
+    HotelResponseDto:
+      type: object
+      title: HotelResponseDto
+      description: DTO para la respuesta de un hotel
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: ID único del hotel
+          example: 1
+        name:
+          type: string
+          description: Nombre del hotel
+          example: Grand Hotel Central
+        address:
+          type: string
+          description: Dirección del hotel
+          example: Calle Gran Vía 12
+        cityId:
+          type: integer
+          format: int64
+          description: ID de la ciudad asociada
+          example: 1
+      required:
+        - id
+        - name
+        - address
+        - cityId
