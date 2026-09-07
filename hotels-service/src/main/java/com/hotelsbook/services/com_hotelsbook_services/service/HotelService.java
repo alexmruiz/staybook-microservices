@@ -7,18 +7,12 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.hotelsbook.services.com_hotelsbook_services.dto.request.HotelRequestDto;
-import com.hotelsbook.services.com_hotelsbook_services.dto.response.HotelResponseDto;
-import com.hotelsbook.services.com_hotelsbook_services.entity.Address;
-import com.hotelsbook.services.com_hotelsbook_services.entity.Amenity;
-import com.hotelsbook.services.com_hotelsbook_services.entity.Hotel;
-import com.hotelsbook.services.com_hotelsbook_services.entity.RoomType;
+import com.hotelsbook.services.com_hotelsbook_services.dto.request.*;
+import com.hotelsbook.services.com_hotelsbook_services.dto.response.*;
+import com.hotelsbook.services.com_hotelsbook_services.entity.*;
 import com.hotelsbook.services.com_hotelsbook_services.exception.EntityNotFoundException;
-import com.hotelsbook.services.com_hotelsbook_services.mapper.AddressMapper;
-import com.hotelsbook.services.com_hotelsbook_services.mapper.HotelMapper;
-import com.hotelsbook.services.com_hotelsbook_services.mapper.RoomTypeMapper;
-import com.hotelsbook.services.com_hotelsbook_services.repository.AmenityRepository;
-import com.hotelsbook.services.com_hotelsbook_services.repository.HotelRepository;
+import com.hotelsbook.services.com_hotelsbook_services.mapper.*;
+import com.hotelsbook.services.com_hotelsbook_services.repository.*;
 
 /**
  * Servicio encargado de gestionar la lógica de negocio relativa a los hoteles.
@@ -33,47 +27,63 @@ public class HotelService implements CrudService<HotelRequestDto, HotelResponseD
     private final HotelRepository repository;
     private final RoomTypeMapper roomTypeMapper;
     private final AmenityRepository amenityRepository;
+    private final CityRepository cityRepository;
+    private final CityMapper cityMapper;
 
     private static final String HOTEL_NOT_FOUND = "Hotel no encontrado con el id indicado";
 
     /**
      * Constructor para la inyección de dependencias.
      * 
-     * @param mapper Mapeador para transformar entre entidades Hotel y sus DTOs
-     * @param repository Repositorio de persistencia de datos para Hotel
-     * @param addressMapper Mapeador para transformar objetos Address
+     * @param mapper            Mapeador para transformar entre entidades Hotel y
+     *                          sus DTOs
+     * @param repository        Repositorio de persistencia de datos para Hotel
+     * @param addressMapper     Mapeador para transformar objetos Address
      * @param amenityRepository Repositorio de persistencia de datos para Amenity
-     * @param roomTypeMapper Mapeador para transformar objetos RoomType
+     * @param roomTypeMapper    Mapeador para transformar objetos RoomType
      */
     public HotelService(
             HotelMapper mapper,
             HotelRepository repository,
             AddressMapper addressMapper,
             AmenityRepository amenityRepository,
-            RoomTypeMapper roomTypeMapper) {
+            RoomTypeMapper roomTypeMapper,
+            CityRepository cityRepository,
+            CityMapper cityMapper) {
         this.mapper = mapper;
         this.repository = repository;
         this.addressMapper = addressMapper;
         this.amenityRepository = amenityRepository;
         this.roomTypeMapper = roomTypeMapper;
+        this.cityRepository = cityRepository;
+        this.cityMapper = cityMapper;
     }
 
     /**
-     * Crea un nuevo registro de hotel en la base de datos a partir de la información recibida.
+     * Crea un nuevo registro de hotel en la base de datos a partir de la
+     * información recibida.
      * 
-     * @param request Objeto DTO que contiene los datos del hotel a crear (HotelRequestDto)
-     * @return Objeto DTO con los datos del hotel guardado y su ID generado (HotelResponseDto)
+     * @param request Objeto DTO que contiene los datos del hotel a crear
+     *                (HotelRequestDto)
+     * @return Objeto DTO con los datos del hotel guardado y su ID generado
+     *         (HotelResponseDto)
      */
     @Override
     public HotelResponseDto create(HotelRequestDto request) {
         Hotel hotel = mapper.toEntity(request);
 
-        // Si se reciben IDs de amenities, se recuperan las entidades de la BD y se asocian al hotel
+        City city = cityRepository.findByName(request.address().city().name())
+                .orElseGet(() -> cityRepository.save(cityMapper.toEntity(request.address().city())));
+
+        hotel.getAddress().setCity(city);
+
+        // Si se reciben IDs de amenities, se recuperan las entidades de la BD y se
+        // asocian al hotel
         if (request.amenitiesIds() != null && !request.amenitiesIds().isEmpty()) {
             Set<Amenity> amenities = amenityRepository.findAllById(request.amenitiesIds())
-                .stream()
-                .collect(Collectors.toSet());
-            
+                    .stream()
+                    .collect(Collectors.toSet());
+
             hotel.setAmenities(amenities);
         }
 
@@ -82,10 +92,12 @@ public class HotelService implements CrudService<HotelRequestDto, HotelResponseD
     }
 
     /**
-     * Elimina un registro de hotel existente en la base de datos según su identificador.
+     * Elimina un registro de hotel existente en la base de datos según su
+     * identificador.
      * 
      * @param id Identificador único del hotel a eliminar (Long)
-     * @throws EntityNotFoundException Si el hotel con el ID especificado no existe en la BD
+     * @throws EntityNotFoundException Si el hotel con el ID especificado no existe
+     *                                 en la BD
      */
     @Override
     public void deleteById(Long id) {
@@ -101,7 +113,8 @@ public class HotelService implements CrudService<HotelRequestDto, HotelResponseD
     /**
      * Obtiene el listado completo de todos los hoteles registrados.
      * 
-     * @return Lista de objetos DTO con la información de cada hotel (List<HotelResponseDto>)
+     * @return Lista de objetos DTO con la información de cada hotel
+     *         (List<HotelResponseDto>)
      */
     @Override
     public List<HotelResponseDto> findAll() {
@@ -116,7 +129,8 @@ public class HotelService implements CrudService<HotelRequestDto, HotelResponseD
      * 
      * @param id Identificador único del hotel (Long)
      * @return Objeto DTO con la información del hotel encontrado (HotelResponseDto)
-     * @throws EntityNotFoundException Si no se encuentra ningún hotel con el ID especificado
+     * @throws EntityNotFoundException Si no se encuentra ningún hotel con el ID
+     *                                 especificado
      */
     @Override
     public HotelResponseDto findById(Long id) {
@@ -128,9 +142,10 @@ public class HotelService implements CrudService<HotelRequestDto, HotelResponseD
     /**
      * Actualiza los datos de un hotel existente en la base de datos.
      * 
-     * @param id Identificador único del hotel que se desea actualizar (Long)
+     * @param id      Identificador único del hotel que se desea actualizar (Long)
      * @param request Objeto DTO con los datos actualizados (HotelRequestDto)
-     * @return Objeto DTO con la información del hotel tras ser guardado (HotelResponseDto)
+     * @return Objeto DTO con la información del hotel tras ser guardado
+     *         (HotelResponseDto)
      * @throws EntityNotFoundException Si el hotel a actualizar no existe en la BD
      */
     @Override
@@ -145,6 +160,10 @@ public class HotelService implements CrudService<HotelRequestDto, HotelResponseD
 
         // Actualización opcional de la dirección (Address)
         if (request.address() != null) {
+            City city = cityRepository.findByName(request.address().city().name())
+                    .orElseGet(() -> cityRepository.save(cityMapper.toEntity(request.address().city())));
+
+            hotel.getAddress().setCity(city);
             Address newAddress = addressMapper.toEntity(request.address());
             hotel.setAddress(newAddress);
         }
@@ -152,9 +171,9 @@ public class HotelService implements CrudService<HotelRequestDto, HotelResponseD
         // Actualización opcional de los tipos de habitación (RoomTypes)
         if (request.roomTypes() != null && !request.roomTypes().isEmpty()) {
             Set<RoomType> newRoomTypes = request.roomTypes()
-                .stream()
-                .map(roomTypeMapper::toEntity)
-                .collect(Collectors.toSet());
+                    .stream()
+                    .map(roomTypeMapper::toEntity)
+                    .collect(Collectors.toSet());
             hotel.setRoomTypes(newRoomTypes);
         }
 
