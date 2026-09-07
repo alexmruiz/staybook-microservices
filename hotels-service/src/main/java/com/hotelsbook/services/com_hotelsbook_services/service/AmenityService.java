@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import com.hotelsbook.services.com_hotelsbook_services.dto.request.AmenityRequestDto;
 import com.hotelsbook.services.com_hotelsbook_services.dto.response.AmenityResponseDto;
 import com.hotelsbook.services.com_hotelsbook_services.entity.Amenity;
+import com.hotelsbook.services.com_hotelsbook_services.exception.EntityNotFoundException;
 import com.hotelsbook.services.com_hotelsbook_services.mapper.AmenityMapper;
 import com.hotelsbook.services.com_hotelsbook_services.repository.AmenityRepository;
 
@@ -72,7 +73,7 @@ public class AmenityService implements CrudService<AmenityRequestDto, AmenityRes
     @Override
     public AmenityResponseDto update(Long id, AmenityRequestDto request) {
         Amenity amenity = amenityRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException(NOT_FOUND_MESSAGE + id));
+                .orElseThrow(() -> new EntityNotFoundException(NOT_FOUND_MESSAGE + id));
 
         amenity.setName(request.name());
         amenity.setDescription(request.description());
@@ -89,7 +90,7 @@ public class AmenityService implements CrudService<AmenityRequestDto, AmenityRes
     @Override
     public void deleteById(Long id) {
         if (!amenityRepository.existsById(id)) {
-            throw new RuntimeException(NOT_FOUND_MESSAGE + id);
+            throw new EntityNotFoundException(NOT_FOUND_MESSAGE + id);
         }
         amenityRepository.deleteById(id);
     }
