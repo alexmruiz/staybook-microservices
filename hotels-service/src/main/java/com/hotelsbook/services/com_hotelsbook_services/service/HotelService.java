@@ -23,7 +23,6 @@ import com.hotelsbook.services.com_hotelsbook_services.repository.*;
 public class HotelService implements CrudService<HotelRequestDto, HotelResponseDto> {
 
     private final HotelMapper mapper;
-    private final AddressMapper addressMapper;
     private final HotelRepository repository;
     private final RoomTypeMapper roomTypeMapper;
     private final AmenityRepository amenityRepository;
@@ -52,7 +51,6 @@ public class HotelService implements CrudService<HotelRequestDto, HotelResponseD
             CityMapper cityMapper) {
         this.mapper = mapper;
         this.repository = repository;
-        this.addressMapper = addressMapper;
         this.amenityRepository = amenityRepository;
         this.roomTypeMapper = roomTypeMapper;
         this.cityRepository = cityRepository;
@@ -161,20 +159,32 @@ public class HotelService implements CrudService<HotelRequestDto, HotelResponseD
         // Actualización opcional de la dirección (Address)
         if (request.address() != null) {
             City city = cityRepository.findByName(request.address().city().name())
-                    .orElseGet(() -> cityRepository.save(cityMapper.toEntity(request.address().city())));
+                    .orElseGet(() -> cityRepository.save(
+                            cityMapper.toEntity(request.address().city())));
 
-            hotel.getAddress().setCity(city);
-            Address newAddress = addressMapper.toEntity(request.address());
-            hotel.setAddress(newAddress);
+            Address address = hotel.getAddress();
+            address.setStreet(request.address().street());
+            address.setStreetNumber(request.address().streetNumber());
+            address.setPostalCode(request.address().postalCode());
+            address.setCity(city);
         }
 
         // Actualización opcional de los tipos de habitación (RoomTypes)
         if (request.roomTypes() != null && !request.roomTypes().isEmpty()) {
-            Set<RoomType> newRoomTypes = request.roomTypes()
-                    .stream()
-                    .map(roomTypeMapper::toEntity)
-                    .collect(Collectors.toSet());
-            hotel.setRoomTypes(newRoomTypes);
+            for (RoomTypeRequestDto dto : request.roomTypes()) {
+                RoomType existingRoomType = hotel.getRoomTypes()
+                .stream()
+                .filter(roomType -> roomType.getType() == dto.type())
+                .findFirst()
+                .orElse(null);
+
+                if (existingRoomType != null) {
+                    existingRoomType.setQuantity(dto.quantity());
+                } else {
+                    RoomType newRoomType = roomTypeMapper.toEntity(dto);
+                    hotel.addRoomType(newRoomType);
+                }
+            }
         }
 
         // Actualización opcional de los servicios (Amenities) por sus IDs
