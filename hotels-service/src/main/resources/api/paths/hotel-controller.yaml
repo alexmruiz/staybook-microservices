@@ -1,0 +1,110 @@
+hotels:
+  post:
+    tags:
+      - Hoteles
+    summary: Crear un hotel
+    description: Registra un nuevo hotel en la base de datos
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/hotel-schemas.yaml#/HotelRequestDto'
+    responses:
+      '201':
+        description: Hotel creado con éxito
+        content:
+          application/json:
+            schema:
+              $ref: '../components/hotel-schemas.yaml#/HotelResponseDto'
+      '400':
+        description: Datos de entrada no válidos
+
+  get:
+    tags:
+      - Hoteles
+    summary: Obtener todos los hoteles
+    description: Devuelve una lista con todos los hoteles registrados
+    responses:
+      '200':
+        description: Lista de hoteles obtenida con éxito
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '../components/hotel-schemas.yaml#/HotelResponseDto'
+
+hotelById:
+  get:
+    tags:
+      - Hoteles
+    summary: Obtener hotel por ID
+    description: Busca los detalles de un hotel por su ID
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID del hotel
+        schema:
+          type: integer
+          format: int64
+    responses:
+      '200':
+        description: Hotel encontrado
+        content:
+          application/json:
+            schema:
+              $ref: '../components/hotel-schemas.yaml#/HotelResponseDto'
+      '404':
+        description: Hotel no encontrado
+
+  put:
+    tags:
+      - Hoteles
+    summary: Actualizar un hotel
+    description: Actualiza los datos de un hotel existente
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID del hotel
+        schema:
+          type: integer
+          format: int64
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/hotel-schemas.yaml#/HotelRequestDto'
+    responses:
+      '200':
+        description: Hotel actualizado correctamente
+        content:
+          application/json:
+            schema:
+              $ref: '../components/hotel-schemas.yaml#/HotelResponseDto'
+      '400':
+        description: Datos de petición no válidos
+      '404':
+        description: Hotel no encontrado
+
+  delete:
+    tags:
+      - Hoteles
+    summary: Eliminar un hotel
+    description: Elimina un hotel del sistema a partir de su ID
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID del hotel
+        schema:
+          type: integer
+          format: int64
+    responses:
+      '204':
+        description: Hotel eliminado correctamente
+      '404':
+        description: Hotel no encontrado

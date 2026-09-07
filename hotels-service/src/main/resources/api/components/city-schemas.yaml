@@ -1,0 +1,39 @@
+CityRequestDto:
+  type: object
+  title: CityRequestDto
+  description: DTO para crear o actualizar una ciudad
+  properties:
+    name:
+      type: string
+      description: Nombre de la ciudad
+      example: Madrid
+    country:
+      type: string
+      description: País de la ciudad
+      example: España
+  required:
+    - name
+    - country
+
+CityResponseDto:
+  type: object
+  title: CityResponseDto
+  description: DTO para la respuesta de una ciudad
+  properties:
+    id:
+      type: integer
+      format: int64
+      description: ID único de la ciudad
+      example: 1
+    name:
+      type: string
+      description: Nombre de la ciudad
+      example: Madrid
+    country:
+      type: string
+      description: País de la ciudad
+      example: España
+  required:
+    - id
+    - name
+    - country
