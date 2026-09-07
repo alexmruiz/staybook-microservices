@@ -9,7 +9,7 @@ import com.hotelsbook.services.com_hotelsbook_services.dto.request.AmenityReques
 import com.hotelsbook.services.com_hotelsbook_services.dto.response.AmenityResponseDto;
 import com.hotelsbook.services.com_hotelsbook_services.service.AmenityService;
 
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import org.springframework.web.bind.annotation.RequestBody;
 import jakarta.validation.Valid;
 
 @RestController
