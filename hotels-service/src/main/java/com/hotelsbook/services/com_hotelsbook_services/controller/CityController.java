@@ -8,18 +8,22 @@ import org.springframework.web.bind.annotation.*;
 
 import com.hotelsbook.services.com_hotelsbook_services.dto.request.CityRequestDto;
 import com.hotelsbook.services.com_hotelsbook_services.dto.response.CityResponseDto;
+import com.hotelsbook.services.com_hotelsbook_services.dto.response.HotelResponseDto;
 import com.hotelsbook.services.com_hotelsbook_services.service.CityService;
+import com.hotelsbook.services.com_hotelsbook_services.service.HotelService;
 
 import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/cities")
 public class CityController {
-    
-    private final CityService cityService;
 
-    public CityController(CityService cityService) {
+    private final CityService cityService;
+    private final HotelService hotelService;
+
+    public CityController(CityService cityService, HotelService hotelService) {
         this.cityService = cityService;
+        this.hotelService = hotelService;
     }
 
     @PostMapping
@@ -40,7 +44,7 @@ public class CityController {
 
     @PutMapping("/{id}")
     public ResponseEntity<CityResponseDto> update(
-            @PathVariable Long id, 
+            @PathVariable Long id,
             @Valid @RequestBody CityRequestDto request) {
         return ResponseEntity.ok(cityService.update(id, request));
     }
@@ -49,5 +53,10 @@ public class CityController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable Long id) {
         cityService.deleteById(id);
+    }
+
+    @GetMapping("/{cityId}/hotels")
+    public ResponseEntity<List<HotelResponseDto>> findHotelsByCity(@PathVariable Long cityId) {
+        return ResponseEntity.ok(hotelService.findByCity(cityId));
     }
 }

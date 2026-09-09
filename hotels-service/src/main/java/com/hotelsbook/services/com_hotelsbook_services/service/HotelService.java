@@ -200,4 +200,20 @@ public class HotelService implements CrudService<HotelRequestDto, HotelResponseD
 
         return mapper.toResponseDto(updated);
     }
+
+    /**
+     * Find a city by name
+     * @param CityRequestDto requestDto
+     * @return List<Hotel>
+     */
+    public List<HotelResponseDto> findByCity (Long cityId) {
+        if (!cityRepository.existsById(cityId)) {
+            throw new EntityNotFoundException(HOTEL_NOT_FOUND);
+        }
+
+        return repository.findByAddressCityId(cityId)
+        .stream()
+        .map(mapper::toResponseDto)
+        .toList();
+    }
 }
