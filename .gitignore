@@ -63,3 +63,4 @@ Thumbs.db
 # Temporal/generated
 # ============================================
 .github/copilot-instructions.md
+.claude/claude-instructions.md
