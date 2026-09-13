@@ -59,7 +59,7 @@ public class AmenityService implements CrudService<AmenityRequestDto, AmenityRes
     @Override
     public AmenityResponseDto findById(Long id) {
         Amenity amenity = amenityRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException(NOT_FOUND_MESSAGE + id));
+                .orElseThrow(() -> new EntityNotFoundException(NOT_FOUND_MESSAGE + id));
         return amenityMapper.toResponseDto(amenity);
     }
 
