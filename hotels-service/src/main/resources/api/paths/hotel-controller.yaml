@@ -24,16 +24,18 @@ hotels:
     tags:
       - Hoteles
     summary: Obtener todos los hoteles
-    description: Devuelve una lista con todos los hoteles registrados
+    description: Devuelve una página de hoteles registrados
+    parameters:
+      - $ref: '../paths/city-controller.yaml#/PageParam'
+      - $ref: '../paths/city-controller.yaml#/SizeParam'
+      - $ref: '../paths/city-controller.yaml#/SortParam'
     responses:
       '200':
-        description: Lista de hoteles obtenida con éxito
+        description: Página de hoteles obtenida con éxito
         content:
           application/json:
             schema:
-              type: array
-              items:
-                $ref: '../components/hotel-schemas.yaml#/HotelResponseDto'
+              $ref: '../components/hotel-schemas.yaml#/HotelPageResponseDto'
 
 hotelById:
   get:

@@ -125,3 +125,37 @@ AmenityResponseDto:
   required:
     - id
     - name
+
+HotelPageResponseDto:
+  type: object
+  title: HotelPageResponseDto
+  description: Página de resultados de hoteles
+  properties:
+    content:
+      type: array
+      items:
+        $ref: '#/HotelResponseDto'
+    totalElements:
+      type: integer
+      format: int64
+      example: 42
+    totalPages:
+      type: integer
+      example: 5
+    number:
+      type: integer
+      description: Número de página actual (0-indexado)
+      example: 0
+    size:
+      type: integer
+      description: Tamaño de página solicitado
+      example: 10
+    first:
+      type: boolean
+      example: true
+    last:
+      type: boolean
+      example: false
+    empty:
+      type: boolean
+      example: false

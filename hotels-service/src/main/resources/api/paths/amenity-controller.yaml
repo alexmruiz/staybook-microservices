@@ -23,16 +23,18 @@ amenities:
     tags:
       - Amenities
     summary: Obtener todos los servicios
-    description: Devuelve todos los servicios registrados
+    description: Devuelve una página de servicios registrados
+    parameters:
+      - $ref: '../paths/city-controller.yaml#/PageParam'
+      - $ref: '../paths/city-controller.yaml#/SizeParam'
+      - $ref: '../paths/city-controller.yaml#/SortParam'
     responses:
       '200':
-        description: Lista de servicios obtenida con éxito
+        description: Página de servicios obtenida con éxito
         content:
           application/json:
             schema:
-              type: array
-              items:
-                $ref: '../components/amenity-schemas.yaml#/AmenityResponseDto'
+              $ref: '../components/amenity-schemas.yaml#/AmenityPageResponseDto'
 
 amenityById:
   get:

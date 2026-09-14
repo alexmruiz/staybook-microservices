@@ -21,6 +21,8 @@ paths:
     $ref: './paths/city-controller.yaml#/cities'
   /api/cities/{id}:
     $ref: './paths/city-controller.yaml#/cityById'
+  /api/cities/{cityId}/hotels:
+    $ref: './paths/city-controller.yaml#/cityHotels'
   /api/hotels:
     $ref: './paths/hotel-controller.yaml#/hotels'
   /api/hotels/{id}:

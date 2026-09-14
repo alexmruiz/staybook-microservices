@@ -24,16 +24,18 @@ cities:
     tags:
       - Ciudades
     summary: Obtener todas las ciudades
-    description: Devuelve una lista con todas las ciudades registradas
+    description: Devuelve una página de ciudades registradas
+    parameters:
+      - $ref: '#/PageParam'
+      - $ref: '#/SizeParam'
+      - $ref: '#/SortParam'
     responses:
       '200':
-        description: Lista de ciudades obtenida con éxito
+        description: Página de ciudades obtenida con éxito
         content:
           application/json:
             schema:
-              type: array
-              items:
-                $ref: '../components/city-schemas.yaml#/CityResponseDto'
+              $ref: '../components/city-schemas.yaml#/CityPageResponseDto'
 
 cityById:
   get:
@@ -108,3 +110,55 @@ cityById:
         description: Ciudad eliminada correctamente
       '404':
         description: Ciudad no encontrada
+
+cityHotels:
+  get:
+    tags:
+      - Ciudades
+    summary: Obtener los hoteles de una ciudad
+    description: Devuelve la lista de hoteles registrados en una ciudad concreta
+    parameters:
+      - name: cityId
+        in: path
+        required: true
+        description: ID de la ciudad
+        schema:
+          type: integer
+          format: int64
+    responses:
+      '200':
+        description: Lista de hoteles de la ciudad obtenida con éxito
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '../components/hotel-schemas.yaml#/HotelResponseDto'
+      '404':
+        description: Ciudad no encontrada
+
+PageParam:
+  name: page
+  in: query
+  required: false
+  description: Número de página a consultar (0-indexado)
+  schema:
+    type: integer
+    default: 0
+
+SizeParam:
+  name: size
+  in: query
+  required: false
+  description: Cantidad de elementos por página
+  schema:
+    type: integer
+    default: 20
+
+SortParam:
+  name: sort
+  in: query
+  required: false
+  description: Criterio de ordenación, por ejemplo "name,asc"
+  schema:
+    type: string
