@@ -1,7 +1,7 @@
 package com.hotelsbook.services.com_hotelsbook_services.service;
 
-import java.util.List;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.hotelsbook.services.com_hotelsbook_services.dto.request.CityRequestDto;
@@ -38,17 +38,10 @@ public class CityService implements CrudService<CityRequestDto, CityResponseDto>
         return cityMapper.toResponseDto(citySaved);
     }
 
-    /**
-     * Find all
-     * 
-     * @return List CityResponseDto
-     */
     @Override
-    public List<CityResponseDto> findAll() {
-        return cityRepository.findAll()
-                .stream()
-                .map(cityMapper::toResponseDto)
-                .toList();
+    public Page<CityResponseDto> findAll(Pageable pageable) {
+        return cityRepository.findAll(pageable)
+                .map(cityMapper::toResponseDto);
     }
 
     /**

@@ -2,6 +2,8 @@ package com.hotelsbook.services.com_hotelsbook_services.controller;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -33,8 +35,8 @@ public class CityController {
     }
 
     @GetMapping
-    public ResponseEntity<List<CityResponseDto>> findAll() {
-        return ResponseEntity.ok(cityService.findAll());
+    public Page<CityResponseDto> findAll(Pageable pageable) {
+        return cityService.findAll(pageable);
     }
 
     @GetMapping("/{id}")

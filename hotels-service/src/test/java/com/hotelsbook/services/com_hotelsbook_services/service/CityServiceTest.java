@@ -20,6 +20,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import com.hotelsbook.services.com_hotelsbook_services.dto.request.CityRequestDto;
 import com.hotelsbook.services.com_hotelsbook_services.dto.response.CityResponseDto;
@@ -200,45 +204,48 @@ class CityServiceTest {
     }
 
     @Nested
-@DisplayName("Método findAll()")
-class FindAllTests {
+    @DisplayName("Método findAll()")
+    class FindAllTests {
 
-    @Test
-    @DisplayName("Debe retornar la lista de ciudades cuando existen registros")
-    void findAll_WhenCitiesExist_ShouldReturnCityList() {
-        // Arrange
-        List<City> cities = List.of(city);
-        when(cityRepository.findAll()).thenReturn(cities);
-        when(cityMapper.toResponseDto(city)).thenReturn(cityResponseDto);
+        @Test
+        @DisplayName("Debe retornar la lista de ciudades cuando existen registros")
+        void findAll_WhenCitiesExist_ShouldReturnCityList() {
+            // Arrange
+            List<City> cities = List.of(city);
+            Pageable pageable = PageRequest.of(0, 10);
+            Page<City> cityPage = new PageImpl<>(cities, pageable, cities.size());
+            when(cityRepository.findAll(pageable)).thenReturn(cityPage);
+            when(cityMapper.toResponseDto(city)).thenReturn(cityResponseDto);
 
-        // Act
-        List<CityResponseDto> result = cityService.findAll();
+            // Act
+            Page<CityResponseDto> result = cityService.findAll(pageable);
 
-        // Assert
-        assertNotNull(result);
-        assertEquals(1, result.size());
-        assertEquals("Madrid", result.get(0).name());
+            // Assert
+            assertNotNull(result);
+            assertEquals(1, result.getContent().size());
+            assertEquals("Madrid", result.getContent().get(0).name());
 
-        verify(cityRepository).findAll();
-        verify(cityMapper).toResponseDto(city);
+            verify(cityRepository).findAll(pageable);
+            verify(cityMapper).toResponseDto(city);
+        }
+
+        @Test
+        @DisplayName("Debe retornar una lista vacía cuando no existen registros")
+        void findAll_WhenNoCitiesExist_ShouldReturnEmptyList() {
+            // Arrange
+            Pageable pageable = PageRequest.of(0, 10);
+            when(cityRepository.findAll(pageable)).thenReturn(Page.empty(pageable));
+
+            // Act
+            Page<CityResponseDto> result = cityService.findAll(pageable);
+
+            // Assert
+            assertNotNull(result);
+            assertTrue(result.isEmpty());
+
+            verify(cityRepository).findAll(pageable);
+            verify(cityMapper, never()).toResponseDto(any());
+        }
     }
-
-    @Test
-    @DisplayName("Debe retornar una lista vacía cuando no existen registros")
-    void findAll_WhenNoCitiesExist_ShouldReturnEmptyList() {
-        // Arrange
-        when(cityRepository.findAll()).thenReturn(List.of());
-
-        // Act
-        List<CityResponseDto> result = cityService.findAll();
-
-        // Assert
-        assertNotNull(result);
-        assertTrue(result.isEmpty());
-
-        verify(cityRepository).findAll();
-        verify(cityMapper, never()).toResponseDto(any());
-    }
-}
 
 }

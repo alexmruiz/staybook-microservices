@@ -1,6 +1,8 @@
 package com.hotelsbook.services.com_hotelsbook_services.service;
 
-import java.util.List;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 /**
  * Interfaz genérica CRUD para todos los servicios
@@ -16,11 +18,12 @@ public interface CrudService<RequestDto, ResponseDto> {
      */
     ResponseDto create(RequestDto request);
     
-    /**
-     * Obtiene todas las entidades
-     * @return Lista de DTOs de respuesta
-     */
-    List<ResponseDto> findAll();
+   /**
+    * Devuelve todos los resultados paginados
+    * @param pageable
+    * @return ResonseDto
+    */
+    Page<ResponseDto> findAll(Pageable pageable);
     
     /**
      * Obtiene una entidad por ID
