@@ -25,6 +25,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import com.hotelsbook.services.com_hotelsbook_services.dto.request.AddressRequestDto;
 import com.hotelsbook.services.com_hotelsbook_services.dto.request.CityRequestDto;
@@ -201,34 +205,37 @@ class HotelServiceTest {
         @Test
         void findAll_WhenHotelsExist_ShouldReturnHotelList() {
             // Arrange
-            when(repository.findAll()).thenReturn(List.of(hotel));
+            Pageable pageable = PageRequest.of(0, 10);
+            Page<Hotel> hotelPage = new PageImpl<>(List.of(hotel), pageable, 1);
+            when(repository.findAll(pageable)).thenReturn(hotelPage);
             when(mapper.toResponseDto(hotel)).thenReturn(response);
 
             // Act
-            List<HotelResponseDto> result = service.findAll();
+            Page<HotelResponseDto> result = service.findAll(pageable);
 
             // Assert
             assertNotNull(result);
-            assertEquals(1, result.size());
-            assertEquals("Hotel Gran Vía", result.get(0).name());
+            assertEquals(1, result.getContent().size());
+            assertEquals("Hotel Gran Vía", result.getContent().get(0).name());
 
-            verify(repository).findAll();
+            verify(repository).findAll(pageable);
             verify(mapper).toResponseDto(hotel);
         }
 
         @Test
         void findAll_WhenNoHotelExist_ShouldReturnEmptyList() {
             // Arrange
-            when(repository.findAll()).thenReturn(List.of());
+            Pageable pageable = PageRequest.of(0, 10);
+            when(repository.findAll(pageable)).thenReturn(Page.empty(pageable));
 
             // Act
-            List<HotelResponseDto> result = service.findAll();
+            Page<HotelResponseDto> result = service.findAll(pageable);
 
             // Assert
             assertNotNull(result);
             assertTrue(result.isEmpty());
 
-            verify(repository).findAll();
+            verify(repository).findAll(pageable);
             verify(mapper, never()).toResponseDto(any());
         }
     }

@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -109,17 +111,16 @@ public class HotelService implements CrudService<HotelRequestDto, HotelResponseD
     }
 
     /**
-     * Obtiene el listado completo de todos los hoteles registrados.
+     * Obtiene el listado paginado de todos los hoteles registrados.
      * 
-     * @return Lista de objetos DTO con la información de cada hotel
-     *         (List<HotelResponseDto>)
+     * @param pageable Información de paginación y ordenación
+     * @return Página de objetos DTO con la información de cada hotel
+     *         (Page<HotelResponseDto>)
      */
     @Override
-    public List<HotelResponseDto> findAll() {
-        return repository.findAll()
-                .stream()
-                .map(mapper::toResponseDto)
-                .toList();
+    public Page<HotelResponseDto> findAll(Pageable pageable) {
+        return repository.findAll(pageable)
+                .map(mapper::toResponseDto);
     }
 
     /**
