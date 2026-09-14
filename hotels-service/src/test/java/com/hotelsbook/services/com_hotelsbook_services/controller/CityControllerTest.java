@@ -21,6 +21,10 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -85,15 +89,17 @@ class CityControllerTest {
         @Test
         @DisplayName("Debe devolver status 200 OK y la lista de ciudades")
         void findAll_ShouldReturn200OkAndList() throws Exception {
-            when(cityService.findAll()).thenReturn(List.of(responseDto));
+            Pageable pageable = PageRequest.of(0, 10);
+            Page<CityResponseDto> page = new PageImpl<>(List.of(responseDto), pageable, 1);
+            when(cityService.findAll(any(Pageable.class))).thenReturn(page);
 
             mockMvc.perform(get("/api/cities"))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.size()").value(1))
-                    .andExpect(jsonPath("$[0].id").value(1))
-                    .andExpect(jsonPath("$[0].name").value("Madrid"));
+                    .andExpect(jsonPath("$.content.size()").value(1))
+                    .andExpect(jsonPath("$.content[0].id").value(1))
+                    .andExpect(jsonPath("$.content[0].name").value("Madrid"));
 
-            verify(cityService).findAll();
+            verify(cityService).findAll(any(Pageable.class));
         }
     }
 

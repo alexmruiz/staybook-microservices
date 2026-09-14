@@ -22,6 +22,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import com.hotelsbook.services.com_hotelsbook_services.dto.request.AmenityRequestDto;
 import com.hotelsbook.services.com_hotelsbook_services.dto.response.AmenityResponseDto;
@@ -76,30 +80,33 @@ class AmenityServiceTest {
 
     @Test
     void findAll_shoulReturnList() {
-        when(repository.findAll()).thenReturn(List.of(amenity));
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<Amenity> amenityPage = new PageImpl<>(List.of(amenity), pageable, 1);
+        when(repository.findAll(pageable)).thenReturn(amenityPage);
         when(mapper.toResponseDto(amenity)).thenReturn(response);
 
-        List<AmenityResponseDto> result = service.findAll();
+        Page<AmenityResponseDto> result = service.findAll(pageable);
 
         // Assert
         assertNotNull(result);
-        assertEquals(1, result.size());
-        assertEquals("Wi-Fi", result.get(0).name());
+        assertEquals(1, result.getContent().size());
+        assertEquals("Wi-Fi", result.getContent().get(0).name());
 
-        verify(repository).findAll();
+        verify(repository).findAll(pageable);
         verify(mapper).toResponseDto(amenity);
     }
 
     @Test
     void findAll_ReturnEmptyList() {
-        when(repository.findAll()).thenReturn(List.of());
+        Pageable pageable = PageRequest.of(0, 10);
+        when(repository.findAll(pageable)).thenReturn(Page.empty(pageable));
 
-        List<AmenityResponseDto> result = service.findAll();
+        Page<AmenityResponseDto> result = service.findAll(pageable);
 
         assertNotNull(result);
         assertTrue(result.isEmpty());
 
-        verify(repository).findAll();
+        verify(repository).findAll(pageable);
         verify(mapper, never()).toResponseDto(any());
     }
 

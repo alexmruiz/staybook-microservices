@@ -1,7 +1,7 @@
 package com.hotelsbook.services.com_hotelsbook_services.controller;
 
-import java.util.List;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,8 +29,8 @@ public class AmenityController {
     }
 
     @GetMapping
-    public List<AmenityResponseDto> findAll() {
-        return amenityService.findAll();
+    public Page<AmenityResponseDto> findAll(Pageable pageable) {
+        return amenityService.findAll(pageable);
     }
 
     @GetMapping("/{id}")

@@ -19,6 +19,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -94,15 +98,17 @@ class HotelControllerTest {
 
     @Test
     void findAll_ShouldReturn200OkAndList() throws Exception {
-        when(service.findAll()).thenReturn(List.of(response));
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<HotelResponseDto> page = new PageImpl<>(List.of(response), pageable, 1);
+        when(service.findAll(any(Pageable.class))).thenReturn(page);
 
         mockMvc.perform(get("/api/hotels"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.size()").value(1))
-                .andExpect(jsonPath("$[0].id").value(1))
-                .andExpect(jsonPath("$[0].name").value("Hotel Gran Vía"));
+                .andExpect(jsonPath("$.content.size()").value(1))
+                .andExpect(jsonPath("$.content[0].id").value(1))
+                .andExpect(jsonPath("$.content[0].name").value("Hotel Gran Vía"));
 
-        verify(service).findAll();
+        verify(service).findAll(any(Pageable.class));
     }
 
     @Test

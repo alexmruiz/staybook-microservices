@@ -1,7 +1,7 @@
 package com.hotelsbook.services.com_hotelsbook_services.service;
 
-import java.util.List;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.hotelsbook.services.com_hotelsbook_services.dto.request.AmenityRequestDto;
@@ -38,16 +38,15 @@ public class AmenityService implements CrudService<AmenityRequestDto, AmenityRes
     }
 
     /**
-     * Find all amenities
+     * Find all amenities paginated
      * 
-     * @return List<AmenityResponseDto>
+     * @param pageable
+     * @return Page<AmenityResponseDto>
      */
     @Override
-    public List<AmenityResponseDto> findAll() {
-        return amenityRepository.findAll()
-                .stream()
-                .map(amenityMapper::toResponseDto)
-                .toList();
+    public Page<AmenityResponseDto> findAll(Pageable pageable) {
+        return amenityRepository.findAll(pageable)
+                .map(amenityMapper::toResponseDto);
     }
 
     /**
