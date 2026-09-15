@@ -89,8 +89,15 @@ public class HotelService implements CrudService<HotelRequestDto, HotelResponseD
         return mapper.toResponseDto(saved);
     }
 
+    /**
+     * Busca una City por nombre en la BD y la devuelve; si no existe, la crea y la
+     * persiste.
+     * 
+     * @param HotelRequestDto request
+     * @return City
+     */
     private City resolveCity(HotelRequestDto request) {
-         return cityRepository.findByName(request.address().city().name())
+        return cityRepository.findByName(request.address().city().name())
                 .orElseGet(() -> cityRepository.save(cityMapper.toEntity(request.address().city())));
     }
 
@@ -172,21 +179,15 @@ public class HotelService implements CrudService<HotelRequestDto, HotelResponseD
         }
 
         // Actualización opcional de los tipos de habitación (RoomTypes)
-        if (request.roomTypes() != null && !request.roomTypes().isEmpty()) {
-            for (RoomTypeRequestDto dto : request.roomTypes()) {
-                RoomType existingRoomType = hotel.getRoomTypes()
-                        .stream()
-                        .filter(roomType -> roomType.getType() == dto.type())
-                        .findFirst()
-                        .orElse(null);
-
-                if (existingRoomType != null) {
-                    existingRoomType.setQuantity(dto.quantity());
-                } else {
-                    RoomType newRoomType = roomTypeMapper.toEntity(dto);
-                    hotel.addRoomType(newRoomType);
-                }
-            }
+        if (request.roomTypes() != null) {
+            Set<RoomType> newRoomTypes = request.roomTypes().stream()
+                    .map(dto -> {
+                        RoomType rt = roomTypeMapper.toEntity(dto);
+                        rt.setHotel(hotel);
+                        return rt;
+                    })
+                    .collect(Collectors.toSet());
+            hotel.setRoomTypes(newRoomTypes);
         }
 
         // Actualización opcional de los servicios (Amenities) por sus IDs

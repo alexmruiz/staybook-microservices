@@ -120,7 +120,7 @@ class CityServiceTest {
                     EntityNotFoundException.class,
                     () -> cityService.update(idInexistente, cityRequestDto));
 
-            assertEquals("Ciudad un encontrada con el id: 999", exception.getMessage());
+            assertEquals("Ciudad no encontrada con el id: 999", exception.getMessage());
 
             verify(cityRepository).findById(idInexistente);
         }
@@ -158,7 +158,7 @@ class CityServiceTest {
                     EntityNotFoundException.class,
                     () -> cityService.findById(idInexistente));
 
-            assertEquals("Ciudad un encontrada con el id: 999", exception.getMessage());
+            assertEquals("Ciudad no encontrada con el id: 999", exception.getMessage());
 
             verify(cityRepository).findById(999L);
             verify(cityMapper, never()).toResponseDto(any());
@@ -197,7 +197,7 @@ class CityServiceTest {
                     EntityNotFoundException.class,
                     () -> cityService.findById(idInexistente));
 
-            assertEquals("Ciudad un encontrada con el id: 999", exception.getMessage());
+            assertEquals("Ciudad no encontrada con el id: 999", exception.getMessage());
 
             verify(cityRepository, never()).delete(any());
         }

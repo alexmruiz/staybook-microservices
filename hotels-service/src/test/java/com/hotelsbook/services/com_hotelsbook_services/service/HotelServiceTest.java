@@ -310,11 +310,13 @@ class HotelServiceTest {
                     updatedRoomTypes,
                     Set.of(1L));
 
-            RoomType newRoomEntity = new RoomType(RoomTypeName.SINGLE, 3, hotel);
-
             when(repository.findById(hotelId)).thenReturn(Optional.of(hotel));
             when(cityRepository.findByName("Madrid")).thenReturn(Optional.of(city));
-            when(roomTypeMapper.toEntity(newRoomDto)).thenReturn(newRoomEntity);
+            when(roomTypeMapper.toEntity(any(RoomTypeRequestDto.class)))
+                    .thenAnswer(inv -> {
+                        RoomTypeRequestDto dto = inv.getArgument(0);
+                        return new RoomType(dto.type(), dto.quantity(), hotel);
+                    });
             when(amenityRepository.findAllById(Set.of(1L)))
                     .thenReturn(List.of(new Amenity("Wi-Fi", "Wi-Fi de alta velocidad")));
             when(repository.save(hotel)).thenReturn(hotel);
@@ -337,7 +339,7 @@ class HotelServiceTest {
         void update_WhenOptionalFieldsAreNullOrEmpty_ShouldUpdateBasicFieldsOnly() {
             // Arrange
             Long hotelId = 1L;
-  
+
             HotelRequestDto simpleRequest = new HotelRequestDto(
                     "Nombre Simple",
                     "Desc Simple",
