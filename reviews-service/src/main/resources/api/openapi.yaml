@@ -1,0 +1,19 @@
+openapi: 3.0.0
+info:
+  title: Reviews Service API
+  version: 1.0.0
+  description: API para la gestión de reseñas (reviews)
+
+servers:
+  - url: http://localhost:8081
+    description: Servidor local
+
+tags:
+  - name: Reseñas
+    description: Endpoints para la gestión de reseñas
+
+paths:
+  /api/reviews:
+    $ref: './paths/review-controller.yaml#/reviews'
+  /api/reviews/{id}:
+    $ref: './paths/review-controller.yaml#/reviewById'

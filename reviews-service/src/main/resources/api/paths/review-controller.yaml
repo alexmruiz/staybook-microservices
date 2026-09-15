@@ -1,0 +1,110 @@
+reviews:
+  post:
+    tags:
+      - Reseñas
+    summary: Crear una reseña
+    description: Crea y guarda una nueva reseña en la base de datos
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/review-schemas.yaml#/ReviewRequestDto'
+    responses:
+      '201':
+        description: Reseña creada con éxito
+        content:
+          application/json:
+            schema:
+              $ref: '../components/review-schemas.yaml#/ReviewResponseDto'
+      '400':
+        description: Datos de entrada no válidos
+
+  get:
+    tags:
+      - Reseñas
+    summary: Obtener todas las reseñas
+    description: Devuelve una lista con todas las reseñas registradas
+    responses:
+      '200':
+        description: Lista de reseñas obtenida con éxito
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '../components/review-schemas.yaml#/ReviewResponseDto'
+
+reviewById:
+  get:
+    tags:
+      - Reseñas
+    summary: Obtener reseña por ID
+    description: Devuelve una reseña específica por su identificador
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID de la reseña
+        schema:
+          type: integer
+          format: int64
+    responses:
+      '200':
+        description: Reseña encontrada
+        content:
+          application/json:
+            schema:
+              $ref: '../components/review-schemas.yaml#/ReviewResponseDto'
+      '404':
+        description: Reseña no encontrada
+
+  put:
+    tags:
+      - Reseñas
+    summary: Actualizar una reseña
+    description: Actualiza los datos de una reseña existente
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID de la reseña
+        schema:
+          type: integer
+          format: int64
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/review-schemas.yaml#/ReviewRequestDto'
+    responses:
+      '200':
+        description: Reseña actualizada correctamente
+        content:
+          application/json:
+            schema:
+              $ref: '../components/review-schemas.yaml#/ReviewResponseDto'
+      '400':
+        description: Datos de petición no válidos
+      '404':
+        description: Reseña no encontrada
+
+  delete:
+    tags:
+      - Reseñas
+    summary: Eliminar una reseña
+    description: Elimina una reseña por su ID
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID de la reseña
+        schema:
+          type: integer
+          format: int64
+    responses:
+      '204':
+        description: Reseña eliminada correctamente
+      '404':
+        description: Reseña no encontrada

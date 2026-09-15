@@ -1,0 +1,40 @@
+ReviewRequestDto:
+  type: object
+  properties:
+    hotelId:
+      type: integer
+      format: int64
+      description: Identificador único del hotel
+      example: 101
+    qualification:
+      type: number
+      format: double
+      description: Calificación del hotel entre 0.0 y 5.0
+      example: 4.5
+  required:
+    - hotelId
+    - qualification
+
+ReviewResponseDto:
+  type: object
+  properties:
+    id:
+      type: integer
+      format: int64
+      description: Identificador único autogenerado de la reseña
+      example: 1
+    hotelId:
+      type: integer
+      format: int64
+      description: Identificador único del hotel asociado
+      example: 101
+    qualification:
+      type: number
+      format: double
+      description: Calificación otorgada al hotel
+      example: 4.5
+    createdAt:
+      type: string
+      format: date-time
+      description: Fecha y hora de creación de la reseña
+      example: '2026-08-24T17:30:00'
