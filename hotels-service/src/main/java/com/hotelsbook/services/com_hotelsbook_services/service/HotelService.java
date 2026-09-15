@@ -46,7 +46,6 @@ public class HotelService implements CrudService<HotelRequestDto, HotelResponseD
     public HotelService(
             HotelMapper mapper,
             HotelRepository repository,
-            AddressMapper addressMapper,
             AmenityRepository amenityRepository,
             RoomTypeMapper roomTypeMapper,
             CityRepository cityRepository,
@@ -72,8 +71,7 @@ public class HotelService implements CrudService<HotelRequestDto, HotelResponseD
     public HotelResponseDto create(HotelRequestDto request) {
         Hotel hotel = mapper.toEntity(request);
 
-        City city = cityRepository.findByName(request.address().city().name())
-                .orElseGet(() -> cityRepository.save(cityMapper.toEntity(request.address().city())));
+        City city = this.resolveCity(request);
 
         hotel.getAddress().setCity(city);
 
@@ -89,6 +87,11 @@ public class HotelService implements CrudService<HotelRequestDto, HotelResponseD
 
         Hotel saved = repository.save(hotel);
         return mapper.toResponseDto(saved);
+    }
+
+    private City resolveCity(HotelRequestDto request) {
+         return cityRepository.findByName(request.address().city().name())
+                .orElseGet(() -> cityRepository.save(cityMapper.toEntity(request.address().city())));
     }
 
     /**
@@ -159,9 +162,7 @@ public class HotelService implements CrudService<HotelRequestDto, HotelResponseD
 
         // Actualización opcional de la dirección (Address)
         if (request.address() != null) {
-            City city = cityRepository.findByName(request.address().city().name())
-                    .orElseGet(() -> cityRepository.save(
-                            cityMapper.toEntity(request.address().city())));
+            City city = this.resolveCity(request);
 
             Address address = hotel.getAddress();
             address.setStreet(request.address().street());
@@ -174,10 +175,10 @@ public class HotelService implements CrudService<HotelRequestDto, HotelResponseD
         if (request.roomTypes() != null && !request.roomTypes().isEmpty()) {
             for (RoomTypeRequestDto dto : request.roomTypes()) {
                 RoomType existingRoomType = hotel.getRoomTypes()
-                .stream()
-                .filter(roomType -> roomType.getType() == dto.type())
-                .findFirst()
-                .orElse(null);
+                        .stream()
+                        .filter(roomType -> roomType.getType() == dto.type())
+                        .findFirst()
+                        .orElse(null);
 
                 if (existingRoomType != null) {
                     existingRoomType.setQuantity(dto.quantity());
@@ -204,17 +205,18 @@ public class HotelService implements CrudService<HotelRequestDto, HotelResponseD
 
     /**
      * Find a city by name
+     * 
      * @param CityRequestDto requestDto
      * @return List<Hotel>
      */
-    public List<HotelResponseDto> findByCity (Long cityId) {
+    public List<HotelResponseDto> findByCity(Long cityId) {
         if (!cityRepository.existsById(cityId)) {
             throw new EntityNotFoundException(HOTEL_NOT_FOUND);
         }
 
         return repository.findByAddressCityId(cityId)
-        .stream()
-        .map(mapper::toResponseDto)
-        .toList();
+                .stream()
+                .map(mapper::toResponseDto)
+                .toList();
     }
 }

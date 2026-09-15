@@ -42,7 +42,6 @@ import com.hotelsbook.services.com_hotelsbook_services.entity.Hotel;
 import com.hotelsbook.services.com_hotelsbook_services.entity.RoomType;
 import com.hotelsbook.services.com_hotelsbook_services.entity.RoomTypeName;
 import com.hotelsbook.services.com_hotelsbook_services.exception.EntityNotFoundException;
-import com.hotelsbook.services.com_hotelsbook_services.mapper.AddressMapper;
 import com.hotelsbook.services.com_hotelsbook_services.mapper.CityMapper;
 import com.hotelsbook.services.com_hotelsbook_services.mapper.HotelMapper;
 import com.hotelsbook.services.com_hotelsbook_services.mapper.RoomTypeMapper;
@@ -63,8 +62,7 @@ class HotelServiceTest {
     private CityRepository cityRepository;
     @Mock
     private CityMapper cityMapper;
-    @Mock
-    private AddressMapper addressMapper;
+
     @Mock
     private RoomTypeMapper roomTypeMapper;
 

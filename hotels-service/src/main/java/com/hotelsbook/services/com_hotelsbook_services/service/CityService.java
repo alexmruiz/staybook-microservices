@@ -18,7 +18,7 @@ public class CityService implements CrudService<CityRequestDto, CityResponseDto>
 
     private final CityMapper cityMapper;
 
-    private static final String CITY_NOT_FOUND = "Ciudad un encontrada con el id: ";
+    private static final String CITY_NOT_FOUND = "Ciudad no encontrada con el id: ";
 
     public CityService(CityRepository cityRepository, CityMapper cityMapper) {
         this.cityRepository = cityRepository;

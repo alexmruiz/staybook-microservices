@@ -9,6 +9,6 @@ public record HotelResponseDto(
     Integer stars,
     Integer capacity,
     Set<RoomTypeResponseDto> roomTypes,
-    Set<AmenityResponseDto> services
+    Set<AmenityResponseDto> amenities
 ) {
 }
