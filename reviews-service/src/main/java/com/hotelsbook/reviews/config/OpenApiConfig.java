@@ -1,4 +1,4 @@
-package com.hotelsbook.reviews;
+package com.hotelsbook.reviews.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

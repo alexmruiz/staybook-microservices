@@ -5,7 +5,6 @@ import java.util.Set;
 
 import jakarta.persistence.*;
 
-
 @Entity
 @Table(name = "hotels")
 public class Hotel {
@@ -24,6 +23,7 @@ public class Hotel {
     @JoinColumn(name = "address_id", nullable = false, unique = true)
     private Address address;
 
+    @Column(nullable = false)
     private Integer stars;
 
     private Integer capacity;
@@ -32,12 +32,8 @@ public class Hotel {
     private Set<RoomType> roomTypes = new HashSet<>();
 
     @ManyToMany
-    @JoinTable(
-            name = "hotel_services",
-            joinColumns = @JoinColumn(name = "hotel_id"),
-            inverseJoinColumns = @JoinColumn(name = "service_id")
-    )
-    private Set<Service> services = new HashSet<>();
+    @JoinTable(name = "hotel_services", joinColumns = @JoinColumn(name = "hotel_id"), inverseJoinColumns = @JoinColumn(name = "service_id"))
+    private Set<Amenity> amenities = new HashSet<>();
 
     protected Hotel() {
     }
@@ -100,8 +96,8 @@ public class Hotel {
         return roomTypes;
     }
 
-    public Set<Service> getServices() {
-        return services;
+    public Set<Amenity> getAmenities() {
+        return amenities;
     }
 
     // Métodos de conveniencia para mantener la relación bidireccional coherente
@@ -115,8 +111,29 @@ public class Hotel {
         roomType.setHotel(null);
     }
 
-    public void addService(Service service) {
-        services.add(service);
+    public void setRoomTypes(Set<RoomType> newRoomTypes) {
+    this.roomTypes.forEach(roomType -> roomType.setHotel(null));
+    this.roomTypes.clear();
+
+    newRoomTypes.forEach(this::addRoomType);
+}
+
+    public void addService(Amenity service) {
+        amenities.add(service);
         service.getHotels().add(this);
+    }
+
+    public void removeService(Amenity service) {
+        amenities.remove(service);
+        service.getHotels().remove(this);
+    }
+
+    public void setAmenities(Set<Amenity> newAmenities) {
+        // Remover todos los servicios actuales
+        this.amenities.forEach(service -> service.getHotels().remove(this));
+        this.amenities.clear();
+
+        // Agregar los nuevos servicios
+        newAmenities.forEach(this::addService);
     }
 }

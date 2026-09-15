@@ -1,0 +1,100 @@
+amenities:
+  post:
+    tags:
+      - Amenities
+    summary: Crear un servicio
+    description: Registra un nuevo servicio disponible en los hoteles
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/amenity-schemas.yaml#/AmenityRequestDto'
+    responses:
+      '201':
+        description: Servicio creado con éxito
+        content:
+          application/json:
+            schema:
+              $ref: '../components/amenity-schemas.yaml#/AmenityResponseDto'
+      '400':
+        description: Datos de entrada no válidos
+  get:
+    tags:
+      - Amenities
+    summary: Obtener todos los servicios
+    description: Devuelve una página de servicios registrados
+    parameters:
+      - $ref: '../paths/city-controller.yaml#/PageParam'
+      - $ref: '../paths/city-controller.yaml#/SizeParam'
+      - $ref: '../paths/city-controller.yaml#/SortParam'
+    responses:
+      '200':
+        description: Página de servicios obtenida con éxito
+        content:
+          application/json:
+            schema:
+              $ref: '../components/amenity-schemas.yaml#/AmenityPageResponseDto'
+
+amenityById:
+  get:
+    tags:
+      - Amenities
+    summary: Obtener un servicio por ID
+    description: Busca un servicio por su identificador
+    parameters:
+      - $ref: '#/AmenityId'
+    responses:
+      '200':
+        description: Servicio encontrado
+        content:
+          application/json:
+            schema:
+              $ref: '../components/amenity-schemas.yaml#/AmenityResponseDto'
+      '404':
+        description: Servicio no encontrado
+  put:
+    tags:
+      - Amenities
+    summary: Actualizar un servicio
+    description: Actualiza los datos de un servicio existente
+    parameters:
+      - $ref: '#/AmenityId'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/amenity-schemas.yaml#/AmenityRequestDto'
+    responses:
+      '200':
+        description: Servicio actualizado correctamente
+        content:
+          application/json:
+            schema:
+              $ref: '../components/amenity-schemas.yaml#/AmenityResponseDto'
+      '400':
+        description: Datos de entrada no válidos
+      '404':
+        description: Servicio no encontrado
+  delete:
+    tags:
+      - Amenities
+    summary: Eliminar un servicio
+    description: Elimina un servicio a partir de su identificador
+    parameters:
+      - $ref: '#/AmenityId'
+    responses:
+      '204':
+        description: Servicio eliminado correctamente
+      '404':
+        description: Servicio no encontrado
+
+AmenityId:
+  name: id
+  in: path
+  required: true
+  description: ID del servicio
+  schema:
+    type: integer
+    format: int64
