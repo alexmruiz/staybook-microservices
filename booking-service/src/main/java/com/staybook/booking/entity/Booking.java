@@ -12,7 +12,11 @@ import com.staybook.booking.enums.BookingStatus;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "bookings")
+@Table(name = "bookings",
+       indexes = {
+         @Index(name = "idx_bookings_booking_reference", columnList = "booking_reference"),
+         @Index(name = "idx_bookings_hotel_id", columnList = "hotel_id")
+       })
 public class Booking {
 
     @Id
