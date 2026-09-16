@@ -30,8 +30,8 @@ class RoomAvailabilityRepositoryTest {
         LocalDate d1 = LocalDate.of(2026, 9, 20);
         LocalDate d2 = LocalDate.of(2026, 9, 21);
 
-        RoomAvailability r1 = new RoomAvailability(1L, hotelId, roomTypeId, d1, 5, BigDecimal.valueOf(100));
-        RoomAvailability r2 = new RoomAvailability(1L, hotelId, roomTypeId, d2, 3, BigDecimal.valueOf(120));
+        RoomAvailability r1 = new RoomAvailability(hotelId, roomTypeId, d1, 5, BigDecimal.valueOf(100));
+        RoomAvailability r2 = new RoomAvailability(hotelId, roomTypeId, d2, 3, BigDecimal.valueOf(120));
 
         repository.saveAll(List.of(r2, r1));
         repository.flush(); // ensure persisted

@@ -6,17 +6,20 @@ import java.time.LocalDate;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "rooms_availability", indexes = {
-        @Index(name = "idx_rooms_availability_hotel_id ", columnList = "hotel_id")
-})
+@Table(
+    name = "rooms_availability",
+    indexes = { @Index(name = "idx_rooms_availability_hotel_id", columnList = "hotel_id") },
+    uniqueConstraints = @UniqueConstraint(
+        name = "uk_rooms_availability_hotel_room_date",
+        columnNames = {"hotel_id", "room_type_id", "date"}
+    )
+)
+    
 public class RoomAvailability {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Column(name = "user_id", nullable = false)
-    private Long userId;
 
     @Column(name = "hotel_id", nullable = false)
     private Long hotelId;
@@ -36,9 +39,8 @@ public class RoomAvailability {
     public RoomAvailability() {
     }
 
-    public RoomAvailability(Long userId, Long hotelId, Long roomTypeId, LocalDate date, Integer availableQuantity,
+    public RoomAvailability(Long hotelId, Long roomTypeId, LocalDate date, Integer availableQuantity,
             BigDecimal price) {
-        this.userId = userId;
         this.hotelId = hotelId;
         this.roomTypeId = roomTypeId;
         this.date = date;
@@ -52,14 +54,6 @@ public class RoomAvailability {
 
     public void setId(Long id) {
         this.id = id;
-    }
-
-    public Long getUserId() {
-        return userId;
-    }
-
-    public void setUserId(Long userId) {
-        this.userId = userId;
     }
 
     public Long getHotelId() {
