@@ -9,6 +9,6 @@ import org.springframework.web.reactive.function.client.WebClient;
 public class BookingApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(HotelApplication.class, args);
+		SpringApplication.run(BookingApplication.class, args);
 	}
 }
