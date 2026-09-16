@@ -1,4 +1,4 @@
-package com.hotelsbook.hotel;
+package com.staybook.booking;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -6,15 +6,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.web.reactive.function.client.WebClient;
 
 @SpringBootApplication
-public class HotelApplication {
+public class BookingApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(HotelApplication.class, args);
+		SpringApplication.run(BookingApplication.class, args);
 	}
-
-	@Bean
-	public WebClient getClient(){
-		return WebClient.create(); 
-	}
-
 }
