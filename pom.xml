@@ -25,7 +25,7 @@
 
     <modules>
         <module>hotels-service</module>
-        <module>reservations-service</module>
+        <module>booking-service</module>
         <module>reviews-service</module>
     </modules>
 </project>
