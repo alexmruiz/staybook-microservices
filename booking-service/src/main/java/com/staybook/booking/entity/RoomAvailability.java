@@ -7,7 +7,7 @@ import jakarta.persistence.*;
 
 @Entity
 @Table(name = "rooms_availability", indexes = {
-        @Index(name = "idx_bookings_hotel_id", columnList = "hotel_id")
+        @Index(name = "idx_rooms_availability_hotel_id ", columnList = "hotel_id")
 })
 public class RoomAvailability {
 
@@ -30,7 +30,7 @@ public class RoomAvailability {
     @Column(name = "available_quantity", nullable = false)
     private Integer availableQuantity;
 
-    @Column(nullable = false)
+    @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
 
     public RoomAvailability() {
@@ -101,7 +101,5 @@ public class RoomAvailability {
     public void setPrice(BigDecimal price) {
         this.price = price;
     }
-
-    
 
 }

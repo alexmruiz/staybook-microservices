@@ -42,7 +42,7 @@ public class Booking {
     @Enumerated(EnumType.STRING)
     private BookingStatus status;
 
-    @Column(name = "total_price", nullable = false)
+    @Column(name = "total_price", nullable = false, precision = 12, scale = 2)
     private BigDecimal totalPrice;
 
     @Column(name = "created_at", nullable = false)
@@ -53,7 +53,7 @@ public class Booking {
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
-    @Column(name = "booking_reference")
+    @Column(name = "booking_reference", unique = true)
     private String bookingReference;
 
     public Booking() {
@@ -138,7 +138,7 @@ public class Booking {
         return createdAt;
     }
 
-    public void setCreateAt(LocalDateTime createdAt) {
+    public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
 
@@ -146,7 +146,7 @@ public class Booking {
         return updatedAt;
     }
 
-    public void setUpdateAt(LocalDateTime updatedAt) {
+    public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
     }
 
