@@ -1,0 +1,33 @@
+package com.staybook.booking.mapper;
+
+import com.staybook.booking.dto.request.BookingRequestDto;
+import com.staybook.booking.dto.response.BookingResponseDto;
+import com.staybook.booking.entity.Booking;
+
+public class BookingMapper {
+
+    public Booking toEntity(BookingRequestDto dto) {
+        if (dto == null)
+            return null;
+
+        return new Booking(dto.userId(), dto.hotelId(), dto.roomTypeId(), dto.checkInDate(), dto.checkOutDate(),
+                dto.status(), dto.totalPrice());
+    }
+
+    public BookingResponseDto toResponseDto(Booking booking) {
+        if (booking == null)
+            return null;
+
+        return new BookingResponseDto(
+                booking.getId(),
+                booking.getUserId(),
+                booking.getRoomTypeId(),
+                booking.getCheckInDate(),
+                booking.getCheckOutDate(),
+                booking.getStatus(),
+                booking.getTotalPrice(),
+                booking.getCreatedAt(),
+                booking.getUpdatedAt(),
+                booking.getBookingReference());
+    }
+}
