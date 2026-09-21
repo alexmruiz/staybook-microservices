@@ -31,6 +31,18 @@ public class GlobalExceptionHandler {
         return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
     }
 
+    // 409 CONFLICT - Estado de reserva inválido para la operación
+    @ExceptionHandler(InvalidBookingStateException.class)
+    public ProblemDetail handleInvalidBookingState(InvalidBookingStateException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
+    // 400 BAD REQUEST - Rango de fechas no válido
+    @ExceptionHandler(InvalidDateRangeException.class)
+    public ProblemDetail handleInvalidDateRange(InvalidDateRangeException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
     // 400 BAD REQUEST - Bean Validation (@Valid en DTOs)
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ProblemDetail handleValidationException(MethodArgumentNotValidException ex) {
