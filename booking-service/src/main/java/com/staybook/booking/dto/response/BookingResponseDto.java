@@ -1,0 +1,21 @@
+package com.staybook.booking.dto.response;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
+import com.staybook.booking.enums.BookingStatus;
+
+public record BookingResponseDto(
+    Long id,
+    Long userId,
+    Long roomTypeId,
+    LocalDate checkInDate,
+    LocalDate checkOutDate,
+    BookingStatus status,
+    BigDecimal totalPrice,
+    LocalDateTime createdAt,
+    LocalDateTime updatedAt,
+    String bookingReference
+) {
+}
