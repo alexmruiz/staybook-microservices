@@ -15,8 +15,8 @@ import com.staybook.booking.repository.RoomAvailabilityRepository;
 @Service
 public class RoomAvailabilityService {
 
-    private RoomAvailabilityRepository repository;
-    private RoomAvailabilityMapper mapper;
+    private final RoomAvailabilityRepository repository;
+    private final RoomAvailabilityMapper mapper;
 
     public RoomAvailabilityService(RoomAvailabilityRepository repository, RoomAvailabilityMapper mapper) {
         this.repository = repository;
@@ -24,16 +24,16 @@ public class RoomAvailabilityService {
     }
 
     /**
-     * Retorna una lista con todas las habitaciones disponibles en la fechas
-     * indicadas
-     * 
-     * @param Long      hotelId
-     * @param LocalDate startDate
-     * @param LocalDate endDate
-     * @param int       availableQuantity
+     * Devuelve una lista con los días disponibles, si la disponibilidad es nula lanza excepción.
+     * Si la disponibilidad es parcial muestra una lista con los días disponibles
+     * @param hotelId
+     * @param roomTypeId
+     * @param startDate
+     * @param endDate
+     * @param availableQuantity
      * @return List<RoomAvailabilityResponseDto> getAvailableRooms
      */
-    public List<RoomAvailabilityResponseDto> getAvailableRooms(Long hotelId, LocalDate startDate, LocalDate endDate,
+    public List<RoomAvailabilityResponseDto> getAvailableRooms(Long hotelId, Long roomTypeId, LocalDate startDate, LocalDate endDate,
             int availableQuantity) {
 
         if (startDate == null || endDate == null || !startDate.isBefore(endDate)) {
@@ -41,7 +41,7 @@ public class RoomAvailabilityService {
         }
 
         List<RoomAvailability> roomAvailabilities = repository.getAvailableRooms(hotelId, startDate, endDate,
-                availableQuantity);
+                availableQuantity, roomTypeId);
 
         if (roomAvailabilities.isEmpty()) {
             throw new RoomNotAvailableException("No hay habitaciones disponibles en la fecha indicada");
