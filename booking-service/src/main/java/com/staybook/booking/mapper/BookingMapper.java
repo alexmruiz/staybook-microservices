@@ -1,9 +1,12 @@
 package com.staybook.booking.mapper;
 
+import org.springframework.stereotype.Component;
+
 import com.staybook.booking.dto.request.BookingRequestDto;
 import com.staybook.booking.dto.response.BookingResponseDto;
 import com.staybook.booking.entity.Booking;
 
+@Component 
 public class BookingMapper {
 
     public Booking toEntity(BookingRequestDto dto) {
