@@ -66,7 +66,7 @@ class RoomAvailabilityRepositoryTest {
         LocalDate endExclusive = d3.plusDays(1); // query uses date < endDate (exclusive)
         int requestedQuantity = 2;
 
-        List<RoomAvailability> result = repository.getAvailableRooms(hotelId, start, endExclusive, requestedQuantity);
+        List<RoomAvailability> result = repository.getAvailableRooms(hotelId, start, endExclusive, requestedQuantity, roomTypeId);
 
         assertEquals(2, result.size(), "Debe devolver solo d1 y d3 (d2 tiene < requested)");
         assertEquals(d1, result.get(0).getDate());

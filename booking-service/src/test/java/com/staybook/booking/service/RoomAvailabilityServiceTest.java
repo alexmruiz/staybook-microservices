@@ -50,17 +50,17 @@ class RoomAvailabilityServiceTest {
         RoomAvailabilityResponseDto response = new RoomAvailabilityResponseDto(1L, hotelId, roomTypeId, date, requestedQuantity, BigDecimal.valueOf(100.00));
 
         when(repository.getAvailableRooms(
-                hotelId, startDate, endDate, requestedQuantity))
+                hotelId, startDate, endDate, requestedQuantity, roomTypeId))
                 .thenReturn(List.of(roomAvailability));
 
         when(mapper.toResponseDto(roomAvailability))
                 .thenReturn(response);
 
-        List<RoomAvailabilityResponseDto> result = service.getAvailableRooms(hotelId, startDate, endDate, 2);
+        List<RoomAvailabilityResponseDto> result = service.getAvailableRooms(hotelId, roomTypeId, startDate, endDate, 2);
 
         assertNotNull(result);
         assertEquals(date, result.get(0).date());
-        verify(repository).getAvailableRooms(hotelId, startDate, endDate, 2);
+        verify(repository).getAvailableRooms(hotelId, startDate, endDate, 2, roomTypeId);
     }
 
     @Test
@@ -70,9 +70,10 @@ class RoomAvailabilityServiceTest {
         Long hotelId = 1L;
         LocalDate startDate = LocalDate.of(2026, 6, 5);
         LocalDate endDate = LocalDate.of(2026, 6, 1); // Inválido
+        Long roomTypeId = 1L;
 
         // When / Then
-        assertThrows(InvalidDateRangeException.class, (()->{service.getAvailableRooms(hotelId, startDate, endDate, 0);}));
+        assertThrows(InvalidDateRangeException.class, (()->{service.getAvailableRooms(hotelId, roomTypeId, startDate, endDate, 0);}));
     }
 
     @Test
@@ -82,13 +83,15 @@ class RoomAvailabilityServiceTest {
         Long hotelId = 1L;
         LocalDate startDate = LocalDate.of(2026, 6, 1);
         LocalDate endDate = LocalDate.of(2026, 6, 5); // válido
+        Long roomTypeId = 1L;
+
 
         when(repository.getAvailableRooms(
-                hotelId, startDate, endDate, 1))
+                hotelId, startDate, endDate, 1, roomTypeId))
                 .thenReturn(List.of());
 
         // When / Then
-        assertThrows(RoomNotAvailableException.class, () -> service.getAvailableRooms(hotelId, startDate, endDate, 1));
+        assertThrows(RoomNotAvailableException.class, () -> service.getAvailableRooms(hotelId, roomTypeId, startDate, endDate, 1));
     }
 
 }
