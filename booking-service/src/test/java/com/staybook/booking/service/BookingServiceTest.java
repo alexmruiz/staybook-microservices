@@ -2,7 +2,9 @@ package com.staybook.booking.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
@@ -21,26 +23,27 @@ import com.staybook.booking.dto.request.BookingRequestDto;
 import com.staybook.booking.dto.response.BookingResponseDto;
 import com.staybook.booking.entity.Booking;
 import com.staybook.booking.enums.BookingStatus;
+import com.staybook.booking.exception.InvalidDateRangeException;
 import com.staybook.booking.mapper.BookingMapper;
 import com.staybook.booking.repository.BookingRepository;
 
-@ExtendWith(MockitoExtension.class) 
+@ExtendWith(MockitoExtension.class)
 class BookingServiceTest {
-    
-    @Mock 
+
+    @Mock
     private BookingRepository repository;
 
     @Mock
     private BookingMapper mapper;
 
-    @InjectMocks 
+    @InjectMocks
     private BookingService service;
 
     private Booking booking;
     private BookingRequestDto request;
     private BookingResponseDto response;
 
-    @BeforeEach 
+    @BeforeEach
     void setUp() {
         Long userId = 1L;
         Long hotelId = 1L;
@@ -49,16 +52,17 @@ class BookingServiceTest {
         LocalDate checkOut = LocalDate.of(2026, 11, 5);
         BookingStatus status = BookingStatus.CONFIRMED;
         BigDecimal price = BigDecimal.valueOf(100.00);
-        LocalDateTime createdAt = LocalDateTime.of(2026,11,1,10,0);
-        LocalDateTime updatedAt = LocalDateTime.of(206,11,5,10,0);
+        LocalDateTime createdAt = LocalDateTime.of(2026, 11, 1, 10, 0);
+        LocalDateTime updatedAt = LocalDateTime.of(206, 11, 5, 10, 0);
         String bookingReference = UUID.randomUUID().toString();
-        
+
         booking = new Booking(userId, hotelId, roomTypeId, checkIn, checkOut);
-        response = new BookingResponseDto(1L, userId, roomTypeId, checkIn, checkOut, status, price, createdAt, updatedAt, bookingReference);
+        response = new BookingResponseDto(1L, userId, roomTypeId, checkIn, checkOut, status, price, createdAt,
+                updatedAt, bookingReference);
         request = new BookingRequestDto(userId, hotelId, roomTypeId, checkIn, checkOut);
     }
 
-    @Test 
+    @Test
     void saved_shouldReturnResponseDto() {
         when(mapper.toEntity(request)).thenReturn(booking);
         when(repository.save(booking)).thenReturn(booking);
@@ -73,5 +77,27 @@ class BookingServiceTest {
         verify(mapper).toEntity(request);
         verify(repository).save(booking);
         verify(mapper).toResponseDto(booking);
+    }
+
+    @Test
+    void create_whenCheckInAfterCheckOut_shouldThrowInvalidDateRangeException() {
+        // check-in posterior a check-out
+        BookingRequestDto badRequest = new BookingRequestDto(
+                1L,
+                1L,
+                1L,
+                LocalDate.of(2026, 11, 6), // checkIn
+                LocalDate.of(2026, 11, 5) // checkOut
+        );
+
+        InvalidDateRangeException ex = assertThrows(
+                InvalidDateRangeException.class,
+                () -> service.create(badRequest));
+
+        assertEquals("La fecha de salida debe ser posterior a la fecha de entrada", ex.getMessage());
+
+        // comprobar que no se invocó el mapper ni el repositorio
+        verifyNoInteractions(mapper);
+        verifyNoInteractions(repository);
     }
 }

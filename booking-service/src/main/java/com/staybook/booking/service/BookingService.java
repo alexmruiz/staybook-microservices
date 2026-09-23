@@ -11,6 +11,7 @@ import com.staybook.booking.repository.BookingRepository;
 import com.staybook.booking.dto.response.BookingResponseDto;
 import com.staybook.booking.entity.Booking;
 import com.staybook.booking.enums.BookingStatus;
+import com.staybook.booking.exception.InvalidDateRangeException;
 import com.staybook.booking.mapper.BookingMapper;
 import com.staybook.booking.dto.request.BookingRequestDto;
 
@@ -27,25 +28,35 @@ public class BookingService {
 
     /**
      * Crea una reserva
+     * 
      * @param BookingRequestDto request
      * @return BookingResponseDto response
      */
     public BookingResponseDto create(BookingRequestDto request) {
+        if (request.checkInDate().isAfter(request.checkOutDate())) {
+            throw new InvalidDateRangeException("La fecha de salida debe ser posterior a la fecha de entrada");
+        }
+
         Booking booking = mapper.toEntity(request);
+
         booking.setStatus(BookingStatus.CONFIRMED);
-        booking.setTotalPrice(BigDecimal.valueOf(100.00));
+        booking.setTotalPrice(BigDecimal.valueOf(100.00));// TODO(BOOK-07): calcular sumando RoomAvailability.price para
+                                                          // cada día del rango
         booking.setBookingReference(this.generateBookingReference());
+
         Booking saved = repository.save(booking);
+
         return mapper.toResponseDto(saved);
     }
 
     /**
      * Genera un número único para cada reserva
+     * 
      * @return string
      */
     private String generateBookingReference() {
         var uuuid = UUID.randomUUID().toString();
         var date = LocalDate.now(ZoneId.of("UTC")).toString();
-        return "SB" + "-" + uuuid + "-" + date; 
+        return "SB" + "-" + uuuid + "-" + date;
     }
 }
