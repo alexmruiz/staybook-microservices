@@ -17,3 +17,5 @@ paths:
     $ref: './paths/review-controller.yaml#/reviews'
   /api/reviews/{id}:
     $ref: './paths/review-controller.yaml#/reviewById'
+  /api/reviews/hotels:
+    $ref: './paths/review-controller.yaml#/hotelsByHotelId'

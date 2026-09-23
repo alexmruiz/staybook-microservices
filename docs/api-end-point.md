@@ -21,13 +21,14 @@
 | PUT | /api/amenities/{id} | Actualizar servicio |
 | DELETE | /api/amenities/{id} | Eliminar servicio |
 
-## Reservations Service
+## Booking Service
 
 | Método | Endpoint | Descripción |
 |--------|----------|-------------|
-| GET | /api/hotels/available | Consulta hoteles disponibles en una ciudad y rango de fechas (cliente de Hotels Service) |
+| POST | /api/bookings | Crear reserva |
+| GET | /api/bookings/{id} | Obtener reserva por ID |
+| GET | /api/bookings/all-bookings/{userId} | Obtener todas las reservas de un usuario (paginado: `page`, `size`, `sort`) |
 
-> Pendiente: este servicio todavía no expone endpoints CRUD propios de reservas (`/api/reservations`).
 
 ## Reviews Service
 
@@ -36,5 +37,6 @@
 | POST | /api/reviews | Crear reseña |
 | GET | /api/reviews | Obtener todas las reseñas |
 | GET | /api/reviews/{id} | Obtener reseña por ID |
+| GET | /api/reviews/hotels | Obtener reseñas por hotel (query param: `hotelId`) |
 | PUT | /api/reviews/{id} | Actualizar reseña |
 | DELETE | /api/reviews/{id} | Eliminar reseña |
