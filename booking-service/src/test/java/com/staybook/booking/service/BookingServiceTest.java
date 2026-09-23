@@ -3,6 +3,7 @@ package com.staybook.booking.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -10,7 +11,10 @@ import static org.mockito.Mockito.when;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.UUID;
+
+import static org.mockito.Mockito.never;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,6 +27,7 @@ import com.staybook.booking.dto.request.BookingRequestDto;
 import com.staybook.booking.dto.response.BookingResponseDto;
 import com.staybook.booking.entity.Booking;
 import com.staybook.booking.enums.BookingStatus;
+import com.staybook.booking.exception.BookingNotFoundException;
 import com.staybook.booking.exception.InvalidDateRangeException;
 import com.staybook.booking.mapper.BookingMapper;
 import com.staybook.booking.repository.BookingRepository;
@@ -99,5 +104,34 @@ class BookingServiceTest {
         // comprobar que no se invocó el mapper ni el repositorio
         verifyNoInteractions(mapper);
         verifyNoInteractions(repository);
+    }
+
+    @Test
+    void findById_WhenIdExists_ShouldReturnBooking() {
+        when(repository.findById(1L)).thenReturn(Optional.of(booking));
+        when(mapper.toResponseDto(booking)).thenReturn(response);
+
+        BookingResponseDto result = service.findById(1L);
+
+        assertNotNull(result);
+        assertEquals(result, response);
+
+        verify(repository).findById(1L);
+        verify(mapper).toResponseDto(booking);
+    }
+
+    @Test
+    void findById_WhenIdDoesNotExist_ShouldThrowException() {
+        Long idInexistente = 99L;
+
+        when(repository.findById(idInexistente)).thenReturn(Optional.empty());
+
+        BookingNotFoundException exception = assertThrows(
+                BookingNotFoundException.class, () -> service.findById(idInexistente));
+
+        assertEquals("Reserva no encontrada con id: 99", exception.getMessage());
+
+        verify(repository).findById(idInexistente);
+        verify(mapper, never()).toResponseDto(any());
     }
 }

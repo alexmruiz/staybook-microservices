@@ -1,8 +1,10 @@
 package com.staybook.booking.controller;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -10,9 +12,16 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
+import static org.hamcrest.Matchers.hasSize;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -25,7 +34,10 @@ import com.staybook.booking.dto.request.BookingRequestDto;
 import com.staybook.booking.dto.response.BookingResponseDto;
 import com.staybook.booking.entity.Booking;
 import com.staybook.booking.enums.BookingStatus;
+import com.staybook.booking.exception.BookingNotFoundException;
 import com.staybook.booking.service.BookingService;
+
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 
 @WebMvcTest(BookingController.class)
 class BookingControllerTest {
@@ -57,7 +69,8 @@ class BookingControllerTest {
         String bookingReference = UUID.randomUUID().toString();
 
         booking = new Booking(userId, hotelId, roomTypeId, checkIn, checkOut);
-        responseDto = new BookingResponseDto(1L, userId, hotelId, roomTypeId, checkIn, checkOut, status, price, createdAt,
+        responseDto = new BookingResponseDto(1L, userId, hotelId, roomTypeId, checkIn, checkOut, status, price,
+                createdAt,
                 updatedAt, bookingReference);
         requestDto = new BookingRequestDto(userId, hotelId, roomTypeId, checkIn, checkOut);
     }
@@ -75,6 +88,68 @@ class BookingControllerTest {
                 .andExpect(jsonPath("$.status").value("CONFIRMED")); // compare as string
 
         verify(service).create(any(BookingRequestDto.class));
+    }
+
+    @Test
+    void findById_WhenExists_ShouldReturn200Ok() throws Exception {
+        when(service.findById(1L)).thenReturn(responseDto);
+
+        mockMvc.perform(get("/api/bookings/{bookingId}", 1L))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.userId").value(1));
+
+        verify(service).findById(1L);
+    }
+
+    @Test
+    @DisplayName("Debe devolver el status configurado por la excepción si no existe")
+    void findById_WhenNotFound_ShouldReturnError() throws Exception {
+        when(service.findById(999L)).thenThrow(new BookingNotFoundException("Reserva no encontrada con id: "));
+
+        mockMvc.perform(get("/api/bookings/{bookingId}", 999L))
+                .andExpect(status().isNotFound());
+
+        verify(service).findById(999L);
+    }
+
+    @Test
+    void findAll_WhenUserHasBookings_ReturnsPage() throws Exception {
+        Long userId = 1L;
+        Pageable pageable = PageRequest.of(0, 10);
+        PageImpl<BookingResponseDto> page = new PageImpl<>(List.of(responseDto), pageable, 1);
+
+        when(service.findAll(any(Pageable.class), eq(userId))).thenReturn(page);
+
+        mockMvc.perform(get("/api/bookings")
+                .param("userId", "1")
+                .param("page", "0")
+                .param("size", "10"))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(1)))
+                .andExpect(jsonPath("$.content[0].id").value(1))
+                .andExpect(jsonPath("$.content[0].userId").value(1));
+
+        verify(service).findAll(any(Pageable.class), eq(userId));
+    }
+
+    @Test
+    void findAll_WhenNoBookings_ReturnsEmptyPage() throws Exception {
+        Long userId = 2L;
+        Pageable pageable = PageRequest.of(0, 10);
+        PageImpl<BookingResponseDto> empty = new PageImpl<>(List.of(), pageable, 0);
+
+        when(service.findAll(any(Pageable.class), eq(userId))).thenReturn(empty);
+
+        mockMvc.perform(get("/api/bookings")
+                .param("userId", "2")
+                .param("page", "0")
+                .param("size", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(0)));
+
+        verify(service).findAll(any(Pageable.class), eq(userId));
     }
 
 }
