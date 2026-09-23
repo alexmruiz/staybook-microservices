@@ -3,12 +3,15 @@ package com.staybook.booking.service;
 import java.math.BigDecimal;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.staybook.booking.repository.BookingRepository;
 import com.staybook.booking.dto.response.BookingResponseDto;
 import com.staybook.booking.entity.Booking;
 import com.staybook.booking.enums.BookingStatus;
+import com.staybook.booking.exception.BookingNotFoundException;
 import com.staybook.booking.exception.InvalidDateRangeException;
 import com.staybook.booking.mapper.BookingMapper;
 import com.staybook.booking.dto.request.BookingRequestDto;
@@ -18,6 +21,7 @@ public class BookingService {
 
     private final BookingRepository repository;
     private final BookingMapper mapper;
+    private static final String BOOKING_NOT_FOUND = "Reseña no encontrada con id: ";
 
     public BookingService(BookingRepository repository, BookingMapper mapper) {
         this.repository = repository;
@@ -55,5 +59,31 @@ public class BookingService {
     private String generateBookingReference() {
         String shortCode = UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         return "SB-" + shortCode;
+    }
+
+    /**
+     * Busca una reseña por id, si no la encuentra lanza una excepción
+     * @param bookingId
+     * @return
+     */
+    public BookingResponseDto findById(Long bookingId) {
+        if (bookingId < 1 || bookingId == null) {
+            throw new BookingNotFoundException(BOOKING_NOT_FOUND + bookingId);
+        }
+
+        Booking booking = repository.findById(bookingId)
+                .orElseThrow(() -> new BookingNotFoundException(BOOKING_NOT_FOUND + bookingId));
+
+        return mapper.toResponseDto(booking);
+    }
+
+    /**
+     * Devuelve todas las reservas del usuario
+     * @param pageable
+     * @return
+     */
+    public Page<BookingResponseDto> findAll(Pageable pageable, Long userId) {
+        return repository.findAllByUserId(userId, pageable)
+        .map(mapper::toResponseDto);
     }
 }
