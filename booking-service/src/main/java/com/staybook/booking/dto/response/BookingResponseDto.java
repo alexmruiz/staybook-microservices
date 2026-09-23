@@ -9,6 +9,7 @@ import com.staybook.booking.enums.BookingStatus;
 public record BookingResponseDto(
     Long id,
     Long userId,
+    Long hotelId,
     Long roomTypeId,
     LocalDate checkInDate,
     LocalDate checkOutDate,

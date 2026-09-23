@@ -59,15 +59,12 @@ public class Booking {
     public Booking() {
     }
 
-    public Booking(Long userId, Long hotelId, Long roomTypeId, LocalDate checkInDate, LocalDate checkOutDate,
-            BookingStatus status, BigDecimal totalPrice) {
+    public Booking(Long userId, Long hotelId, Long roomTypeId, LocalDate checkInDate, LocalDate checkOutDate) {
         this.userId = userId;
         this.hotelId = hotelId;
         this.roomTypeId = roomTypeId;
         this.checkInDate = checkInDate;
         this.checkOutDate = checkOutDate;
-        this.status = status;
-        this.totalPrice = totalPrice;
     }
 
     public Long getId() {
