@@ -37,6 +37,8 @@ import com.staybook.booking.enums.BookingStatus;
 import com.staybook.booking.exception.BookingNotFoundException;
 import com.staybook.booking.service.BookingService;
 
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+
 
 @WebMvcTest(BookingController.class)
 class BookingControllerTest {
@@ -123,6 +125,7 @@ class BookingControllerTest {
         mockMvc.perform(get("/api/bookings/all-bookings/{userId}", userId)
                 .param("page", "0")
                 .param("size", "10"))
+                .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content", hasSize(1)))
                 .andExpect(jsonPath("$.content[0].id").value(1))
