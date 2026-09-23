@@ -49,11 +49,11 @@ class BookingServiceTest {
         Long hotelId = 1L;
         Long roomTypeId = 1L;
         LocalDate checkIn = LocalDate.of(2026, 11, 5);
-        LocalDate checkOut = LocalDate.of(2026, 11, 5);
+        LocalDate checkOut = LocalDate.of(2026, 11, 6);
         BookingStatus status = BookingStatus.CONFIRMED;
         BigDecimal price = BigDecimal.valueOf(100.00);
         LocalDateTime createdAt = LocalDateTime.of(2026, 11, 1, 10, 0);
-        LocalDateTime updatedAt = LocalDateTime.of(206, 11, 5, 10, 0);
+        LocalDateTime updatedAt = LocalDateTime.of(2026, 11, 5, 10, 0);
         String bookingReference = UUID.randomUUID().toString();
 
         booking = new Booking(userId, hotelId, roomTypeId, checkIn, checkOut);
