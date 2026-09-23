@@ -23,6 +23,7 @@ public class BookingMapper {
         return new BookingResponseDto(
                 booking.getId(),
                 booking.getUserId(),
+                booking.getHotelId(),
                 booking.getRoomTypeId(),
                 booking.getCheckInDate(),
                 booking.getCheckOutDate(),

@@ -1,8 +1,6 @@
 package com.staybook.booking.service;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -33,13 +31,13 @@ public class BookingService {
      * @return BookingResponseDto response
      */
     public BookingResponseDto create(BookingRequestDto request) {
-        if (request.checkInDate().isAfter(request.checkOutDate())) {
+        if (!request.checkInDate().isBefore(request.checkOutDate())) {
             throw new InvalidDateRangeException("La fecha de salida debe ser posterior a la fecha de entrada");
         }
 
         Booking booking = mapper.toEntity(request);
 
-        booking.setStatus(BookingStatus.CONFIRMED);
+        booking.setStatus(BookingStatus.PENDING);
         booking.setTotalPrice(BigDecimal.valueOf(100.00));// TODO(BOOK-07): calcular sumando RoomAvailability.price para
                                                           // cada día del rango
         booking.setBookingReference(this.generateBookingReference());
@@ -55,8 +53,7 @@ public class BookingService {
      * @return string
      */
     private String generateBookingReference() {
-        var uuuid = UUID.randomUUID().toString();
-        var date = LocalDate.now(ZoneId.of("UTC")).toString();
-        return "SB" + "-" + uuuid + "-" + date;
+        String shortCode = UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        return "SB-" + shortCode;
     }
 }

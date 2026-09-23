@@ -57,7 +57,7 @@ class BookingControllerTest {
         String bookingReference = UUID.randomUUID().toString();
 
         booking = new Booking(userId, hotelId, roomTypeId, checkIn, checkOut);
-        responseDto = new BookingResponseDto(1L, userId, roomTypeId, checkIn, checkOut, status, price, createdAt,
+        responseDto = new BookingResponseDto(1L, userId, hotelId, roomTypeId, checkIn, checkOut, status, price, createdAt,
                 updatedAt, bookingReference);
         requestDto = new BookingRequestDto(userId, hotelId, roomTypeId, checkIn, checkOut);
     }
