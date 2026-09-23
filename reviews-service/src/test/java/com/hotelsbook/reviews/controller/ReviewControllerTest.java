@@ -93,6 +93,37 @@ class ReviewControllerTest {
     }
 
     @Nested
+    @DisplayName("GET /api/reviews/hotels")
+    class FindByHotelTests {
+
+        @Test
+        @DisplayName("Debe retornar HTTP 200 OK con la lista de reseñas para un hotel")
+        void findByHotelId_WhenExists_ShouldReturnList() throws Exception {
+            when(reviewService.findByHotelId(5L)).thenReturn(List.of(responseDto));
+
+            mockMvc.perform(get("/api/reviews/hotels").param("hotelId", "5"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.size()").value(1))
+                    .andExpect(jsonPath("$[0].hotelId").value(5));
+
+            verify(reviewService).findByHotelId(5L);
+        }
+
+        @Test
+        @DisplayName("Debe retornar HTTP 200 OK y lista vacía si no hay reseñas")
+        void findByHotelId_WhenNoReviews_ReturnsEmpty() throws Exception {
+            when(reviewService.findByHotelId(99L)).thenReturn(List.of());
+
+            mockMvc.perform(get("/api/reviews/hotels").param("hotelId", "99"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.size()").value(0));
+
+            verify(reviewService).findByHotelId(99L);
+        }
+
+    }
+
+    @Nested
     @DisplayName("GET /api/reviews/{id}")
     class FindByIdTests {
 

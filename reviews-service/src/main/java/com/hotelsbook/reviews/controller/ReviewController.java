@@ -52,4 +52,9 @@ public class ReviewController {
         reviewService.delete(id);
     }
 
+    @GetMapping("/hotels")
+    public ResponseEntity<List<ReviewResponseDto>> findByHotelId(@RequestParam Long hotelId) {
+        return ResponseEntity.ok(reviewService.findByHotelId(hotelId));
+    }
+
 }
