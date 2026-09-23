@@ -174,4 +174,34 @@ class ReviewServiceTest {
         verify(repository, never()).deleteById(any());
     }
 
+    @Test
+    void findByHotelId_WhenExists_ReturnsList() {
+        Long hotelId = 1L;
+        when(repository.findByHotelId(hotelId)).thenReturn(List.of(review));
+        when(mapper.toResponseDto(review)).thenReturn(response);
+
+        List<ReviewResponseDto> result = service.findByHotelId(hotelId);
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertEquals(hotelId, result.get(0).hotelId());
+
+        verify(repository).findByHotelId(hotelId);
+        verify(mapper).toResponseDto(review);
+    }
+
+    @Test
+    void findByHotelId_WhenNoReviews_ReturnsEmptyList() {
+        Long hotelId = 99L;
+        when(repository.findByHotelId(hotelId)).thenReturn(List.of());
+
+        List<ReviewResponseDto> result = service.findByHotelId(hotelId);
+
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+
+        verify(repository).findByHotelId(hotelId);
+        verify(mapper, never()).toResponseDto(any());
+    }
+
 }

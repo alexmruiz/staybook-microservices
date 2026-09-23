@@ -95,4 +95,10 @@ public class ReviewService {
         reviewRepository.deleteById(id);
     }
 
+    public List<ReviewResponseDto> findByHotelId(Long hotelId) {
+        return reviewRepository.findByHotelId(hotelId)
+                .stream()
+                .map(reviewMapper::toResponseDto)
+                .toList();
+    }
 }
