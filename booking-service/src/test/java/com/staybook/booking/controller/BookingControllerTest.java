@@ -39,7 +39,6 @@ import com.staybook.booking.service.BookingService;
 
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 
-
 @WebMvcTest(BookingController.class)
 class BookingControllerTest {
 
@@ -122,7 +121,8 @@ class BookingControllerTest {
 
         when(service.findAll(any(Pageable.class), eq(userId))).thenReturn(page);
 
-        mockMvc.perform(get("/api/bookings/all-bookings/{userId}", userId)
+        mockMvc.perform(get("/api/bookings")
+                .param("userId", "1")
                 .param("page", "0")
                 .param("size", "10"))
                 .andDo(print())
@@ -142,7 +142,8 @@ class BookingControllerTest {
 
         when(service.findAll(any(Pageable.class), eq(userId))).thenReturn(empty);
 
-        mockMvc.perform(get("/api/bookings/all-bookings/{userId}", userId)
+        mockMvc.perform(get("/api/bookings")
+                .param("userId", "2")
                 .param("page", "0")
                 .param("size", "10"))
                 .andExpect(status().isOk())

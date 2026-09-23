@@ -21,7 +21,7 @@ public class BookingService {
 
     private final BookingRepository repository;
     private final BookingMapper mapper;
-    private static final String BOOKING_NOT_FOUND = "Reseña no encontrada con id: ";
+    private static final String BOOKING_NOT_FOUND = "Reserva no encontrada con id: ";
 
     public BookingService(BookingRepository repository, BookingMapper mapper) {
         this.repository = repository;
@@ -62,12 +62,13 @@ public class BookingService {
     }
 
     /**
-     * Busca una reseña por id, si no la encuentra lanza una excepción
+     * Busca una reserva por id, si no la encuentra lanza una excepción
+     * 
      * @param bookingId
      * @return
      */
     public BookingResponseDto findById(Long bookingId) {
-        if (bookingId < 1 || bookingId == null) {
+        if (bookingId == null || bookingId < 1) {
             throw new BookingNotFoundException(BOOKING_NOT_FOUND + bookingId);
         }
 
@@ -79,11 +80,12 @@ public class BookingService {
 
     /**
      * Devuelve todas las reservas del usuario
+     * 
      * @param pageable
      * @return
      */
     public Page<BookingResponseDto> findAll(Pageable pageable, Long userId) {
         return repository.findAllByUserId(userId, pageable)
-        .map(mapper::toResponseDto);
+                .map(mapper::toResponseDto);
     }
 }

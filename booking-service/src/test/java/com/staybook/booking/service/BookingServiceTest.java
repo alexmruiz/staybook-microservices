@@ -129,7 +129,7 @@ class BookingServiceTest {
         BookingNotFoundException exception = assertThrows(
                 BookingNotFoundException.class, () -> service.findById(idInexistente));
 
-        assertEquals("Reseña no encontrada con id: 99", exception.getMessage());
+        assertEquals("Reserva no encontrada con id: 99", exception.getMessage());
 
         verify(repository).findById(idInexistente);
         verify(mapper, never()).toResponseDto(any());
