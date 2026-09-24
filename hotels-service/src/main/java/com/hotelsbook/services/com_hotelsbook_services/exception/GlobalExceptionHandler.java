@@ -7,6 +7,7 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 /**
  * Captura excepciones de TODOS los controladores
@@ -40,6 +41,14 @@ public class GlobalExceptionHandler {
         return ProblemDetail.forStatusAndDetail(
                 HttpStatus.BAD_REQUEST,
                 "Los datos enviados en la petición no son válidos");
+    }
+
+    // Captura errores cuando un path variable no puede convertirse al tipo esperado (ej. "{id")
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ProblemDetail handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        String detail = String.format("El parámetro '%s' tiene un valor inválido: %s", ex.getName(), ex.getValue());
+        log.warn("MethodArgumentTypeMismatch: {} = {}", ex.getName(), ex.getValue());
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, detail);
     }
 
     // Captura cualquier otro error no controlado (ej. fallo de BD)

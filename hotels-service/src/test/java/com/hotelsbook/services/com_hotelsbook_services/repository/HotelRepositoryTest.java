@@ -13,7 +13,7 @@ import com.hotelsbook.services.com_hotelsbook_services.entity.Address;
 import com.hotelsbook.services.com_hotelsbook_services.entity.City;
 import com.hotelsbook.services.com_hotelsbook_services.entity.Hotel;
 
-@DataJpaTest
+@DataJpaTest(properties = "spring.sql.init.mode=never")
 class HotelRepositoryTest {
 
     @Autowired

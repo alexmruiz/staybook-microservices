@@ -6,6 +6,6 @@ public record HotelSummaryDto(
                 Long id,
                 String name,
                 Integer stars,
-                List<RoomTypeSumaryDto> roomTypes) {
+                List<RoomTypeSummaryDto> roomTypes) {
 
 }

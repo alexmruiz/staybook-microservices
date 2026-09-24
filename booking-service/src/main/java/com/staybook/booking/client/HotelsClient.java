@@ -9,6 +9,6 @@ import com.staybook.booking.dto.response.HotelSummaryDto;
 @HttpExchange("/api/hotels")
 public interface HotelsClient {
     
-    @GetExchange("/{id")
+    @GetExchange("/{id}")
     HotelSummaryDto getHotelById(@PathVariable("id") Long id);
 }

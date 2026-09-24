@@ -12,6 +12,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -31,7 +32,11 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.staybook.booking.dto.request.BookingRequestDto;
+import com.staybook.booking.dto.response.BookingDetailResponseDto;
 import com.staybook.booking.dto.response.BookingResponseDto;
+import com.staybook.booking.dto.response.HotelSummaryDto;
+import com.staybook.booking.dto.response.ReviewSummaryDto;
+import com.staybook.booking.dto.response.RoomTypeSummaryDto;
 import com.staybook.booking.entity.Booking;
 import com.staybook.booking.enums.BookingStatus;
 import com.staybook.booking.exception.BookingNotFoundException;
@@ -150,6 +155,47 @@ class BookingControllerTest {
                 .andExpect(jsonPath("$.content", hasSize(0)));
 
         verify(service).findAll(any(Pageable.class), eq(userId));
+    }
+
+    @Test
+    void getBookingDetails_WhenAllServicesAreUp_ShouldReturn200AndCompleteData() throws Exception {
+        // Arrange
+        RoomTypeSummaryDto roomTypeDto = new RoomTypeSummaryDto(1L, "DOUBLE", 2);
+        RoomTypeSummaryDto roomTypeDto1 = new RoomTypeSummaryDto(2L, "SINGLE", 3);
+
+        List<RoomTypeSummaryDto> listRoomTypes = new ArrayList<>();
+
+        listRoomTypes.add(roomTypeDto);
+        listRoomTypes.add(roomTypeDto1);
+
+        HotelSummaryDto hotelDto = new HotelSummaryDto(1L, "Hotel Palace", 5, listRoomTypes );
+        List<ReviewSummaryDto> reviewsDto = List.of(new ReviewSummaryDto(1L, 2L, 4.5, "Excelente"));
+        
+        BookingDetailResponseDto bookingDetailResponseDto = new BookingDetailResponseDto(responseDto, hotelDto, reviewsDto);
+
+        when(service.getBookingDetails(1L)).thenReturn(bookingDetailResponseDto);
+
+        // Act & Assert
+        mockMvc.perform(get("/api/bookings/1/details")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.hotel.name").value("Hotel Palace"))
+                .andExpect(jsonPath("$.reviews", hasSize(1)));
+    }
+
+    @Test
+    void getBookingDetails_WhenHotelServiceFails_ShouldReturn200WithNullHotel() throws Exception {
+        // Arrange (Simulando que el hotel llega como null debido a la degradación)
+        BookingDetailResponseDto bookingDetailResponseDtoNullHotel = new BookingDetailResponseDto(responseDto, null, List.of());
+
+        when(service.getBookingDetails(1L)).thenReturn(bookingDetailResponseDtoNullHotel);
+
+        // Act & Assert
+        mockMvc.perform(get("/api/bookings/1/details")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.hotel").doesNotExist()) // o .value(null) según serialización
+                .andExpect(jsonPath("$.reviews").isArray());
     }
 
 }
