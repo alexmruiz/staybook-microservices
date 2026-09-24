@@ -4,7 +4,6 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import com.hotelsbook.reviews.dto.request.ReviewRequestDto;
@@ -12,12 +11,10 @@ import com.hotelsbook.reviews.dto.response.ReviewResponseDto;
 import com.hotelsbook.reviews.service.ReviewService;
 
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Positive;
 
 @CrossOrigin(origins = "http://localhost:4200")
 @RestController
 @RequestMapping("/api/reviews")
-@Validated 
 public class ReviewController {
 
     private final ReviewService reviewService;
@@ -55,9 +52,8 @@ public class ReviewController {
         reviewService.delete(id);
     }
 
-    @GetMapping("/hotel")
-    public ResponseEntity<List<ReviewResponseDto>> findByHotelId(@RequestParam @Positive Long hotelId) {
+    @GetMapping("/hotel/{hotelId}")
+    public ResponseEntity<List<ReviewResponseDto>> findByHotelId(@PathVariable("hotelId") Long hotelId) {
         return ResponseEntity.ok(reviewService.findByHotelId(hotelId));
     }
-
 }
