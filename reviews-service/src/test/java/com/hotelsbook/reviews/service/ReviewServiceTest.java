@@ -48,9 +48,9 @@ class ReviewServiceTest {
 
     @BeforeEach
     void setUp() {
-        review = new ReviewEntity(1L, 1L, 4.00);
-        request = new ReviewRequestDto(1L, 1L, 4.00, "ss");
-        response = new ReviewResponseDto(1L, 1L, 1L, 4.00, LocalDateTime.parse("2026-08-24T17:30:00"));
+        review = new ReviewEntity(1L, 3L, 4.00);
+        request = new ReviewRequestDto(1L, 3L, 4.00, "ss");
+        response = new ReviewResponseDto(2L, 1L, 3L, 4.00, "test", LocalDateTime.parse("2026-08-24T17:30:00"));
     }
 
     @Test
@@ -63,7 +63,7 @@ class ReviewServiceTest {
         ReviewResponseDto result = service.create(request);
 
         assertNotNull(result);
-        assertEquals(1L, result.id());
+        assertEquals(2L, result.id());
         assertEquals(4.00, result.qualification());
 
         verify(mapper).toEntity(request);
@@ -94,7 +94,7 @@ class ReviewServiceTest {
         ReviewResponseDto result = service.findById(1L);
 
         assertNotNull(result);
-        assertEquals(1L, result.id());
+        assertEquals(2L, result.id());
         assertEquals(4.00, result.qualification());
 
         verify(repository).findById(1L);
@@ -128,7 +128,7 @@ class ReviewServiceTest {
         });
         when(mapper.toResponseDto(any())).thenAnswer(inv -> {
             ReviewEntity e = inv.getArgument(0);
-            return new ReviewResponseDto(e.getId(), e.getHotelId(), e.getUserId(), e.getQualification(), response.createdAt());
+            return new ReviewResponseDto(e.getId(), e.getHotelId(), e.getUserId(), e.getQualification(), "test", response.createdAt());
         });
 
         ReviewResponseDto result = service.update(id, requestUpdate);

@@ -1,6 +1,6 @@
 package com.staybook.booking.dto.response;
 
-public record ReviewSumaryDto(
+public record ReviewSummaryDto(
     Long hotelId,
     Long userId,
     Double qualification,

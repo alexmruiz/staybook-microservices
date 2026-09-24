@@ -20,9 +20,10 @@ public class ReviewMapper {
     public ReviewResponseDto toResponseDto(ReviewEntity entity) {
         return new ReviewResponseDto(
                 entity.getId(),
-                entity.getUserId(),
                 entity.getHotelId(),
+                entity.getUserId(),
                 entity.getQualification(),
+                entity.getDescription(),
                 entity.getCreatedAt()
         );
     }

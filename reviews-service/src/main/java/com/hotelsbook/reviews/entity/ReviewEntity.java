@@ -41,8 +41,8 @@ public class ReviewEntity {
 
     public ReviewEntity(Long hotelId, Long userId, Double qualification) {
         this.hotelId = hotelId;
-        this.qualification = qualification;
         this.userId = userId;
+        this.qualification = qualification;
     }
 
     public Long getId() {
@@ -95,6 +95,6 @@ public class ReviewEntity {
 
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now(ZoneId.systemDefault());
+        createdAt = LocalDateTime.now(ZoneId.of("UTC"));
     }
 }

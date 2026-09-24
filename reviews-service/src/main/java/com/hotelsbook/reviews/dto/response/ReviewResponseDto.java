@@ -7,5 +7,6 @@ public record ReviewResponseDto(
         Long hotelId,
         Long userId,
         Double qualification,
+        String description,
         LocalDateTime createdAt) {
 }
