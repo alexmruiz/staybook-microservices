@@ -2,7 +2,7 @@ package com.staybook.booking.dto.response;
 
 public record RoomTypeSummaryDto(
                 Long id,
-                String name,
+                String type,
                 Integer quantity
 ) {
 
