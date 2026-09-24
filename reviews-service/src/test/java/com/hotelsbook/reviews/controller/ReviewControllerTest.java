@@ -49,8 +49,8 @@ class ReviewControllerTest {
 
     @BeforeEach
     void setUp() {
-        requestDto = new ReviewRequestDto(5L, 4.00);
-        responseDto = new ReviewResponseDto(1L, 5L, 4.00, LocalDateTime.parse("2026-08-28T17:30:00"));
+        requestDto = new ReviewRequestDto(5L, 1L, 4.00, "ss");
+        responseDto = new ReviewResponseDto(1L, 5L, 5L, 4.00, "test", LocalDateTime.parse("2026-08-28T17:30:00"));
     }
 
     @Nested
@@ -101,7 +101,7 @@ class ReviewControllerTest {
         void findByHotelId_WhenExists_ShouldReturnList() throws Exception {
             when(reviewService.findByHotelId(5L)).thenReturn(List.of(responseDto));
 
-            mockMvc.perform(get("/api/reviews/hotel").param("hotelId", "5"))
+            mockMvc.perform(get("/api/reviews/hotel/{hotelId}", 5))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.size()").value(1))
                     .andExpect(jsonPath("$[0].hotelId").value(5));
@@ -114,7 +114,7 @@ class ReviewControllerTest {
         void findByHotelId_WhenNoReviews_ReturnsEmpty() throws Exception {
             when(reviewService.findByHotelId(99L)).thenReturn(List.of());
 
-            mockMvc.perform(get("/api/reviews/hotel").param("hotelId", "99"))
+            mockMvc.perform(get("/api/reviews/hotel/{hotelId}", 99))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.size()").value(0));
 

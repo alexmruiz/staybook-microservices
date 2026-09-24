@@ -19,8 +19,8 @@ class ReviewRepositoryTest {
     @Test
     void findByHotelId_whenExists_returnsList() {
         // given
-        ReviewEntity r1 = new ReviewEntity(10L, 4.5);
-        ReviewEntity r2 = new ReviewEntity(10L, 3.0);
+        ReviewEntity r1 = new ReviewEntity(10L, 1L, 4.5);
+        ReviewEntity r2 = new ReviewEntity(10L, 1L, 3.0);
         repository.save(r1);
         repository.save(r2);
 
@@ -35,7 +35,7 @@ class ReviewRepositoryTest {
     @Test
     void findByHotelId_whenNotExists_returnsEmpty() {
         // given
-        ReviewEntity r = new ReviewEntity(20L, 5.0);
+        ReviewEntity r = new ReviewEntity(20L, 1L, 5.0);
         repository.save(r);
 
         // when

@@ -31,6 +31,11 @@ public class ReviewService {
      */
     public ReviewResponseDto create(ReviewRequestDto request) {
         ReviewEntity reviewEntity = reviewMapper.toEntity(request);
+
+        if (request.description() != null) {
+            reviewEntity.setDescription(request.description());
+        }
+
         ReviewEntity saved = reviewRepository.save(reviewEntity);
         return reviewMapper.toResponseDto(saved);
     }
@@ -73,6 +78,10 @@ public class ReviewService {
 
         existReview.setQualification(request.qualification());
         existReview.setHotelId(request.hotelId());
+
+        if (request.description() != null) {
+            existReview.setDescription(request.description());
+        }
 
         ReviewEntity update = reviewRepository.save(existReview);
 

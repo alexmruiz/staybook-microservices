@@ -48,9 +48,9 @@ class ReviewServiceTest {
 
     @BeforeEach
     void setUp() {
-        review = new ReviewEntity(1L, 4.00);
-        request = new ReviewRequestDto(1L, 4.00);
-        response = new ReviewResponseDto(1L, 1L, 4.00, LocalDateTime.parse("2026-08-24T17:30:00"));
+        review = new ReviewEntity(1L, 3L, 4.00);
+        request = new ReviewRequestDto(1L, 3L, 4.00, "ss");
+        response = new ReviewResponseDto(2L, 1L, 3L, 4.00, "test", LocalDateTime.parse("2026-08-24T17:30:00"));
     }
 
     @Test
@@ -63,7 +63,7 @@ class ReviewServiceTest {
         ReviewResponseDto result = service.create(request);
 
         assertNotNull(result);
-        assertEquals(1L, result.id());
+        assertEquals(2L, result.id());
         assertEquals(4.00, result.qualification());
 
         verify(mapper).toEntity(request);
@@ -94,7 +94,7 @@ class ReviewServiceTest {
         ReviewResponseDto result = service.findById(1L);
 
         assertNotNull(result);
-        assertEquals(1L, result.id());
+        assertEquals(2L, result.id());
         assertEquals(4.00, result.qualification());
 
         verify(repository).findById(1L);
@@ -118,11 +118,18 @@ class ReviewServiceTest {
     @Test
     void update_WhenIdExists_ShouldUpdateAndReturnResponse() {
         Long id = 1L;
-        ReviewRequestDto requestUpdate = new ReviewRequestDto(2L, 4.00);
+        ReviewRequestDto requestUpdate = new ReviewRequestDto(2L, 2L, 4.00, "ss");
 
         when(repository.findById(id)).thenReturn(Optional.of(review));
-        when(repository.save(review)).thenReturn(review);
-        when(mapper.toResponseDto(review)).thenReturn(new ReviewResponseDto(1L, 2L, 4.00, response.createdAt()));
+        when(repository.save(any())).thenAnswer(inv -> {
+            ReviewEntity saved = inv.getArgument(0);
+            saved.setId(1L);
+            return saved;
+        });
+        when(mapper.toResponseDto(any())).thenAnswer(inv -> {
+            ReviewEntity e = inv.getArgument(0);
+            return new ReviewResponseDto(e.getId(), e.getHotelId(), e.getUserId(), e.getQualification(), "test", response.createdAt());
+        });
 
         ReviewResponseDto result = service.update(id, requestUpdate);
 
