@@ -12,6 +12,7 @@ public class ReviewMapper {
     public ReviewEntity toEntity(ReviewRequestDto requestDto) {
         return new ReviewEntity(
             requestDto.hotelId(),
+            requestDto.userId(),
             requestDto.qualification()
         );
     }
@@ -19,6 +20,7 @@ public class ReviewMapper {
     public ReviewResponseDto toResponseDto(ReviewEntity entity) {
         return new ReviewResponseDto(
                 entity.getId(),
+                entity.getUserId(),
                 entity.getHotelId(),
                 entity.getQualification(),
                 entity.getCreatedAt()

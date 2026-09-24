@@ -49,8 +49,8 @@ class ReviewControllerTest {
 
     @BeforeEach
     void setUp() {
-        requestDto = new ReviewRequestDto(5L, 4.00);
-        responseDto = new ReviewResponseDto(1L, 5L, 4.00, LocalDateTime.parse("2026-08-28T17:30:00"));
+        requestDto = new ReviewRequestDto(5L, 1L, 4.00, "ss");
+        responseDto = new ReviewResponseDto(1L, 5L, 5L, 4.00, LocalDateTime.parse("2026-08-28T17:30:00"));
     }
 
     @Nested
