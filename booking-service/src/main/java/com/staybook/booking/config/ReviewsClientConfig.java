@@ -1,5 +1,6 @@
 package com.staybook.booking.config;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -7,26 +8,25 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.support.RestClientAdapter;
 import org.springframework.web.service.invoker.HttpServiceProxyFactory;
 
-import com.staybook.booking.client.HotelsClient;
+import com.staybook.booking.client.ReviewsClient;
 
 @Configuration
-public class RestClientConfig {
+public class ReviewsClientConfig {
 
-    @Value("${hotels-service.base-url}")
-    private String hotelServiceBaseUrl;
+    @Value("${reviews-service.base-url}")
+    private String reviewServiceBaseUrl;
 
     @Bean
-    public RestClient hotelRestClient() {
+    public RestClient reviewRestClient() {
         return RestClient.builder()
-                .baseUrl(hotelServiceBaseUrl)
+                .baseUrl(reviewServiceBaseUrl)
                 .build();
     }
 
     @Bean
-    public HotelsClient hotelsClient(RestClient hotelsRestClient) {
-        RestClientAdapter adapter = RestClientAdapter.create(hotelsRestClient);
+    public ReviewsClient reviewsClient(@Qualifier("reviewRestClient") RestClient reviewRestClient) {
+        RestClientAdapter adapter = RestClientAdapter.create(reviewRestClient);
         HttpServiceProxyFactory factory = HttpServiceProxyFactory.builderFor(adapter).build();
-        return factory.createClient(HotelsClient.class);
+        return factory.createClient(ReviewsClient.class);
     }
-
 }
