@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.staybook.booking.dto.request.BookingRequestDto;
+import com.staybook.booking.dto.response.BookingDetailResponseDto;
 import com.staybook.booking.dto.response.BookingResponseDto;
 import com.staybook.booking.service.BookingService;
 
@@ -45,5 +46,10 @@ public class BookingController {
     @GetMapping
     public Page<BookingResponseDto> findAll(@RequestParam @Positive Long userId, Pageable pageable) {
         return service.findAll(pageable, userId);
+    }
+
+    @GetMapping("/{bookingId}/details")
+    public BookingDetailResponseDto getBookingDetails(@PathVariable("bookingId") Long bookingId) {
+        return service.getBookingDetails(bookingId);
     }
 }
