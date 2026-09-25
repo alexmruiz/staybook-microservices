@@ -36,7 +36,8 @@ class RoomAvailabilityRepositoryTest {
         repository.saveAll(List.of(r2, r1));
         repository.flush(); // ensure persisted
 
-        List<RoomAvailability> result = repository.findAllForUpdate(hotelId, d1, d2, 2, roomTypeId);
+        // repository query uses an exclusive end date (date < endDate), so pass d2.plusDays(1)
+        List<RoomAvailability> result = repository.findAllForUpdate(hotelId, d1, d2.plusDays(1), 2, roomTypeId);
 
         assertEquals(2, result.size());
         assertEquals(d1, result.get(0).getDate());
