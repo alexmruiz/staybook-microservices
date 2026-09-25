@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -25,7 +26,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.staybook.booking.client.HotelsClient;
 import com.staybook.booking.client.ReviewsClient;
-import com.staybook.booking.dto.response.RoomAvailabilityResponseDto;
 import com.staybook.booking.entity.RoomAvailability;
 import com.staybook.booking.mapper.RoomAvailabilityMapper;
 
@@ -37,6 +37,7 @@ import com.staybook.booking.exception.BookingNotFoundException;
 import com.staybook.booking.exception.InvalidDateRangeException;
 import com.staybook.booking.mapper.BookingMapper;
 import com.staybook.booking.repository.BookingRepository;
+import org.mockito.ArgumentCaptor;
 
 @ExtendWith(MockitoExtension.class)
 class BookingServiceTest {
@@ -87,18 +88,14 @@ class BookingServiceTest {
 
     @Test
     void saved_shouldReturnResponseDto() {
-        // Prepare availability for the date range (one night)
-        RoomAvailabilityResponseDto availabilityDto = new RoomAvailabilityResponseDto(
-                1L, request.hotelId(), request.roomTypeId(), request.checkInDate(), request.roomsRequested(),
-                BigDecimal.valueOf(100.00));
+        // Prepare availability for the date range (one night) as entity
+        RoomAvailability availabilityEntity = new RoomAvailability(request.hotelId(), request.roomTypeId(),
+                request.checkInDate(), request.roomsRequested(), BigDecimal.valueOf(100.00));
+        availabilityEntity.setId(1L);
 
         when(roomAvailabilityService.getAvailableRoomsForUpdate(request.hotelId(), request.checkInDate(),
                 request.checkOutDate(), request.roomsRequested(), request.roomTypeId()))
-                .thenReturn(java.util.List.of(availabilityDto));
-
-        when(roomAvailabilityMapper.toEntity(any(RoomAvailabilityResponseDto.class)))
-                .thenReturn(new RoomAvailability(request.hotelId(), request.roomTypeId(), request.checkInDate(),
-                        request.roomsRequested(), BigDecimal.valueOf(100.00)));
+                .thenReturn(java.util.List.of(availabilityEntity));
 
         when(mapper.toEntity(request)).thenReturn(booking);
         when(repository.save(booking)).thenReturn(booking);
@@ -113,6 +110,37 @@ class BookingServiceTest {
         verify(mapper).toEntity(request);
         verify(repository).save(booking);
         verify(mapper).toResponseDto(booking);
+    }
+
+    @Test
+    void create_ShouldDecrementAvailabilityWithCorrectId() {
+        // Arrange: availability with an existing id (entity)
+        RoomAvailability availabilityWithId = new RoomAvailability(request.hotelId(), request.roomTypeId(),
+                request.checkInDate(), request.roomsRequested(), BigDecimal.valueOf(100.00));
+        availabilityWithId.setId(99L);
+
+        when(roomAvailabilityService.getAvailableRoomsForUpdate(request.hotelId(), request.checkInDate(),
+                request.checkOutDate(), request.roomsRequested(), request.roomTypeId()))
+                .thenReturn(java.util.List.of(availabilityWithId));
+
+        when(mapper.toEntity(request)).thenReturn(booking);
+        when(repository.save(booking)).thenReturn(booking);
+        when(mapper.toResponseDto(booking)).thenReturn(response);
+
+        // Capture original quantity before service mutates the entity
+        int originalQuantity = availabilityWithId.getAvailableQuantity();
+
+        // Act
+        service.create(request);
+
+        // Assert that saveAllUpdated received an entity with the original id and decremented quantity
+        @SuppressWarnings({"unchecked", "rawtypes"})
+        ArgumentCaptor<java.util.List<RoomAvailability>> captor = (ArgumentCaptor) ArgumentCaptor.forClass(java.util.List.class);
+        verify(roomAvailabilityService).saveAllUpdated(captor.capture());
+
+        List<RoomAvailability> saved = captor.getValue();
+        assertEquals(99L, saved.get(0).getId());
+        assertEquals(originalQuantity - request.roomsRequested(), saved.get(0).getAvailableQuantity());
     }
 
     @Test

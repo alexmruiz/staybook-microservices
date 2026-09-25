@@ -20,7 +20,6 @@ import com.staybook.booking.dto.response.BookingDetailResponseDto;
 import com.staybook.booking.dto.response.BookingResponseDto;
 import com.staybook.booking.dto.response.HotelSummaryDto;
 import com.staybook.booking.dto.response.ReviewSummaryDto;
-import com.staybook.booking.dto.response.RoomAvailabilityResponseDto;
 import com.staybook.booking.entity.Booking;
 import com.staybook.booking.entity.RoomAvailability;
 import com.staybook.booking.enums.BookingStatus;
@@ -28,7 +27,6 @@ import com.staybook.booking.exception.BookingNotFoundException;
 import com.staybook.booking.exception.InvalidDateRangeException;
 import com.staybook.booking.exception.RoomNotAvailableException;
 import com.staybook.booking.mapper.BookingMapper;
-import com.staybook.booking.mapper.RoomAvailabilityMapper;
 import com.staybook.booking.client.HotelsClient;
 import com.staybook.booking.client.ReviewsClient;
 import com.staybook.booking.dto.request.BookingRequestDto;
@@ -45,16 +43,14 @@ public class BookingService {
     private final ReviewsClient reviewsClient;
     private final HotelsClient hotelsClient;
     private final RoomAvailabilityService roomAvailabilityService;
-    private final RoomAvailabilityMapper mapperAvailability;
 
     public BookingService(BookingRepository repository, BookingMapper mapper, ReviewsClient reviewsClient,
-            HotelsClient hotelsClient, RoomAvailabilityService roomAvailabilityService, RoomAvailabilityMapper mapperAvailability) {
+            HotelsClient hotelsClient, RoomAvailabilityService roomAvailabilityService) {
         this.repository = repository;
         this.mapper = mapper;
         this.reviewsClient = reviewsClient;
         this.hotelsClient = hotelsClient;
         this.roomAvailabilityService = roomAvailabilityService;
-        this.mapperAvailability = mapperAvailability;
     }
 
     /**
@@ -69,7 +65,7 @@ public class BookingService {
             throw new InvalidDateRangeException("La fecha de salida debe ser posterior a la fecha de entrada");
         }
 
-        List<RoomAvailabilityResponseDto> availabilities = roomAvailabilityService.getAvailableRoomsForUpdate(request.hotelId(), request.checkInDate(), request.checkOutDate(), request.roomsRequested(), request.roomTypeId());
+        List<RoomAvailability> availabilities = roomAvailabilityService.getAvailableRoomsForUpdate(request.hotelId(), request.checkInDate(), request.checkOutDate(), request.roomsRequested(), request.roomTypeId());
 
         int daysAvailabilities = availabilities.size();
 
@@ -80,22 +76,19 @@ public class BookingService {
         }
 
         BigDecimal priceTotal = BigDecimal.ZERO;
-        java.util.List<RoomAvailability> updatedAvailabilities = new java.util.ArrayList<>();
 
-        for (RoomAvailabilityResponseDto availability : availabilities) {
-            if (request.roomsRequested() > availability.availableQuantity()) {
+        for (RoomAvailability availability : availabilities) {
+            if (request.roomsRequested() > availability.getAvailableQuantity()) {
                 throw new RoomNotAvailableException(ROOM_NOT_AVAILABLE);
             }
 
-            RoomAvailability roomAvailability = mapperAvailability.toEntity(availability);
-            roomAvailability.setAvailableQuantity(roomAvailability.getAvailableQuantity() - request.roomsRequested());
-            updatedAvailabilities.add(roomAvailability);
+            availability.setAvailableQuantity(availability.getAvailableQuantity() - request.roomsRequested());
 
-            priceTotal = priceTotal.add(availability.price().multiply(BigDecimal.valueOf(request.roomsRequested())));
+            priceTotal = priceTotal.add(availability.getPrice().multiply(BigDecimal.valueOf(request.roomsRequested())));
         }
 
         // Persistir disponibilidades actualizadas antes de guardar la reserva
-        roomAvailabilityService.saveAllUpdated(updatedAvailabilities);
+        roomAvailabilityService.saveAllUpdated(availabilities);
 
         // Aplicar escala/rounding al total final
         priceTotal = priceTotal.setScale(2, RoundingMode.HALF_UP);

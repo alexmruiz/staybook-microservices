@@ -66,7 +66,7 @@ public class RoomAvailabilityService {
      * @param roomsRequested
      * @return List<RoomAvailabilityResponseDto> getAvailableRooms
      */
-    public List<RoomAvailabilityResponseDto> getAvailableRoomsForUpdate(Long hotelId,
+    public List<RoomAvailability> getAvailableRoomsForUpdate(Long hotelId,
             LocalDate startDate, LocalDate endDate,
             Integer roomsRequested, Long roomTypeId) {
 
@@ -74,14 +74,7 @@ public class RoomAvailabilityService {
             throw new InvalidDateRangeException("La fecha de inicio debe ser anterior a la fecha de fin");
         }
 
-        List<RoomAvailability> roomAvailabilities = repository.findAllForUpdate(hotelId, startDate, endDate,
-                roomsRequested, roomTypeId);
-
-        if (roomAvailabilities.isEmpty()) {
-            throw new RoomNotAvailableException("No hay habitaciones disponibles en la fecha indicada");
-        }
-
-        return roomAvailabilities.stream().map(mapper::toResponseDto).toList();
+        return repository.findAllForUpdate(hotelId, startDate, endDate, roomsRequested, roomTypeId);
     }
 
     /**
