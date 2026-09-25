@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -23,6 +24,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.staybook.booking.client.HotelsClient;
+import com.staybook.booking.client.ReviewsClient;
+import com.staybook.booking.entity.RoomAvailability;
+import com.staybook.booking.mapper.RoomAvailabilityMapper;
+
 import com.staybook.booking.dto.request.BookingRequestDto;
 import com.staybook.booking.dto.response.BookingResponseDto;
 import com.staybook.booking.entity.Booking;
@@ -31,6 +37,7 @@ import com.staybook.booking.exception.BookingNotFoundException;
 import com.staybook.booking.exception.InvalidDateRangeException;
 import com.staybook.booking.mapper.BookingMapper;
 import com.staybook.booking.repository.BookingRepository;
+import org.mockito.ArgumentCaptor;
 
 @ExtendWith(MockitoExtension.class)
 class BookingServiceTest {
@@ -40,6 +47,18 @@ class BookingServiceTest {
 
     @Mock
     private BookingMapper mapper;
+
+    @Mock
+    private RoomAvailabilityService roomAvailabilityService;
+
+    @Mock
+    private RoomAvailabilityMapper roomAvailabilityMapper;
+
+    @Mock
+    private ReviewsClient reviewsClient;
+
+    @Mock
+    private HotelsClient hotelsClient;
 
     @InjectMocks
     private BookingService service;
@@ -61,14 +80,23 @@ class BookingServiceTest {
         LocalDateTime updatedAt = LocalDateTime.of(2026, 11, 5, 10, 0);
         String bookingReference = UUID.randomUUID().toString();
 
-        booking = new Booking(userId, hotelId, roomTypeId, checkIn, checkOut);
+        booking = new Booking(userId, hotelId, roomTypeId, checkIn, checkOut, 3);
         response = new BookingResponseDto(1L, userId, hotelId, roomTypeId, checkIn, checkOut, status, price, createdAt,
-                updatedAt, bookingReference);
-        request = new BookingRequestDto(userId, hotelId, roomTypeId, checkIn, checkOut);
+                updatedAt, bookingReference, 3);
+        request = new BookingRequestDto(userId, hotelId, roomTypeId, checkIn, checkOut, 3);
     }
 
     @Test
     void saved_shouldReturnResponseDto() {
+        // Prepare availability for the date range (one night) as entity
+        RoomAvailability availabilityEntity = new RoomAvailability(request.hotelId(), request.roomTypeId(),
+                request.checkInDate(), request.roomsRequested(), BigDecimal.valueOf(100.00));
+        availabilityEntity.setId(1L);
+
+        when(roomAvailabilityService.getAvailableRoomsForUpdate(request.hotelId(), request.checkInDate(),
+                request.checkOutDate(), request.roomsRequested(), request.roomTypeId()))
+                .thenReturn(java.util.List.of(availabilityEntity));
+
         when(mapper.toEntity(request)).thenReturn(booking);
         when(repository.save(booking)).thenReturn(booking);
         when(mapper.toResponseDto(booking)).thenReturn(response);
@@ -85,6 +113,37 @@ class BookingServiceTest {
     }
 
     @Test
+    void create_ShouldDecrementAvailabilityWithCorrectId() {
+        // Arrange: availability with an existing id (entity)
+        RoomAvailability availabilityWithId = new RoomAvailability(request.hotelId(), request.roomTypeId(),
+                request.checkInDate(), request.roomsRequested(), BigDecimal.valueOf(100.00));
+        availabilityWithId.setId(99L);
+
+        when(roomAvailabilityService.getAvailableRoomsForUpdate(request.hotelId(), request.checkInDate(),
+                request.checkOutDate(), request.roomsRequested(), request.roomTypeId()))
+                .thenReturn(java.util.List.of(availabilityWithId));
+
+        when(mapper.toEntity(request)).thenReturn(booking);
+        when(repository.save(booking)).thenReturn(booking);
+        when(mapper.toResponseDto(booking)).thenReturn(response);
+
+        // Capture original quantity before service mutates the entity
+        int originalQuantity = availabilityWithId.getAvailableQuantity();
+
+        // Act
+        service.create(request);
+
+        // Assert that saveAllUpdated received an entity with the original id and decremented quantity
+        @SuppressWarnings({"unchecked", "rawtypes"})
+        ArgumentCaptor<java.util.List<RoomAvailability>> captor = (ArgumentCaptor) ArgumentCaptor.forClass(java.util.List.class);
+        verify(roomAvailabilityService).saveAllUpdated(captor.capture());
+
+        List<RoomAvailability> saved = captor.getValue();
+        assertEquals(99L, saved.get(0).getId());
+        assertEquals(originalQuantity - request.roomsRequested(), saved.get(0).getAvailableQuantity());
+    }
+
+    @Test
     void create_whenCheckInAfterCheckOut_shouldThrowInvalidDateRangeException() {
         // check-in posterior a check-out
         BookingRequestDto badRequest = new BookingRequestDto(
@@ -92,8 +151,8 @@ class BookingServiceTest {
                 1L,
                 1L,
                 LocalDate.of(2026, 11, 6), // checkIn
-                LocalDate.of(2026, 11, 5) // checkOut
-        );
+                LocalDate.of(2026, 11, 5), // checkOut
+                3);
 
         InvalidDateRangeException ex = assertThrows(
                 InvalidDateRangeException.class,

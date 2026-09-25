@@ -43,10 +43,10 @@ class RoomAvailabilityControllerTest {
     @DisplayName("Debe retornar la lista de habitaciones disponibles con estado 200 OK")
     void getAvailableRooms_WhenValidParams_ShouldReturn200Ok() throws Exception {
         Long hotelId = 1L;
-        Long roomTypeId = 2L;
+        Long roomTypeId = 3L;
         LocalDate startDate = LocalDate.of(2026, 11, 1);
         LocalDate endDate = LocalDate.of(2026, 11, 2);
-        int availableQuantity = 2;
+        Integer availableQuantity = 2;
 
         when(roomAvailabilityService.getAvailableRooms(hotelId, roomTypeId, startDate, endDate, availableQuantity))
                 .thenReturn(List.of(responseDto));
@@ -56,7 +56,7 @@ class RoomAvailabilityControllerTest {
                 .param("roomTypeId", roomTypeId.toString())
                 .param("startDate", startDate.toString())
                 .param("endDate", endDate.toString())
-                .param("availableQuantity", String.valueOf(availableQuantity)))
+                .param("requestedRooms", String.valueOf(availableQuantity)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(1))
                 .andExpect(jsonPath("$[0].hotelId").value(1))
