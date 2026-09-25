@@ -23,6 +23,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.staybook.booking.client.HotelsClient;
+import com.staybook.booking.client.ReviewsClient;
+import com.staybook.booking.dto.response.RoomAvailabilityResponseDto;
+import com.staybook.booking.entity.RoomAvailability;
+import com.staybook.booking.mapper.RoomAvailabilityMapper;
+
 import com.staybook.booking.dto.request.BookingRequestDto;
 import com.staybook.booking.dto.response.BookingResponseDto;
 import com.staybook.booking.entity.Booking;
@@ -40,6 +46,18 @@ class BookingServiceTest {
 
     @Mock
     private BookingMapper mapper;
+
+    @Mock
+    private RoomAvailabilityService roomAvailabilityService;
+
+    @Mock
+    private RoomAvailabilityMapper roomAvailabilityMapper;
+
+    @Mock
+    private ReviewsClient reviewsClient;
+
+    @Mock
+    private HotelsClient hotelsClient;
 
     @InjectMocks
     private BookingService service;
@@ -61,14 +79,27 @@ class BookingServiceTest {
         LocalDateTime updatedAt = LocalDateTime.of(2026, 11, 5, 10, 0);
         String bookingReference = UUID.randomUUID().toString();
 
-        booking = new Booking(userId, hotelId, roomTypeId, checkIn, checkOut);
+        booking = new Booking(userId, hotelId, roomTypeId, checkIn, checkOut, 3);
         response = new BookingResponseDto(1L, userId, hotelId, roomTypeId, checkIn, checkOut, status, price, createdAt,
-                updatedAt, bookingReference);
-        request = new BookingRequestDto(userId, hotelId, roomTypeId, checkIn, checkOut);
+                updatedAt, bookingReference, 3);
+        request = new BookingRequestDto(userId, hotelId, roomTypeId, checkIn, checkOut, 3);
     }
 
     @Test
     void saved_shouldReturnResponseDto() {
+        // Prepare availability for the date range (one night)
+        RoomAvailabilityResponseDto availabilityDto = new RoomAvailabilityResponseDto(
+                1L, request.hotelId(), request.roomTypeId(), request.checkInDate(), request.roomsRequested(),
+                BigDecimal.valueOf(100.00));
+
+        when(roomAvailabilityService.getAvailableRoomsForUpdate(request.hotelId(), request.checkInDate(),
+                request.checkOutDate(), request.roomsRequested(), request.roomTypeId()))
+                .thenReturn(java.util.List.of(availabilityDto));
+
+        when(roomAvailabilityMapper.toEntity(any(RoomAvailabilityResponseDto.class)))
+                .thenReturn(new RoomAvailability(request.hotelId(), request.roomTypeId(), request.checkInDate(),
+                        request.roomsRequested(), BigDecimal.valueOf(100.00)));
+
         when(mapper.toEntity(request)).thenReturn(booking);
         when(repository.save(booking)).thenReturn(booking);
         when(mapper.toResponseDto(booking)).thenReturn(response);
@@ -92,8 +123,8 @@ class BookingServiceTest {
                 1L,
                 1L,
                 LocalDate.of(2026, 11, 6), // checkIn
-                LocalDate.of(2026, 11, 5) // checkOut
-        );
+                LocalDate.of(2026, 11, 5), // checkOut
+                3);
 
         InvalidDateRangeException ex = assertThrows(
                 InvalidDateRangeException.class,

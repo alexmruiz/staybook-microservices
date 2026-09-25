@@ -13,7 +13,8 @@ public class BookingMapper {
         if (dto == null)
             return null;
 
-        return new Booking(dto.userId(), dto.hotelId(), dto.roomTypeId(), dto.checkInDate(), dto.checkOutDate());
+        return new Booking(dto.userId(), dto.hotelId(), dto.roomTypeId(), dto.checkInDate(), dto.checkOutDate(),
+                dto.roomsRequested());
     }
 
     public BookingResponseDto toResponseDto(Booking booking) {
@@ -31,6 +32,7 @@ public class BookingMapper {
                 booking.getTotalPrice(),
                 booking.getCreatedAt(),
                 booking.getUpdatedAt(),
-                booking.getBookingReference());
+                booking.getBookingReference(),
+                booking.getRoomsRequested());
     }
 }

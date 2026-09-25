@@ -38,6 +38,9 @@ public class Booking {
     @Column(name = "check_out_date", nullable = false)
     private LocalDate checkOutDate;
 
+    @Column(name ="rooms_requested", nullable = false)
+    private Integer roomsRequested;
+
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private BookingStatus status;
@@ -59,12 +62,19 @@ public class Booking {
     public Booking() {
     }
 
-    public Booking(Long userId, Long hotelId, Long roomTypeId, LocalDate checkInDate, LocalDate checkOutDate) {
+    public Booking(Long userId, Long hotelId, Long roomTypeId, LocalDate checkInDate, LocalDate checkOutDate,
+            Integer roomsRequested) {
         this.userId = userId;
         this.hotelId = hotelId;
         this.roomTypeId = roomTypeId;
         this.checkInDate = checkInDate;
         this.checkOutDate = checkOutDate;
+        this.roomsRequested = roomsRequested;
+    }
+
+    // Convenience constructor used by some tests
+    public Booking(Long userId, Long hotelId, Long roomTypeId, LocalDate checkInDate, LocalDate checkOutDate) {
+        this(userId, hotelId, roomTypeId, checkInDate, checkOutDate, 1);
     }
 
     public Long getId() {
@@ -154,4 +164,14 @@ public class Booking {
     public void setBookingReference(String bookingReference) {
         this.bookingReference = bookingReference;
     }
+
+    public Integer getRoomsRequested() {
+        return roomsRequested;
+    }
+
+    public void setRoomsRequested(Integer roomsRequested) {
+        this.roomsRequested = roomsRequested;
+    }
+
+    
 }

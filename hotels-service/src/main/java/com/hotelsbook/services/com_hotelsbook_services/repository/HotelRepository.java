@@ -13,5 +13,5 @@ public interface HotelRepository extends JpaRepository<Hotel, Long> {
     List<Hotel> findByAddressCityId(Long cityId);
     Long countByAddressCity(City city);
     Optional<Hotel> findByNameAndAddressCity(String name, City city);
-    List<Hotel> findByStarsGreaterThanEqual(int stars);
+    List<Hotel> findByStarsGreaterThanEqual(Integer stars);
 }

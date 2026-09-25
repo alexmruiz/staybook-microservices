@@ -17,6 +17,13 @@ public record BookingResponseDto(
     BigDecimal totalPrice,
     LocalDateTime createdAt,
     LocalDateTime updatedAt,
-    String bookingReference
+    String bookingReference,
+    Integer roomsRequested
 ) {
+    public BookingResponseDto(Long id, Long userId, Long hotelId, Long roomTypeId, LocalDate checkInDate,
+            LocalDate checkOutDate, BookingStatus status, BigDecimal totalPrice, LocalDateTime createdAt,
+            LocalDateTime updatedAt, String bookingReference) {
+        this(id, userId, hotelId, roomTypeId, checkInDate, checkOutDate, status, totalPrice, createdAt, updatedAt,
+                bookingReference, 1);
+    }
 }
