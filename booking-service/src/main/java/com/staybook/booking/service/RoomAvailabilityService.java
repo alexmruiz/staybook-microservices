@@ -30,18 +30,18 @@ public class RoomAvailabilityService {
      * @param roomTypeId
      * @param startDate
      * @param endDate
-     * @param availableQuantity
+     * @param roomsRequested
      * @return List<RoomAvailabilityResponseDto> getAvailableRooms
      */
     public List<RoomAvailabilityResponseDto> getAvailableRooms(Long hotelId, Long roomTypeId, LocalDate startDate, LocalDate endDate,
-            int availableQuantity) {
+            int roomsRequested) {
 
         if (startDate == null || endDate == null || !startDate.isBefore(endDate)) {
             throw new InvalidDateRangeException("La fecha de inicio debe ser anterior a la fecha de fin");
         }
 
         List<RoomAvailability> roomAvailabilities = repository.getAvailableRooms(hotelId, startDate, endDate,
-                availableQuantity, roomTypeId);
+                roomsRequested, roomTypeId);
 
         if (roomAvailabilities.isEmpty()) {
             throw new RoomNotAvailableException("No hay habitaciones disponibles en la fecha indicada");

@@ -28,7 +28,7 @@ public interface RoomAvailabilityRepository extends JpaRepository<RoomAvailabili
       WHERE r.hotelId = :hotelId
         AND r.date >= :startDate
         AND r.date < :endDate
-        AND r.availableQuantity >= :availableQuantity
+        AND r.availableQuantity >= :requestedRooms
         AND r.roomTypeId = :roomTypeId
       ORDER BY r.date
       """)
@@ -36,7 +36,7 @@ public interface RoomAvailabilityRepository extends JpaRepository<RoomAvailabili
       Long hotelId,
       LocalDate startDate,
       LocalDate endDate,
-      int availableQuantity,
+      int requestedRooms,
       Long roomTypeId
     );
 }

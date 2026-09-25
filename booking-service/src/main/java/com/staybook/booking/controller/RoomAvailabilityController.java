@@ -32,8 +32,8 @@ public class RoomAvailabilityController {
             @RequestParam @Positive Long roomTypeId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
-            @RequestParam @Positive int availableQuantity) {
-        return service.getAvailableRooms(hotelId, roomTypeId, startDate, endDate, availableQuantity);
+            @RequestParam @Positive int requestedRooms) {
+        return service.getAvailableRooms(hotelId, roomTypeId, startDate, endDate, requestedRooms);
     }
 
 }
