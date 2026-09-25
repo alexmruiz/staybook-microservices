@@ -11,10 +11,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.staybook.booking.repository.BookingRepository;
-
-import jakarta.transaction.Transactional;
 
 import com.staybook.booking.dto.response.BookingDetailResponseDto;
 import com.staybook.booking.dto.response.BookingResponseDto;
@@ -24,6 +23,7 @@ import com.staybook.booking.entity.Booking;
 import com.staybook.booking.entity.RoomAvailability;
 import com.staybook.booking.enums.BookingStatus;
 import com.staybook.booking.exception.BookingNotFoundException;
+import com.staybook.booking.exception.InvalidBookingStateException;
 import com.staybook.booking.exception.InvalidDateRangeException;
 import com.staybook.booking.exception.RoomNotAvailableException;
 import com.staybook.booking.mapper.BookingMapper;
@@ -59,19 +59,20 @@ public class BookingService {
      * @param BookingRequestDto request
      * @return BookingResponseDto response
      */
-    @Transactional 
+    @Transactional
     public BookingResponseDto create(BookingRequestDto request) {
         if (!request.checkInDate().isBefore(request.checkOutDate())) {
             throw new InvalidDateRangeException("La fecha de salida debe ser posterior a la fecha de entrada");
         }
 
-        List<RoomAvailability> availabilities = roomAvailabilityService.getAvailableRoomsForUpdate(request.hotelId(), request.checkInDate(), request.checkOutDate(), request.roomsRequested(), request.roomTypeId());
+        List<RoomAvailability> availabilities = roomAvailabilityService.getAvailableRoomsForUpdate(request.hotelId(),
+                request.checkInDate(), request.checkOutDate(), request.roomsRequested(), request.roomTypeId());
 
         int daysAvailabilities = availabilities.size();
 
         long daysReserved = ChronoUnit.DAYS.between(request.checkInDate(), request.checkOutDate());
 
-        if(daysAvailabilities != daysReserved) {
+        if (daysAvailabilities != daysReserved) {
             throw new RoomNotAvailableException(ROOM_NOT_AVAILABLE);
         }
 
@@ -172,5 +173,56 @@ public class BookingService {
             log.warn("No se pudo obtener la lista de reseñas del hotel {}: {}", hotelId, e.getMessage());
             return List.of();
         }
+    }
+
+    /**
+     * Cambia el estado de la reserva a confirmado
+     * 
+     * @param Long bookingId
+     * @return BookingResponseDto
+     */
+    @Transactional 
+    public BookingResponseDto confirmBooking(Long bookingId) {
+        Booking booking = repository.findByIdForUpdate(bookingId)
+                .orElseThrow(() -> new BookingNotFoundException(BOOKING_NOT_FOUND + bookingId));
+
+        if (booking.getStatus() != BookingStatus.PENDING) {
+            throw new InvalidBookingStateException("El estado de la reserva no permite la confirmación");
+        }
+
+        booking.setStatus(BookingStatus.CONFIRMED);
+
+        return mapper.toResponseDto(repository.save(booking));
+    }
+
+    /**
+     * Cancela una reserva, cambia su estado a cancelado.
+     * Para obtener todos los resultados envío al repositorio 0 en roomsRequested
+     * @param Long bookingId
+     * @return BookingResponseDto
+     */
+    @Transactional 
+    public BookingResponseDto cancelBooking(Long bookingId) {
+        Booking booking = repository.findByIdForUpdate(bookingId)
+                .orElseThrow(() -> new BookingNotFoundException(BOOKING_NOT_FOUND + bookingId));
+
+        if (booking.getStatus() != BookingStatus.PENDING && booking.getStatus() != BookingStatus.CONFIRMED) {
+            throw new InvalidBookingStateException("El estado de la reserva no permite la cancelación");
+        }
+
+        List<RoomAvailability> availabilities = roomAvailabilityService.getAvailableRoomsForUpdate(booking.getHotelId(),
+                booking.getCheckInDate(), booking.getCheckOutDate(), 0,
+                booking.getRoomTypeId());
+
+        for (RoomAvailability roomAvailability : availabilities) {
+            roomAvailability
+                    .setAvailableQuantity(roomAvailability.getAvailableQuantity() + booking.getRoomsRequested());
+        }
+
+        roomAvailabilityService.saveAllUpdated(availabilities);
+
+        booking.setStatus(BookingStatus.CANCELLED);
+
+        return mapper.toResponseDto(repository.save(booking));
     }
 }
