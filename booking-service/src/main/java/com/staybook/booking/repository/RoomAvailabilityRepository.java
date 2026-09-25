@@ -17,11 +17,18 @@ public interface RoomAvailabilityRepository extends JpaRepository<RoomAvailabili
   @Query("""
       SELECT r FROM RoomAvailability r
       WHERE r.hotelId = :hotelId
+        AND r.date >= :startDate
+        AND r.date < :endDate
+        AND r.availableQuantity >= :requestedRooms
         AND r.roomTypeId = :roomTypeId
-        AND r.date IN :dates
       ORDER BY r.date
       """)
-  List<RoomAvailability> findAllForUpdate(Long hotelId, Long roomTypeId, List<LocalDate> dates);
+  List<RoomAvailability> findAllForUpdate(
+      Long hotelId,
+      LocalDate startDate,
+      LocalDate endDate,
+      Integer requestedRooms,
+      Long roomTypeId);
 
   @Query("""
       SELECT r FROM RoomAvailability r
@@ -36,7 +43,6 @@ public interface RoomAvailabilityRepository extends JpaRepository<RoomAvailabili
       Long hotelId,
       LocalDate startDate,
       LocalDate endDate,
-      int requestedRooms,
-      Long roomTypeId
-    );
+      Integer requestedRooms,
+      Long roomTypeId);
 }

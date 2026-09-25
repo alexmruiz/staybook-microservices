@@ -36,8 +36,7 @@ class RoomAvailabilityRepositoryTest {
         repository.saveAll(List.of(r2, r1));
         repository.flush(); // ensure persisted
 
-        List<LocalDate> dates = List.of(d1, d2);
-        List<RoomAvailability> result = repository.findAllForUpdate(hotelId, roomTypeId, dates);
+        List<RoomAvailability> result = repository.findAllForUpdate(hotelId, d1, d2, 2, roomTypeId);
 
         assertEquals(2, result.size());
         assertEquals(d1, result.get(0).getDate());
@@ -64,7 +63,7 @@ class RoomAvailabilityRepositoryTest {
 
         LocalDate start = d1;
         LocalDate endExclusive = d3.plusDays(1); // query uses date < endDate (exclusive)
-        int requestedQuantity = 2;
+        Integer requestedQuantity = 2;
 
         List<RoomAvailability> result = repository.getAvailableRooms(hotelId, start, endExclusive, requestedQuantity, roomTypeId);
 

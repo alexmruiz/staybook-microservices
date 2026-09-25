@@ -25,4 +25,11 @@ public class RoomAvailabilityMapper {
                 roomAvailability.getRoomTypeId(), roomAvailability.getDate(), roomAvailability.getAvailableQuantity(),
                 roomAvailability.getPrice());
     }
+
+    public RoomAvailability toEntity(RoomAvailabilityResponseDto dto) {
+        if (dto == null)
+            return null;
+
+        return new RoomAvailability(dto.hotelId(), dto.roomTypeId(), dto.date(), dto.availableQuantity(), dto.price());
+    }
 }

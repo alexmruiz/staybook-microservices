@@ -44,7 +44,7 @@ class RoomAvailabilityServiceTest {
         LocalDate date = LocalDate.of(2026, 5, 5);
         LocalDate startDate = LocalDate.of(2026, 5, 5);
         LocalDate endDate = LocalDate.of(2026, 5, 7);
-        int requestedQuantity = 2;
+        Integer requestedQuantity = 2;
 
         RoomAvailability roomAvailability = new RoomAvailability(hotelId, roomTypeId, date, 2, BigDecimal.valueOf(100.00));
         RoomAvailabilityResponseDto response = new RoomAvailabilityResponseDto(1L, hotelId, roomTypeId, date, requestedQuantity, BigDecimal.valueOf(100.00));
