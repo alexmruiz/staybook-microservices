@@ -1,0 +1,146 @@
+bookings:
+  /api/bookings:
+    post:
+      summary: Crear reserva
+      operationId: createBooking
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas.yaml#/components/schemas/BookingRequestDto'
+      responses:
+        '201':
+          description: Reserva creada
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas.yaml#/components/schemas/BookingResponseDto'
+    get:
+      summary: Listar reservas filtradas por usuario
+      operationId: listBookings
+      parameters:
+        - name: userId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: sort
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Página de reservas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  content:
+                    type: array
+                    items:
+                      $ref: '../components/schemas.yaml#/components/schemas/BookingResponseDto'
+                  totalElements:
+                    type: integer
+                  totalPages:
+                    type: integer
+                  number:
+                    type: integer
+
+bookingById:
+  /api/bookings/{bookingId}:
+    get:
+      summary: Obtener reserva por ID
+      operationId: getBookingById
+      parameters:
+        - name: bookingId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Reserva encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas.yaml#/components/schemas/BookingResponseDto'
+        '404':
+          description: No encontrada
+
+bookingDetails:
+  /api/bookings/{bookingId}/details:
+    get:
+      summary: Obtener detalles de la reserva (incluye hotel y reviews)
+      operationId: getBookingDetails
+      parameters:
+        - name: bookingId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Detalle de la reserva
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas.yaml#/components/schemas/BookingDetailResponseDto'
+
+bookingConfirm:
+  /api/bookings/{bookingId}/confirm:
+    post:
+      summary: Confirmar reserva
+      operationId: confirmBooking
+      parameters:
+        - name: bookingId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Reserva confirmada
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas.yaml#/components/schemas/BookingResponseDto'
+        '404':
+          description: No encontrada
+
+bookingCancel:
+  /api/bookings/{bookingId}/cancel:
+    post:
+      summary: Cancelar reserva
+      operationId: cancelBooking
+      parameters:
+        - name: bookingId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Reserva cancelada
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas.yaml#/components/schemas/BookingResponseDto'
+        '404':
+          description: No encontrada

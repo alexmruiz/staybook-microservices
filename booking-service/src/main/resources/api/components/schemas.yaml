@@ -1,0 +1,128 @@
+components:
+  schemas:
+    BookingRequestDto:
+      type: object
+      properties:
+        userId:
+          type: integer
+          format: int64
+        hotelId:
+          type: integer
+          format: int64
+        roomTypeId:
+          type: integer
+          format: int64
+        checkInDate:
+          type: string
+          format: date
+        checkOutDate:
+          type: string
+          format: date
+        roomsRequested:
+          type: integer
+          minimum: 1
+      required: [userId, hotelId, roomTypeId, checkInDate, checkOutDate]
+
+    BookingResponseDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        userId:
+          type: integer
+          format: int64
+        hotelId:
+          type: integer
+          format: int64
+        roomTypeId:
+          type: integer
+          format: int64
+        checkInDate:
+          type: string
+          format: date
+        checkOutDate:
+          type: string
+          format: date
+        status:
+          $ref: '#/components/schemas/BookingStatus'
+        totalPrice:
+          type: number
+          format: double
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        bookingReference:
+          type: string
+        roomsRequested:
+          type: integer
+
+    BookingDetailResponseDto:
+      type: object
+      properties:
+        booking:
+          $ref: '#/components/schemas/BookingResponseDto'
+        hotel:
+          $ref: '#/components/schemas/HotelSummaryDto'
+        reviews:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReviewSummaryDto'
+
+    HotelSummaryDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        stars:
+          type: integer
+        amenities:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              name:
+                type: string
+
+    ReviewSummaryDto:
+      type: object
+      properties:
+        hotelId:
+          type: integer
+        userId:
+          type: integer
+        qualification:
+          type: number
+          format: double
+        description:
+          type: string
+
+    RoomAvailabilityResponseDto:
+      type: object
+      properties:
+        id:
+          type: integer
+        hotelId:
+          type: integer
+        roomTypeId:
+          type: integer
+        date:
+          type: string
+          format: date
+        availableQuantity:
+          type: integer
+        price:
+          type: number
+          format: double
+
+    BookingStatus:
+      type: string
+      enum: [PENDING, CONFIRMED, CANCELLED, COMPLETED, EXPIRED]
