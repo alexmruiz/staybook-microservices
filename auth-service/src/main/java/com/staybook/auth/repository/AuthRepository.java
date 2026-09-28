@@ -7,6 +7,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import com.staybook.auth.entity.Auth;
 
 public interface AuthRepository extends JpaRepository<Auth, Long>{
-    
-    Optional<Auth> findByEmail();
+    Optional<Auth> findByEmail(String email);
 }
