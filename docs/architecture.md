@@ -10,7 +10,7 @@ StayBook está compuesto por varios microservicios independientes que se comunic
 
 Gestiona el catálogo de hoteles.
 
-### Reservations Service
+### Bookings Service
 
 Gestiona las reservas y consulta información del servicio de hoteles.
 
@@ -20,7 +20,7 @@ Gestiona las valoraciones de los hoteles.
 
 ## Comunicación
 
-Reservations Service ───► Hotels Service
+Bookings Service ───► Hotels Service
 
 Reviews Service ───────► Hotels Service
 
