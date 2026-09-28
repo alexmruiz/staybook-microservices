@@ -15,7 +15,7 @@ import com.staybook.auth.enums.TypeRole;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "auth")
+@Table(name = "users")
 public class Auth {
 
 	@Id
