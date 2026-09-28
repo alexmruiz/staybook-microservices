@@ -33,6 +33,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.staybook.booking.dto.request.BookingRequestDto;
+import com.staybook.booking.dto.response.AmenitySummaryDto;
 import com.staybook.booking.dto.response.BookingDetailResponseDto;
 import com.staybook.booking.dto.response.BookingResponseDto;
 import com.staybook.booking.dto.response.HotelSummaryDto;
@@ -161,15 +162,15 @@ class BookingControllerTest {
     @Test
     void getBookingDetails_WhenAllServicesAreUp_ShouldReturn200AndCompleteData() throws Exception {
         // Arrange
-        RoomTypeSummaryDto roomTypeDto = new RoomTypeSummaryDto(1L, "DOUBLE", 2);
-        RoomTypeSummaryDto roomTypeDto1 = new RoomTypeSummaryDto(2L, "SINGLE", 3);
+        AmenitySummaryDto amenityWifi = new AmenitySummaryDto(1L, "Wi-Fi", "Wi-Fi de alta velocidad");
+        AmenitySummaryDto amenityGym = new AmenitySummaryDto(2L, "Gym", "Gran gimnasio");
 
-        List<RoomTypeSummaryDto> listRoomTypes = new ArrayList<>();
+        List<AmenitySummaryDto> listAmenities = new ArrayList<>();
 
-        listRoomTypes.add(roomTypeDto);
-        listRoomTypes.add(roomTypeDto1);
+        listAmenities.add(amenityWifi);
+        listAmenities.add(amenityGym);
 
-        HotelSummaryDto hotelDto = new HotelSummaryDto(1L, "Hotel Palace", 5, listRoomTypes);
+        HotelSummaryDto hotelDto = new HotelSummaryDto(1L, "Hotel Palace", 5, listAmenities);
         List<ReviewSummaryDto> reviewsDto = List.of(new ReviewSummaryDto(1L, 2L, 4.5, "Excelente"));
 
         BookingDetailResponseDto bookingDetailResponseDto = new BookingDetailResponseDto(responseDto, hotelDto,
