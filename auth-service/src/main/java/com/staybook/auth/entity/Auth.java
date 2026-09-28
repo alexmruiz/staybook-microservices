@@ -42,7 +42,7 @@ public class Auth {
 	@CreationTimestamp
 	private LocalDateTime createdAt;
 
-	@Column(name = "updated_at", nullable = false)
+	@Column(name = "updated_at")
 	@UpdateTimestamp
 	private LocalDateTime updatedAt;
 
