@@ -23,6 +23,7 @@ import org.springframework.data.domain.Pageable;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -63,8 +64,8 @@ class BookingControllerTest {
     @BeforeEach
     void setUp() {
         Long userId = 1L;
-        Long hotelId = 1L;
-        Long roomTypeId = 1L;
+        Long hotelId = 2L;
+        Long roomTypeId = 3L;
         LocalDate checkIn = LocalDate.of(2026, 11, 5);
         LocalDate checkOut = LocalDate.of(2026, 11, 5);
         BookingStatus status = BookingStatus.CONFIRMED;
@@ -168,10 +169,11 @@ class BookingControllerTest {
         listRoomTypes.add(roomTypeDto);
         listRoomTypes.add(roomTypeDto1);
 
-        HotelSummaryDto hotelDto = new HotelSummaryDto(1L, "Hotel Palace", 5, listRoomTypes );
+        HotelSummaryDto hotelDto = new HotelSummaryDto(1L, "Hotel Palace", 5, listRoomTypes);
         List<ReviewSummaryDto> reviewsDto = List.of(new ReviewSummaryDto(1L, 2L, 4.5, "Excelente"));
-        
-        BookingDetailResponseDto bookingDetailResponseDto = new BookingDetailResponseDto(responseDto, hotelDto, reviewsDto);
+
+        BookingDetailResponseDto bookingDetailResponseDto = new BookingDetailResponseDto(responseDto, hotelDto,
+                reviewsDto);
 
         when(service.getBookingDetails(1L)).thenReturn(bookingDetailResponseDto);
 
@@ -186,7 +188,8 @@ class BookingControllerTest {
     @Test
     void getBookingDetails_WhenHotelServiceFails_ShouldReturn200WithNullHotel() throws Exception {
         // Arrange (Simulando que el hotel llega como null debido a la degradación)
-        BookingDetailResponseDto bookingDetailResponseDtoNullHotel = new BookingDetailResponseDto(responseDto, null, List.of());
+        BookingDetailResponseDto bookingDetailResponseDtoNullHotel = new BookingDetailResponseDto(responseDto, null,
+                List.of());
 
         when(service.getBookingDetails(1L)).thenReturn(bookingDetailResponseDtoNullHotel);
 
@@ -196,6 +199,66 @@ class BookingControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.hotel").doesNotExist()) // o .value(null) según serialización
                 .andExpect(jsonPath("$.reviews").isArray());
+    }
+
+    @Nested
+    @DisplayName("Prueba confirmBooking tanto en caso felíz como en caso de error")
+    class confirmBookingTest {
+        @Test
+        void confirmBooking_happyPath_returnsBookingResponse() throws Exception {
+            Long bookingId = 1L;
+
+            when(service.confirmBooking(bookingId)).thenReturn(responseDto);
+
+            mockMvc.perform(post("/api/bookings/{bookingId}/confirm", bookingId))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.id").value(bookingId.intValue()))
+                    .andExpect(jsonPath("$.status").value("CONFIRMED"))
+                    .andExpect(jsonPath("$.userId").value("1"));
+        }
+
+        @Test
+        void confirmBooking_notFound_returns404ProblemDetail() throws Exception {
+            Long bookingId = 99L;
+            String message = "Reserva no encontrada con id: " + bookingId;
+
+            when(service.confirmBooking(bookingId)).thenThrow(new BookingNotFoundException(message));
+
+            mockMvc.perform(post("/api/bookings/{bookingId}/confirm", bookingId))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.detail").value(message));
+        }
+    }
+
+    @Nested
+    @DisplayName("Prueba todos los casos en cancelBooking, tanto caso feliz como el caso de error")
+    class CancelBooking {
+        @Test
+        void cancelBooking_happyPath_returnsBookingResponse() throws Exception {
+            Long bookingId = 1L;
+
+            when(service.cancelBooking(bookingId)).thenReturn(responseDto);
+
+            mockMvc.perform(post("/api/bookings/{bookingId}/cancel", bookingId))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.id").value(bookingId.intValue()))
+                    .andExpect(jsonPath("$.status").value("CONFIRMED"))
+                    .andExpect(jsonPath("$.roomTypeId").value("3"))
+                    .andExpect(jsonPath("$.hotelId").value("2"));
+
+        }
+
+        @Test
+        void cancekBooking_notFound_returns404ProblemDetail() throws Exception {
+            Long bookingId = 99L;
+            String message = "Reserva no encontrada con id: " + bookingId;
+
+            when(service.cancelBooking(bookingId)).thenThrow(new BookingNotFoundException(message));
+
+            mockMvc.perform(post("/api/bookings/{bookingId}/cancel", bookingId))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.detail").value(message));
+        }
     }
 
 }

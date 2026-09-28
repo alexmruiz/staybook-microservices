@@ -52,4 +52,14 @@ public class BookingController {
     public BookingDetailResponseDto getBookingDetails(@PathVariable("bookingId") Long bookingId) {
         return service.getBookingDetails(bookingId);
     }
+
+    @PostMapping("/{bookingId}/confirm")
+    public BookingResponseDto confirmBooking (@PathVariable("bookingId") Long bookingId) {
+        return service.confirmBooking(bookingId);
+    }
+
+    @PostMapping("/{bookingId}/cancel")
+    public BookingResponseDto cancelBooking (@PathVariable("bookingId") Long bookingId) {
+        return service.cancelBooking(bookingId);
+    }
 }
