@@ -1,12 +1,12 @@
 package com.staybook.auth.dto.request;
 
 import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 public record RegisterRequestDto(
-        @NotNull @Email String email,
-        @NotNull @Min(8) String password,
-        @NotNull String name,
-        @NotNull String surname) {
+        @NotBlank @Email String email,
+        @NotBlank @Size(min = 8) String password,
+        @NotBlank String name,
+        @NotBlank String surname) {
 }

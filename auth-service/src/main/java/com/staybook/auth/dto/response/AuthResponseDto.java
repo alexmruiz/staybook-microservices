@@ -4,7 +4,7 @@ import java.time.LocalDateTime;
 
 import com.staybook.auth.enums.TypeRole;
 
-public record UserResponseDto(
+public record AuthResponseDto(
     Long id,
     String email,
     String name,
