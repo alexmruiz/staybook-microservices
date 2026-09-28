@@ -30,6 +30,7 @@
 | GET | /api/bookings | Obtener reservas filtradas por usuario (query param: `userId`, paginado: `page`, `size`, `sort`) |
 | GET | /api/bookings/{bookingId} | Obtener reserva por ID |
 | GET | /api/bookings/{bookingId}/details | Obtener detalles de la reserva (incluye `hotel` y `reviews` cuando estén disponibles) |
+| GET | /api/room-availability | Obtener habitaciones disponibles. Query params: `hotelId` (required), `roomTypeId` (required, positive), `startDate` (ISO yyyy-MM-dd), `endDate` (ISO yyyy-MM-dd), `requestedRooms` (required, positive). Respuesta: lista de objetos `{id, hotelId, roomTypeId, date, availableQuantity, price}`. Ejemplo: `/api/room-availability?hotelId=1&roomTypeId=2&startDate=2026-10-01&endDate=2026-10-05&requestedRooms=1` |
 
 
 ## Reviews Service
