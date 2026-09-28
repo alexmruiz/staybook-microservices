@@ -15,7 +15,7 @@ import com.staybook.auth.enums.TypeRole;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "auth")
+@Table(name = "users")
 public class Auth {
 
 	@Id
@@ -49,14 +49,10 @@ public class Auth {
 	public Auth() {
 	}
 
-	public Auth(String email, String name, String surname, TypeRole role, LocalDateTime createdAt,
-			LocalDateTime updatedAt) {
+	public Auth(String email, String name, String surname) {
 		this.email = email;
 		this.name = name;
 		this.surname = surname;
-		this.role = role;
-		this.createdAt = createdAt;
-		this.updatedAt = updatedAt;
 	}
 
 	public Long getId() {
