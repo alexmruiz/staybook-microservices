@@ -15,14 +15,14 @@ public class GlobalExceptionHandler {
 
     // 409 CONFLICT - Unicidad del email
     @ExceptionHandler(EmailAlreadyExistsException.class)
-    public ProblemDetail handleInvalidBookingState(EmailAlreadyExistsException ex) {
+    public ProblemDetail handleEmailAlreadyExists(EmailAlreadyExistsException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
     }
 
     // 400 BAD REQUEST - Credenciales invalidas
     @ExceptionHandler(InvalidCredentialsException.class)
-    public ProblemDetail handleInvalidDateRange(InvalidCredentialsException ex) {
-        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+    public ProblemDetail handleInvalidCredentials(InvalidCredentialsException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
     }
 
     // 400 BAD REQUEST - Bean Validation (@Valid en DTOs)
