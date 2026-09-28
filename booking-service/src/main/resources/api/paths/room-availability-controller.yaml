@@ -1,0 +1,46 @@
+roomAvailability:
+  /api/room-availability:
+    get:
+      summary: Obtener habitaciones disponibles
+      operationId: getRoomAvailability
+      parameters:
+        - name: hotelId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: roomTypeId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+        - name: startDate
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: requestedRooms
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: Lista de disponibilidad por fecha
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '../components/schemas.yaml#/components/schemas/RoomAvailabilityResponseDto'

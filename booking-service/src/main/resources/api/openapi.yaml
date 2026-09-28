@@ -1,0 +1,23 @@
+openapi: 3.0.3
+info:
+  title: StayBook - Booking Service API
+  version: 1.0.0
+  description: API del servicio de reservas (booking-service). Paths y componentes organizados en archivos separados (./paths, ./components).
+servers:
+  - url: /
+paths:
+  /api/bookings:
+    $ref: './paths/bookings-controller.yaml#/bookings'
+  /api/bookings/{bookingId}:
+    $ref: './paths/bookings-controller.yaml#/bookingById'
+  /api/bookings/{bookingId}/details:
+    $ref: './paths/bookings-controller.yaml#/bookingDetails'
+  /api/bookings/{bookingId}/confirm:
+    $ref: './paths/bookings-controller.yaml#/bookingConfirm'
+  /api/bookings/{bookingId}/cancel:
+    $ref: './paths/bookings-controller.yaml#/bookingCancel'
+  /api/room-availability:
+    $ref: './paths/room-availability-controller.yaml#/roomAvailability'
+
+components:
+  $ref: './components/schemas.yaml#/components'
