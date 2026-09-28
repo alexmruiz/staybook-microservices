@@ -1,8 +1,10 @@
 package com.staybook.auth.dto.request;
 
+import jakarta.validation.constraints.NotNull;
+
 public record AuthRequestDto(
-        String email,
-        String password,
-        String name,
-        String surname) {
+        @NotNull String email,
+        @NotNull String password,
+        @NotNull String name,
+        @NotNull String surname) {
 }
