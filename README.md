@@ -26,7 +26,7 @@ docs/images/architecture.png
 ### Microservicios
 
 - Hotels Service → Gestión de hoteles.
-- Reservations Service → Gestión de reservas.
+- Booking Service → Gestión de reservas.
 - Reviews Service → Gestión de opiniones.
 
 Cada microservicio dispone de:
@@ -43,7 +43,7 @@ Cada microservicio dispone de:
 ```text
 staybook-microservices/
 ├── hotels-service/
-├── reservations-service/
+├── booking-service/
 ├── reviews-service/
 ├── docker-compose.yml
 ├── docs/
@@ -66,13 +66,13 @@ staybook-microservices/
 docker compose up --build
 ```
 
-Servicios disponibles:
+Servicios disponibles (por defecto en local según `application.properties` de cada módulo):
 
 | Servicio | URL |
 |----------|-----|
-| Hotels API | http://localhost:8081 |
-| Reservations API | http://localhost:8082 |
-| Reviews API | http://localhost:8083 |
+| Hotels API | http://localhost:8080 |
+| Booking API | http://localhost:8082 |
+| Reviews API | http://localhost:8081 |
 | pgAdmin | http://localhost:5050 |
 
 ---
@@ -83,9 +83,9 @@ Cada servicio expone su documentación OpenAPI.
 
 | Servicio | Swagger |
 |----------|---------|
-| Hotels | `/swagger-ui/index.html` |
-| Reservations | `/swagger-ui/index.html` |
-| Reviews | `/swagger-ui/index.html` |
+| Hotels | `/swagger-ui/index.html` or `/swagger-ui.html` |
+| Booking | `/swagger-ui` or `/swagger-ui.html` |
+| Reviews | `/swagger-ui.html` |
 
 Ejemplo:
 
@@ -96,17 +96,17 @@ http://localhost:8081/swagger-ui/index.html
 ## 🗺️ Roadmap
 
 - [x] Migración de RestTemplate.
-- [ ] DTO + Mapper.
-- [ ] Bean Validation.
-- [ ] Global Exception Handler.
+- [x] DTO + Mapper.
+- [x] Bean Validation.
+- [x] Global Exception Handler.
 - [ ] OpenFeign.
 - [ ] JWT Authentication.
-- [ ] Unit Testing.
+- [x] Unit Testing.
 - [ ] Integration Testing.
 - [ ] Dockerización completa.
 - [ ] Actuator.
 - [ ] GitHub Actions CI.
-- [ ] SonarCloud.
+- [x] SonarCloud.
 
 ---
 
