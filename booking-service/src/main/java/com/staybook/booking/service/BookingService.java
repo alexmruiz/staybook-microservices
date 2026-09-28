@@ -143,6 +143,11 @@ public class BookingService {
                 .map(mapper::toResponseDto);
     }
 
+    /**
+     * Devuelve una reserva con los datos del hotel y sus reseñas
+     * @param Long id -> bookingId
+     * @return BookingDetailResponseDto
+     */
     public BookingDetailResponseDto getBookingDetails(Long id) {
         Booking booking = repository.findById(id)
                 .orElseThrow(() -> new BookingNotFoundException(BOOKING_NOT_FOUND + id));
@@ -205,6 +210,10 @@ public class BookingService {
     public BookingResponseDto cancelBooking(Long bookingId) {
         Booking booking = repository.findByIdForUpdate(bookingId)
                 .orElseThrow(() -> new BookingNotFoundException(BOOKING_NOT_FOUND + bookingId));
+
+        if (booking.getStatus() == BookingStatus.CANCELLED ) {
+            throw new InvalidBookingStateException("La reserva ya ha sido cancelada");
+        }
 
         if (booking.getStatus() != BookingStatus.PENDING && booking.getStatus() != BookingStatus.CONFIRMED) {
             throw new InvalidBookingStateException("El estado de la reserva no permite la cancelación");
