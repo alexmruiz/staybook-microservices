@@ -37,15 +37,13 @@ class AuthIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        authRepository.deleteAll(); 
+        authRepository.deleteAll();
         request = new RegisterRequestDto(
-            "carlos@example.com", "password123", "name", "surname"
-        );
+                "carlos@example.com", "password123", "name", "surname");
     }
 
     @Test
     void register_WhenValidRequest_ShouldReturn201Created() throws Exception {
-        
 
         mockMvc.perform(post("/api/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)

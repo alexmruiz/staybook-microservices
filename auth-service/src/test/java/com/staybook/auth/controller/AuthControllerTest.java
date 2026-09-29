@@ -24,6 +24,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.staybook.auth.controller.AuthControllerTest.TestConfig;
+import com.staybook.auth.dto.request.LoginRequestDto;
 import com.staybook.auth.dto.request.RegisterRequestDto;
 import com.staybook.auth.dto.response.UserResponseDto;
 import com.staybook.auth.enums.TypeRole;
@@ -71,6 +72,7 @@ public class AuthControllerTest {
                     .andExpect(jsonPath("$.name").value("name"))
                     .andExpect(jsonPath("$.role").value("ROLE_ADMIN"));
         }
+
     }
 
     @TestConfiguration
@@ -80,4 +82,30 @@ public class AuthControllerTest {
             return mock(AuthService.class);
         }
     }
+
+    @Nested
+    @DisplayName("Test login()")
+    class loginTest {
+
+        @Test
+        void login_AfterRegister_ShouldReturnValidToken() throws Exception {
+            // 1. Registro
+            mockMvc.perform(post("/api/auth/register")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(registerRequestDto)))
+                    .andExpect(status().isCreated());
+
+            // 2. Login con las mismas credenciales
+            LoginRequestDto loginRequest = new LoginRequestDto(registerRequestDto.email(),
+                    registerRequestDto.password());
+
+            mockMvc.perform(post("/api/auth/login")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(loginRequest)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.token").isNotEmpty())
+                    .andExpect(jsonPath("$.tokenType").value("Bearer"));
+        }
+    }
+
 }
