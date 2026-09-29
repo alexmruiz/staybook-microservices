@@ -3,6 +3,7 @@ package com.staybook.auth.service;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -75,7 +76,7 @@ public class AuthService {
             // 5. Retornamos la respuesta con el token, tipo y expiración
             return new AuthResponseDto(jwtToken, "Bearer", jwtService.getJwtExpiration(), user.getEmail(), user.getRole());
 
-        } catch (Exception e) {
+        } catch (AuthenticationException e) {
             // Si el email no existe o la contraseña es incorrecta, lanzamos la excepción
             // 401
             throw new InvalidCredentialsException("Email o contraseña incorrectos");

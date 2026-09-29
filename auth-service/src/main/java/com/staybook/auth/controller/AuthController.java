@@ -32,7 +32,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public AuthResponseDto login(LoginRequestDto requestDto) {
+    public AuthResponseDto login(@Valid @RequestBody LoginRequestDto requestDto) {
         return service.login(requestDto);
     }
 }
