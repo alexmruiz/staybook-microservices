@@ -65,10 +65,7 @@ public class AuthService {
             // 2. Si pasa, obtenemos los detalles del usuario autenticado
             UserDetails userDetails = (UserDetails) authentication.getPrincipal();
 
-            // 3. Buscamos la entidad en base de datos para sacar el rol exacto o datos
-            // adicionales
-            Auth user = repository.findByEmail(request.email())
-                .orElseThrow(() -> new InvalidCredentialsException("Credenciales inválidas"));
+            Auth user = (Auth) userDetails;
 
             // 4. Generamos el token JWT usando nuestro JwtService
             String jwtToken = jwtService.generateToken(userDetails);
