@@ -2,7 +2,6 @@ package com.staybook.auth.integration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.staybook.auth.dto.request.RegisterRequestDto;
-import com.staybook.auth.enums.TypeRole;
 import com.staybook.auth.repository.AuthRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
