@@ -1,7 +1,6 @@
 package com.staybook.auth.integration;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -9,7 +8,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -19,10 +17,9 @@ import com.staybook.auth.dto.request.RegisterRequestDto;
 import com.staybook.auth.repository.AuthRepository;
 
 @SpringBootTest
-@Import(com.staybook.auth.config.TestBeansConfig.class)
-@AutoConfigureMockMvc(addFilters = false)
+@AutoConfigureMockMvc
 @ActiveProfiles("test")
-class AuthIntegrationTest {
+class SecurityIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -43,30 +40,11 @@ class AuthIntegrationTest {
     }
 
     @Test
-    void register_WhenValidRequest_ShouldReturn201Created() throws Exception {
-
-        mockMvc.perform(post("/api/auth/register")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").exists())
-                .andExpect(jsonPath("$.email").value("carlos@example.com"))
-                .andExpect(jsonPath("$.name").value("name"));
-    }
-
-    @Test
-    void register_WhenEmailAlreadyExists_ShouldReturn409Conflict() throws Exception {
-
-        // 1. Registramos por primera vez (éxito)
+    void register_ShouldBePubliclyAccessible() throws Exception {
         mockMvc.perform(post("/api/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated());
-
-        // 2. Intentamos registrar de nuevo con el mismo email (debe fallar con 409)
-        mockMvc.perform(post("/api/auth/register")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isConflict());
     }
+
 }

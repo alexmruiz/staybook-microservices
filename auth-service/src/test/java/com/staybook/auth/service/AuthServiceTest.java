@@ -19,13 +19,17 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import com.staybook.auth.dto.request.LoginRequestDto;
 import com.staybook.auth.dto.request.RegisterRequestDto;
-import com.staybook.auth.dto.response.AuthResponseDto;
+import com.staybook.auth.dto.response.UserResponseDto;
 import com.staybook.auth.entity.Auth;
 import com.staybook.auth.enums.TypeRole;
 import com.staybook.auth.exception.EmailAlreadyExistsException;
+import com.staybook.auth.exception.InvalidCredentialsException;
 import com.staybook.auth.mapper.AuthMapper;
 import com.staybook.auth.repository.AuthRepository;
 
@@ -41,11 +45,17 @@ public class AuthServiceTest {
     @Mock
     private PasswordEncoder passwordEncoder;
 
+    @Mock
+    private AuthenticationManager authenticationManager;
+
+    @Mock
+    private com.staybook.auth.security.JwtService jwtService;
+
     @InjectMocks
     private AuthService service;
 
     private Auth auth;
-    private AuthResponseDto response;
+    private UserResponseDto response;
     private RegisterRequestDto requestDto;
 
     @BeforeEach
@@ -54,7 +64,7 @@ public class AuthServiceTest {
         LocalDateTime updatedAt = LocalDateTime.of(2026, 10, 6, 6, 6);
 
         this.auth = new Auth("email@email.com", "name", "surname");
-        this.response = new AuthResponseDto(1L, "email@email.com", "name", "surname", TypeRole.ROLE_USER, createdAt,
+        this.response = new UserResponseDto(1L, "email@email.com", "name", "surname", TypeRole.ROLE_USER, createdAt,
                 updatedAt);
         this.requestDto = new RegisterRequestDto("email@email.com", "testadmin", "name", "surname");
     }
@@ -73,7 +83,7 @@ public class AuthServiceTest {
             when(repository.save(auth)).thenReturn(auth);
             when(mapper.toResponseDto(auth)).thenReturn(response);
 
-            AuthResponseDto result = service.register(requestDto);
+            UserResponseDto result = service.register(requestDto);
 
             assertNotNull(result);
             assertEquals(1L, result.id());
@@ -99,6 +109,35 @@ public class AuthServiceTest {
             // ya existía
             verify(repository, never()).save(any());
             verify(passwordEncoder, never()).encode(any());
+        }
+    }
+
+    @Nested
+    @DisplayName("Test login() errors")
+    class loginTest {
+
+        @Test
+        void login_WithWrongPassword_ShouldReturn401() throws Exception {
+            // Arrange
+            LoginRequestDto login = new LoginRequestDto("email@email.com", "wrongpass");
+
+            when(authenticationManager.authenticate(any()))
+                    .thenThrow(new BadCredentialsException("Bad credentials"));
+
+            // Act & Assert
+            assertThrows(InvalidCredentialsException.class, () -> service.login(login));
+        }
+
+        @Test
+        void login_WithNonExistentEmail_ShouldReturn401() throws Exception {
+            // Arrange
+            LoginRequestDto login = new LoginRequestDto("noone@nowhere.com", "whatever");
+
+            when(authenticationManager.authenticate(any()))
+                    .thenThrow(new BadCredentialsException("Bad credentials"));
+
+            // Act & Assert
+            assertThrows(InvalidCredentialsException.class, () -> service.login(login));
         }
     }
 

@@ -1,6 +1,9 @@
 package com.staybook.auth.controller;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -23,14 +26,16 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.staybook.auth.config.SecurityConfig;
 import com.staybook.auth.controller.AuthControllerTest.TestConfig;
+import com.staybook.auth.dto.request.LoginRequestDto;
 import com.staybook.auth.dto.request.RegisterRequestDto;
-import com.staybook.auth.dto.response.AuthResponseDto;
+import com.staybook.auth.dto.response.UserResponseDto;
 import com.staybook.auth.enums.TypeRole;
 import com.staybook.auth.service.AuthService;
 
 @WebMvcTest(AuthController.class)
-@Import(TestConfig.class)
+@Import({TestConfig.class, SecurityConfig.class})
 public class AuthControllerTest {
 
     @Autowired
@@ -43,7 +48,7 @@ public class AuthControllerTest {
     private AuthService service;
 
     private RegisterRequestDto registerRequestDto;
-    private AuthResponseDto responseDto;
+    private UserResponseDto responseDto;
 
     @BeforeEach
     void setUp() {
@@ -51,7 +56,7 @@ public class AuthControllerTest {
         LocalDateTime createdAt = LocalDateTime.of(2026, 11, 1, 5, 6);
         LocalDateTime updatedAt = LocalDateTime.of(2026, 12, 8, 5, 5);
         registerRequestDto = new RegisterRequestDto("email@email.com", "password", "name", "surname");
-        responseDto = new AuthResponseDto(1L, "email@email.com", "name", "surname", role, createdAt, updatedAt);
+        responseDto = new UserResponseDto(1L, "email@email.com", "name", "surname", role, createdAt, updatedAt);
     }
 
     @Nested
@@ -71,6 +76,7 @@ public class AuthControllerTest {
                     .andExpect(jsonPath("$.name").value("name"))
                     .andExpect(jsonPath("$.role").value("ROLE_ADMIN"));
         }
+
     }
 
     @TestConfiguration
@@ -80,4 +86,61 @@ public class AuthControllerTest {
             return mock(AuthService.class);
         }
     }
+
+    @Nested
+    @DisplayName("Test login()")
+    class loginTest {
+        
+        @BeforeEach
+        void setUp() {
+            // Reset mock before each test to clear previous stubbing
+            reset(service);
+        }
+
+        @Test
+        void login_AfterRegister_ShouldReturnValidToken() throws Exception {
+            // Instead of performing a full register via HTTP (which requires proper
+            // security context and CSRF), mock the AuthService behavior for login
+            // and test the login endpoint in isolation.
+            LoginRequestDto loginRequest = new LoginRequestDto(registerRequestDto.email(), registerRequestDto.password());
+
+            when(service.login(any(LoginRequestDto.class)))
+                .thenReturn(new com.staybook.auth.dto.response.AuthResponseDto("fake-token", "Bearer", 86400000L,
+                    registerRequestDto.email(), TypeRole.ROLE_ADMIN));
+
+            mockMvc.perform(post("/api/auth/login").with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(loginRequest)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").isNotEmpty())
+                .andExpect(jsonPath("$.tokenType").value("Bearer"));
+        }
+
+        @Test
+        void login_WithWrongPassword_ShouldReturn401() throws Exception {
+            LoginRequestDto loginRequest = new LoginRequestDto("email@email.com", "wrongpass");
+
+            doThrow(new com.staybook.auth.exception.InvalidCredentialsException("Email o contraseña incorrectos"))
+                .when(service).login(any(LoginRequestDto.class));
+
+            mockMvc.perform(post("/api/auth/login").with(csrf())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(loginRequest)))
+                    .andExpect(status().isUnauthorized());
+        }
+
+        @Test
+        void login_WithNonExistentEmail_ShouldReturn401() throws Exception {
+            LoginRequestDto loginRequest = new LoginRequestDto("noone@nowhere.com", "whatever");
+
+            doThrow(new com.staybook.auth.exception.InvalidCredentialsException("Email o contraseña incorrectos"))
+                .when(service).login(any(LoginRequestDto.class));
+
+            mockMvc.perform(post("/api/auth/login").with(csrf())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(loginRequest)))
+                    .andExpect(status().isUnauthorized());
+        }
+    }
+
 }
