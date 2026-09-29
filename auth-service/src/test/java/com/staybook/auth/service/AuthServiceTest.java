@@ -22,7 +22,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.staybook.auth.dto.request.RegisterRequestDto;
-import com.staybook.auth.dto.response.AuthResponseDto;
+import com.staybook.auth.dto.response.UserResponseDto;
 import com.staybook.auth.entity.Auth;
 import com.staybook.auth.enums.TypeRole;
 import com.staybook.auth.exception.EmailAlreadyExistsException;
@@ -45,7 +45,7 @@ public class AuthServiceTest {
     private AuthService service;
 
     private Auth auth;
-    private AuthResponseDto response;
+    private UserResponseDto response;
     private RegisterRequestDto requestDto;
 
     @BeforeEach
@@ -54,7 +54,7 @@ public class AuthServiceTest {
         LocalDateTime updatedAt = LocalDateTime.of(2026, 10, 6, 6, 6);
 
         this.auth = new Auth("email@email.com", "name", "surname");
-        this.response = new AuthResponseDto(1L, "email@email.com", "name", "surname", TypeRole.ROLE_USER, createdAt,
+        this.response = new UserResponseDto(1L, "email@email.com", "name", "surname", TypeRole.ROLE_USER, createdAt,
                 updatedAt);
         this.requestDto = new RegisterRequestDto("email@email.com", "testadmin", "name", "surname");
     }
@@ -73,7 +73,7 @@ public class AuthServiceTest {
             when(repository.save(auth)).thenReturn(auth);
             when(mapper.toResponseDto(auth)).thenReturn(response);
 
-            AuthResponseDto result = service.register(requestDto);
+            UserResponseDto result = service.register(requestDto);
 
             assertNotNull(result);
             assertEquals(1L, result.id());

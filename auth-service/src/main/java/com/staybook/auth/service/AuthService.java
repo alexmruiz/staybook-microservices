@@ -5,7 +5,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.staybook.auth.dto.request.RegisterRequestDto;
-import com.staybook.auth.dto.response.AuthResponseDto;
+import com.staybook.auth.dto.response.UserResponseDto;
 import com.staybook.auth.entity.Auth;
 import com.staybook.auth.enums.TypeRole;
 import com.staybook.auth.exception.EmailAlreadyExistsException;
@@ -26,7 +26,7 @@ public class AuthService {
     }
 
     @Transactional
-    public AuthResponseDto register(RegisterRequestDto request) {
+    public UserResponseDto register(RegisterRequestDto request) {
         boolean existEmail = repository.findByEmail(request.email()).isPresent();
 
         if (existEmail) {

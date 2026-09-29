@@ -25,7 +25,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.staybook.auth.controller.AuthControllerTest.TestConfig;
 import com.staybook.auth.dto.request.RegisterRequestDto;
-import com.staybook.auth.dto.response.AuthResponseDto;
+import com.staybook.auth.dto.response.UserResponseDto;
 import com.staybook.auth.enums.TypeRole;
 import com.staybook.auth.service.AuthService;
 
@@ -43,7 +43,7 @@ public class AuthControllerTest {
     private AuthService service;
 
     private RegisterRequestDto registerRequestDto;
-    private AuthResponseDto responseDto;
+    private UserResponseDto responseDto;
 
     @BeforeEach
     void setUp() {
@@ -51,7 +51,7 @@ public class AuthControllerTest {
         LocalDateTime createdAt = LocalDateTime.of(2026, 11, 1, 5, 6);
         LocalDateTime updatedAt = LocalDateTime.of(2026, 12, 8, 5, 5);
         registerRequestDto = new RegisterRequestDto("email@email.com", "password", "name", "surname");
-        responseDto = new AuthResponseDto(1L, "email@email.com", "name", "surname", role, createdAt, updatedAt);
+        responseDto = new UserResponseDto(1L, "email@email.com", "name", "surname", role, createdAt, updatedAt);
     }
 
     @Nested
