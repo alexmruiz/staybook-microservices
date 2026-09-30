@@ -72,7 +72,8 @@ public class AuthService {
      * 
      * @param request Credenciales de login (email y contraseña)
      * @return Respuesta con token JWT, tipo de autenticación y datos del usuario
-     * @throws InvalidCredentialsException Si el email no existe o la contraseña es incorrecta
+     * @throws InvalidCredentialsException Si el email no existe o la contraseña es
+     *                                     incorrecta
      */
     public AuthResponseDto login(LoginRequestDto request) {
         try {
@@ -110,6 +111,34 @@ public class AuthService {
                 .orElseThrow(() -> new InvalidCredentialsException("Credenciales no validas"));
 
         return mapper.toResponseDto(auth);
+    }
+
+    /**
+     * Actualiza el perfil de un usuario existente.
+     *
+     * @param email Email del usuario a actualizar
+     * @param requestDto Nuevos datos del perfil (email, nombre, apellido, contraseña)
+     * @return Datos del usuario actualizado
+     * @throws InvalidCredentialsException Si el email no existe en el sistema
+     */
+    @Transactional
+    public UserResponseDto updateUserProfile(String email, RegisterRequestDto requestDto) {
+        if (email == null) {
+            return null;
+        }
+
+        Auth auth = repository.findByEmail(email)
+                .orElseThrow(() -> new InvalidCredentialsException("Credenciales no validas"));
+
+        auth.setName(requestDto.name());
+        auth.setSurname(requestDto.surname());
+        auth.setEmail(requestDto.email());
+        auth.setPassword(passwordEncoder.encode(requestDto.password()));
+        auth.setRole(TypeRole.ROLE_USER);
+
+        Auth result = repository.save(auth);
+
+        return mapper.toResponseDto(result);
     }
 
 }
