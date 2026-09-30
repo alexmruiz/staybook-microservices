@@ -25,9 +25,10 @@ docs/images/architecture.png
 
 ### Microservicios
 
-- Hotels Service → Gestión de hoteles.
-- Booking Service → Gestión de reservas.
-- Reviews Service → Gestión de opiniones.
+- **Auth Service** → Autenticación, registro y gestión de perfiles de usuario con JWT.
+- **Hotels Service** → Gestión de hoteles.
+- **Booking Service** → Gestión de reservas.
+- **Reviews Service** → Gestión de opiniones.
 
 Cada microservicio dispone de:
 
@@ -42,6 +43,7 @@ Cada microservicio dispone de:
 
 ```text
 staybook-microservices/
+├── auth-service/
 ├── hotels-service/
 ├── booking-service/
 ├── reviews-service/
@@ -70,6 +72,7 @@ Servicios disponibles (por defecto en local según `application.properties` de c
 
 | Servicio | URL |
 |----------|-----|
+| Auth API | http://localhost:8083 |
 | Hotels API | http://localhost:8080 |
 | Booking API | http://localhost:8082 |
 | Reviews API | http://localhost:8081 |
@@ -86,6 +89,7 @@ Cada servicio expone su documentación OpenAPI.
 | Hotels | `/swagger-ui/index.html` or `/swagger-ui.html` |
 | Booking | `/swagger-ui` or `/swagger-ui.html` |
 | Reviews | `/swagger-ui.html` |
+| Auth | `/swagger-ui.html` |
 
 Ejemplo:
 
@@ -99,8 +103,8 @@ http://localhost:8081/swagger-ui/index.html
 - [x] DTO + Mapper.
 - [x] Bean Validation.
 - [x] Global Exception Handler.
+- [x] JWT Authentication (Auth Service).
 - [ ] OpenFeign.
-- [ ] JWT Authentication.
 - [x] Unit Testing.
 - [ ] Integration Testing.
 - [ ] Dockerización completa.

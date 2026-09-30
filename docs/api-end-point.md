@@ -1,5 +1,14 @@
 # Endpoints de la API
 
+## Auth Service
+
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| POST | /api/auth/register | Registrar nuevo usuario |
+| POST | /api/auth/login | Autenticar usuario y obtener token JWT |
+| GET | /api/users/me | Obtener perfil del usuario autenticado |
+| PUT | /api/users/me | Actualizar perfil del usuario autenticado |
+
 ## Hotels Service
 
 | Método | Endpoint | Descripción |
