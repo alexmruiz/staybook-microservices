@@ -141,4 +141,34 @@ public class AuthServiceTest {
         }
     }
 
+    @Nested
+    @DisplayName("Test function getUserEmailUser")
+    class getEmailUser {
+
+        @Test
+        void getEmailUser_shouldReturnUserResponseDto() {
+            when(repository.findByEmail(auth.getEmail())).thenReturn(Optional.of(auth));
+            when(mapper.toResponseDto(auth)).thenReturn(response);
+
+            UserResponseDto result = service.getEmailUser(auth.getEmail());
+
+            assertNotNull(result);
+            assertEquals("name", result.name());
+            assertEquals("surname", result.surname());
+
+            verify(repository).findByEmail(auth.getEmail());
+            verify(mapper).toResponseDto(auth);
+        }
+
+        @Test
+        void getEmailUser_shouldReturnInvalidCredentialsException() {
+            when(repository.findByEmail(auth.getEmail())).thenReturn(Optional.empty());
+
+            assertThrows(InvalidCredentialsException.class,( ()->service.getEmailUser(auth.getEmail())));
+
+            verify(repository).findByEmail(auth.getEmail());
+            verify(mapper, never()).toResponseDto(auth);
+        }
+    }
+
 }
