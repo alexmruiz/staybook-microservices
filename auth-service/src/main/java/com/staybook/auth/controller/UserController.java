@@ -12,6 +12,8 @@ import com.staybook.auth.dto.request.RegisterRequestDto;
 import com.staybook.auth.dto.response.UserResponseDto;
 import com.staybook.auth.service.AuthService;
 
+import jakarta.validation.Valid;
+
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
@@ -29,7 +31,7 @@ public class UserController {
     }
 
     @PutMapping("/me")
-    public UserResponseDto updateMyProfile(Principal principal, @RequestBody RegisterRequestDto requestDto) {
+    public UserResponseDto updateMyProfile(Principal principal, @Valid  @RequestBody RegisterRequestDto requestDto) {
         String userEmail = principal.getName();
         return service.updateUserProfile(userEmail, requestDto);
     }
