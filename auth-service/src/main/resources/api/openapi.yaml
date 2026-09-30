@@ -1,4 +1,5 @@
 openapi: 3.0.0
+
 info:
   title: Auth Service API
   version: 1.0.0
@@ -11,16 +12,36 @@ servers:
 tags:
   - name: Autenticación
     description: Endpoints para registro e inicio de sesión
+
   - name: Usuarios
     description: Endpoints para gestión de perfiles de usuario
 
 paths:
   /api/auth/register:
     $ref: './paths/auth-controller.yaml#/register'
+
   /api/auth/login:
     $ref: './paths/auth-controller.yaml#/login'
+
   /api/users/me:
     $ref: './paths/user-controller.yaml#/userProfile'
 
 components:
-  $ref: './schemas/schemas.yaml#/components'
+  schemas:
+    LoginRequestDto:
+      $ref: './components/auth-schemas.yaml#/LoginRequestDto'
+
+    RegisterRequestDto:
+      $ref: './components/auth-schemas.yaml#/RegisterRequestDto'
+
+    AuthResponseDto:
+      $ref: './components/auth-schemas.yaml#/AuthResponseDto'
+
+    UserResponseDto:
+      $ref: './components/auth-schemas.yaml#/UserResponseDto'
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
