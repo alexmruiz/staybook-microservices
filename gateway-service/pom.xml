@@ -13,7 +13,7 @@
     <groupId>com.staybook</groupId>
     <artifactId>gateway</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>gateway</name>
+    <name>gateway-service</name>
     <description>Gateway Service para StayBook</description>
     
     <properties>
