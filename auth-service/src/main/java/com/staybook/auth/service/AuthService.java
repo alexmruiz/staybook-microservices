@@ -21,6 +21,10 @@ import com.staybook.auth.mapper.AuthMapper;
 import com.staybook.auth.repository.AuthRepository;
 import com.staybook.auth.security.JwtService;
 
+/**
+ * Servicio de autenticación y autorización.
+ * Gestiona el registro, login y consulta de usuarios.
+ */
 @Service
 public class AuthService {
 
@@ -39,6 +43,13 @@ public class AuthService {
         this.jwtService = jwtService;
     }
 
+    /**
+     * Registra un nuevo usuario en el sistema.
+     *
+     * @param request Datos de registro que contienen email, nombre y contraseña
+     * @return Datos del usuario registrado (sin contraseña)
+     * @throws EmailAlreadyExistsException Si el email ya está registrado
+     */
     @Transactional
     public UserResponseDto register(RegisterRequestDto request) {
         boolean existEmail = repository.findByEmail(request.email()).isPresent();
@@ -56,28 +67,49 @@ public class AuthService {
         return mapper.toResponseDto(saved);
     }
 
+    /**
+     * Autentica un usuario con sus credenciales.
+     * 
+     * @param request Credenciales de login (email y contraseña)
+     * @return Respuesta con token JWT, tipo de autenticación y datos del usuario
+     * @throws InvalidCredentialsException Si el email no existe o la contraseña es incorrecta
+     */
     public AuthResponseDto login(LoginRequestDto request) {
-        // 1. Spring Security autentica las credenciales
         try {
+            // Spring Security valida las credenciales contra la base de datos
             Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.email(), request.password()));
+                    new UsernamePasswordAuthenticationToken(request.email(), request.password()));
 
-            // 2. Si pasa, obtenemos los detalles del usuario autenticado
             UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-
             Auth user = (Auth) userDetails;
 
-            // 4. Generamos el token JWT usando nuestro JwtService
+            // Generamos el token JWT con los datos del usuario autenticado
             String jwtToken = jwtService.generateToken(userDetails);
 
-            // 5. Retornamos la respuesta con el token, tipo y expiración
-            return new AuthResponseDto(jwtToken, "Bearer", jwtService.getJwtExpiration(), user.getEmail(), user.getRole());
+            return new AuthResponseDto(jwtToken, "Bearer", jwtService.getJwtExpiration(), user.getEmail(),
+                    user.getRole());
 
         } catch (AuthenticationException e) {
-            // Si el email no existe o la contraseña es incorrecta, lanzamos la excepción
-            // 401
             throw new InvalidCredentialsException("Email o contraseña incorrectos");
         }
+    }
+
+    /**
+     * Obtiene los datos de un usuario a partir de su email.
+     *
+     * @param email Email del usuario a buscar
+     * @return Datos del usuario (sin contraseña), o null si el email es null
+     * @throws InvalidCredentialsException Si el email no existe en el sistema
+     */
+    public UserResponseDto getEmailUser(String email) {
+        if (email == null) {
+            return null;
+        }
+
+        Auth auth = repository.findByEmail(email)
+                .orElseThrow(() -> new InvalidCredentialsException("Credenciales no validas"));
+
+        return mapper.toResponseDto(auth);
     }
 
 }
