@@ -171,4 +171,71 @@ public class AuthServiceTest {
         }
     }
 
+    @Nested
+    @DisplayName ("Test function updateuserProfile")
+    class UpdateUserProfileTest {
+
+        @Test
+        void updateUserProfile_WhenEmailExists_ShouldUpdateAndReturnResponse() {
+            // Arrange
+            String email = "carlos@example.com";
+            RegisterRequestDto updateRequestDto = new RegisterRequestDto("nuevo@example.com", "newPassword", "Carlos Updated", "Gómez Updated");
+
+            Auth existingAuth = new Auth();
+            existingAuth.setEmail(email);
+            existingAuth.setName("Carlos");
+            existingAuth.setSurname("Gómez");
+            existingAuth.setPassword("oldHash");
+
+            Auth savedAuth = new Auth();
+            savedAuth.setEmail("nuevo@example.com");
+            savedAuth.setName("Carlos Updated");
+            savedAuth.setSurname("Gómez Updated");
+            savedAuth.setPassword("encodedNewPassword");
+            savedAuth.setRole(TypeRole.ROLE_USER);
+
+            UserResponseDto expectedResponse = new UserResponseDto(
+                1L, "nuevo@example.com", "Carlos Updated", "Gómez Updated", TypeRole.ROLE_USER, LocalDateTime.now(), LocalDateTime.now()
+            );
+
+            when(repository.findByEmail(email)).thenReturn(Optional.of(existingAuth));
+            when(passwordEncoder.encode("newPassword")).thenReturn("encodedNewPassword");
+            when(repository.save(existingAuth)).thenReturn(savedAuth);
+            when(mapper.toResponseDto(savedAuth)).thenReturn(expectedResponse);
+
+            // Act
+            UserResponseDto result = service.updateUserProfile(email, updateRequestDto);
+
+            // Assert
+            assertNotNull(result);
+            assertEquals("nuevo@example.com", result.email());
+            assertEquals("Carlos Updated", result.name());
+            assertEquals("Gómez Updated", result.surname());
+
+            verify(repository).findByEmail(email);
+            verify(passwordEncoder).encode("newPassword");
+            verify(repository).save(existingAuth);
+            verify(mapper).toResponseDto(savedAuth);
+        }
+
+        @Test
+        void updateUserProfile_WhenEmailDoesNotExist_ShouldThrowException() {
+            // Arrange
+            String email = "noexiste@example.com";
+
+            when(repository.findByEmail(email)).thenReturn(Optional.empty());
+
+            // Act & Assert
+            InvalidCredentialsException exception = assertThrows(
+                InvalidCredentialsException.class,
+                () -> service.updateUserProfile(email, requestDto)
+            );
+
+            assertEquals("Credenciales no validas", exception.getMessage());
+            verify(repository).findByEmail(email);
+            verify(repository, never()).save(any());
+            verify(passwordEncoder, never()).encode(any());
+        }
+    }
+
 }
