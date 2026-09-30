@@ -1,0 +1,118 @@
+LoginRequestDto:
+  type: object
+  properties:
+    email:
+      type: string
+      format: email
+      description: Correo electrónico del usuario
+      example: usuario@example.com
+    password:
+      type: string
+      description: Contraseña del usuario
+      example: '12345678'
+  required:
+    - email
+    - password
+
+RegisterRequestDto:
+  type: object
+  properties:
+    email:
+      type: string
+      format: email
+      description: Correo electrónico del usuario
+      example: usuario@example.com
+    password:
+      type: string
+      minLength: 8
+      description: Contraseña del usuario (mínimo 8 caracteres)
+      example: 'Password123'
+    name:
+      type: string
+      description: Nombre del usuario
+      example: Carlos
+    surname:
+      type: string
+      description: Apellido del usuario
+      example: Gómez
+  required:
+    - email
+    - password
+    - name
+    - surname
+
+AuthResponseDto:
+  type: object
+  properties:
+    token:
+      type: string
+      description: Token de autenticación JWT
+      example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+    tokenType:
+      type: string
+      description: Tipo de token
+      example: Bearer
+    expiresIn:
+      type: integer
+      format: int64
+      description: Tiempo de expiración del token en milisegundos o segundos
+      example: 86400
+    email:
+      type: string
+      format: email
+      description: Correo electrónico del usuario autenticado
+      example: usuario@example.com
+    role:
+      type: string
+      description: Rol asignado al usuario en el sistema
+      example: ROLE_USER
+  required:
+    - token
+    - tokenType
+    - expiresIn
+    - email
+    - role
+
+UserResponseDto:
+  type: object
+  properties:
+    id:
+      type: integer
+      format: int64
+      description: Identificador único autogenerado del usuario
+      example: 1
+    email:
+      type: string
+      format: email
+      description: Correo electrónico del usuario
+      example: usuario@example.com
+    name:
+      type: string
+      description: Nombre del usuario
+      example: Carlos
+    surname:
+      type: string
+      description: Apellido del usuario
+      example: Gómez
+    role:
+      type: string
+      description: Rol asignado al usuario
+      example: ROLE_USER
+    createdAt:
+      type: string
+      format: date-time
+      description: Fecha y hora de creación del registro de usuario
+      example: '2026-08-24T17:30:00'
+    updatedAt:
+      type: string
+      format: date-time
+      description: Fecha y hora de la última actualización del usuario
+      example: '2026-08-24T17:30:00'
+  required:
+    - id
+    - email
+    - name
+    - surname
+    - role
+    - createdAt
+    - updatedAt

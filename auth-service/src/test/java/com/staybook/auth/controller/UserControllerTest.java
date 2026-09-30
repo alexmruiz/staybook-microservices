@@ -41,6 +41,7 @@ class UserControllerTest {
 
     private Auth auth;
     private UserResponseDto response;
+    private UserResponseDto responseUpdate;
     private RegisterRequestDto requestDto;
 
     @BeforeEach
@@ -49,7 +50,9 @@ class UserControllerTest {
         LocalDateTime updatedAt = LocalDateTime.of(2026, 10, 6, 6, 6);
 
         this.auth = new Auth("email@email.com", "name", "surname");
-        this.response = new UserResponseDto(1L, "email@email.test", "name1", "surname1", TypeRole.ROLE_USER, createdAt,
+        this.response = new UserResponseDto(1L, "email@email.com", "name", "surname", TypeRole.ROLE_USER, createdAt,
+                updatedAt);
+        responseUpdate = new UserResponseDto(1L, "email@email.test", "name1", "surname1", TypeRole.ROLE_USER, createdAt,
                 updatedAt);
         requestDto = new RegisterRequestDto("email@email.test", "passwordTest", "name1", "surname1");
     }
@@ -89,7 +92,7 @@ class UserControllerTest {
 
         @Test
         void updateUserProfile_ShouldReturnUserResponseDto() throws Exception {
-            when(service.updateUserProfile(auth.getEmail(), requestDto)).thenReturn(response);
+            when(service.updateUserProfile(auth.getEmail(), requestDto)).thenReturn(responseUpdate);
 
             mockMvc.perform(put("/api/users/me")
                     .with(user(auth.getEmail()))

@@ -18,6 +18,10 @@ Gestiona las reservas y consulta información del servicio de hoteles.
 
 Gestiona las valoraciones de los hoteles.
 
+### Auth Service
+
+Gestiona la autenticación del usuario.
+
 ## Comunicación
 
 Bookings Service ───► Hotels Service

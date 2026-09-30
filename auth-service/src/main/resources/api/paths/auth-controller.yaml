@@ -1,0 +1,63 @@
+register:
+  post:
+    tags:
+      - Autenticación
+    summary: Registrar nuevo usuario
+    operationId: register
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/schemas.yaml#/components/schemas/RegisterRequestDto'
+    responses:
+      '201':
+        description: Usuario registrado exitosamente
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/schemas.yaml#/components/schemas/UserResponseDto'
+      '400':
+        description: Datos de entrada inválidos
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/schemas.yaml#/components/schemas/ErrorResponse'
+      '409':
+        description: El email ya está registrado
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/schemas.yaml#/components/schemas/ErrorResponse'
+
+login:
+  post:
+    tags:
+      - Autenticación
+    summary: Autenticar usuario y obtener token JWT
+    operationId: login
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/schemas.yaml#/components/schemas/LoginRequestDto'
+    responses:
+      '200':
+        description: Autenticación exitosa
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/schemas.yaml#/components/schemas/AuthResponseDto'
+      '400':
+        description: Credenciales inválidas o datos incompletos
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/schemas.yaml#/components/schemas/ErrorResponse'
+      '401':
+        description: Email o contraseña incorrectos
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/schemas.yaml#/components/schemas/ErrorResponse'
