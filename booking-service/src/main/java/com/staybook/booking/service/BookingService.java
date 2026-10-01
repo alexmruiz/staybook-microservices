@@ -60,7 +60,7 @@ public class BookingService {
      * @return BookingResponseDto response
      */
     @Transactional
-    public BookingResponseDto create(BookingRequestDto request) {
+    public BookingResponseDto create(Long userId, BookingRequestDto request) {
         if (!request.checkInDate().isBefore(request.checkOutDate())) {
             throw new InvalidDateRangeException("La fecha de salida debe ser posterior a la fecha de entrada");
         }
@@ -97,6 +97,7 @@ public class BookingService {
         Booking booking = mapper.toEntity(request);
 
         booking.setStatus(BookingStatus.PENDING);
+        booking.setId(userId);
         booking.setTotalPrice(priceTotal);
         booking.setBookingReference(this.generateBookingReference());
 
