@@ -74,7 +74,7 @@ class BookingControllerTest {
         LocalDateTime updatedAt = LocalDateTime.of(2026, 11, 5, 10, 0);
         String bookingReference = UUID.randomUUID().toString();
 
-        booking = new Booking(userId, hotelId, roomTypeId, checkIn, checkOut);
+        booking = new Booking(hotelId, roomTypeId, checkIn, checkOut, 1);
         responseDto = new BookingResponseDto(1L, userId, hotelId, roomTypeId, checkIn, checkOut, status, price,
                 createdAt,
                 updatedAt, bookingReference);
