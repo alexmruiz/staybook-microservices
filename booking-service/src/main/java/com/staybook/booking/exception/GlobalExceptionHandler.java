@@ -13,6 +13,11 @@ public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
+    @ExceptionHandler(BookingAccessDeniedException.class)
+    public ProblemDetail handleBookingAccessDenied(BookingAccessDeniedException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, ex.getMessage());
+    }
+
     // 404 NOT FOUND - Recurso de reserva no encontrado
     @ExceptionHandler(BookingNotFoundException.class)
     public ProblemDetail handleBookingNotFound(BookingNotFoundException ex) {
