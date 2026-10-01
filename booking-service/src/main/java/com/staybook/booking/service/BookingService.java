@@ -100,7 +100,7 @@ public class BookingService {
         Booking booking = mapper.toEntity(request);
 
         booking.setStatus(BookingStatus.PENDING);
-        booking.setId(userId);
+        booking.setUserId(userId);
         booking.setTotalPrice(priceTotal);
         booking.setBookingReference(this.generateBookingReference());
 
