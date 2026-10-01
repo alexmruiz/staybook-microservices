@@ -10,6 +10,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 
 @Service
@@ -40,7 +41,7 @@ public class JwtService {
             .claim("userId", userId)
             .setIssuedAt(new Date(System.currentTimeMillis())) // Fecha de creación
             .setExpiration(new Date(System.currentTimeMillis() + jwtExpiration)) // 'exp': Expiración
-            .signWith(getSignInKey())           // Firma digital con nuestra clave secreta
+            .signWith(getSignInKey(), SignatureAlgorithm.HS256) // Firma digital HS256
             .compact();
     }
 
