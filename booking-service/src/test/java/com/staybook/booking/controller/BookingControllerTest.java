@@ -1,11 +1,13 @@
 package com.staybook.booking.controller;
 
+import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -16,17 +18,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import static org.hamcrest.Matchers.hasSize;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -42,8 +42,6 @@ import com.staybook.booking.entity.Booking;
 import com.staybook.booking.enums.BookingStatus;
 import com.staybook.booking.exception.BookingNotFoundException;
 import com.staybook.booking.service.BookingService;
-
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 
 @WebMvcTest(BookingController.class)
 class BookingControllerTest {
@@ -83,9 +81,10 @@ class BookingControllerTest {
 
     @Test
     void create_WhenValidRequest_ShouldReturn201Created() throws Exception {
-        when(service.create(any(BookingRequestDto.class))).thenReturn(responseDto);
+        when(service.create(eq(1L), any(BookingRequestDto.class))).thenReturn(responseDto);
 
         mockMvc.perform(post("/api/bookings")
+            .header("X-User-Id", 1L)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(requestDto)))
                 .andExpect(status().isCreated())
@@ -93,7 +92,7 @@ class BookingControllerTest {
                 .andExpect(jsonPath("$.userId").value(1))
                 .andExpect(jsonPath("$.status").value("CONFIRMED")); // compare as string
 
-        verify(service).create(any(BookingRequestDto.class));
+        verify(service).create(eq(1L), any(BookingRequestDto.class));
     }
 
     @Test
@@ -128,7 +127,7 @@ class BookingControllerTest {
         when(service.findAll(any(Pageable.class), eq(userId))).thenReturn(page);
 
         mockMvc.perform(get("/api/bookings")
-                .param("userId", "1")
+            .header("X-User-Id", userId)
                 .param("page", "0")
                 .param("size", "10"))
                 .andDo(print())
@@ -149,7 +148,7 @@ class BookingControllerTest {
         when(service.findAll(any(Pageable.class), eq(userId))).thenReturn(empty);
 
         mockMvc.perform(get("/api/bookings")
-                .param("userId", "2")
+                .header("X-User-Id", userId)
                 .param("page", "0")
                 .param("size", "10"))
                 .andExpect(status().isOk())
@@ -175,10 +174,11 @@ class BookingControllerTest {
         BookingDetailResponseDto bookingDetailResponseDto = new BookingDetailResponseDto(responseDto, hotelDto,
                 reviewsDto);
 
-        when(service.getBookingDetails(1L)).thenReturn(bookingDetailResponseDto);
+        when(service.getBookingDetails(1L, 2L)).thenReturn(bookingDetailResponseDto);
 
         // Act & Assert
         mockMvc.perform(get("/api/bookings/1/details")
+        .header("X-User-Id", "2")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.hotel.name").value("Hotel Palace"))
@@ -191,10 +191,11 @@ class BookingControllerTest {
         BookingDetailResponseDto bookingDetailResponseDtoNullHotel = new BookingDetailResponseDto(responseDto, null,
                 List.of());
 
-        when(service.getBookingDetails(1L)).thenReturn(bookingDetailResponseDtoNullHotel);
+        when(service.getBookingDetails(1L, 2L)).thenReturn(bookingDetailResponseDtoNullHotel);
 
         // Act & Assert
         mockMvc.perform(get("/api/bookings/1/details")
+        .header("X-User-Id", 2)
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.hotel").doesNotExist()) // o .value(null) según serialización
