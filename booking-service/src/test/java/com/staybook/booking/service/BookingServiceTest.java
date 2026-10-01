@@ -48,6 +48,7 @@ import com.staybook.booking.entity.Booking;
 import com.staybook.booking.enums.BookingStatus;
 import com.staybook.booking.exception.BookingNotFoundException;
 import com.staybook.booking.exception.InvalidBookingStateException;
+import com.staybook.booking.exception.BookingAccessDeniedException;
 import com.staybook.booking.exception.InvalidDateRangeException;
 import com.staybook.booking.mapper.BookingMapper;
 import com.staybook.booking.repository.BookingRepository;
@@ -189,7 +190,7 @@ class BookingServiceTest {
                 when(repository.findById(1L)).thenReturn(Optional.of(booking));
                 when(mapper.toResponseDto(booking)).thenReturn(response);
 
-                BookingResponseDto result = service.findById(1L);
+                BookingResponseDto result = service.findById(11L, 1L);
 
                 assertNotNull(result);
                 assertEquals(result, response);
@@ -205,11 +206,28 @@ class BookingServiceTest {
                 when(repository.findById(idInexistente)).thenReturn(Optional.empty());
 
                 BookingNotFoundException exception = assertThrows(
-                                BookingNotFoundException.class, () -> service.findById(idInexistente));
+                                BookingNotFoundException.class, () -> service.findById(11L, idInexistente));
 
                 assertEquals("Reserva no encontrada con id: 99", exception.getMessage());
 
                 verify(repository).findById(idInexistente);
+                verify(mapper, never()).toResponseDto(any());
+        }
+
+        @Test
+        void findById_WhenUserDoesNotOwnBooking_ShouldThrowAccessDeniedException() {
+                Long bookingId = 1L;
+                Long anotherUserId = 11L;
+
+                when(repository.findById(bookingId)).thenReturn(Optional.of(booking));
+
+                BookingAccessDeniedException exception = assertThrows(
+                                BookingAccessDeniedException.class,
+                                () -> service.findById(anotherUserId, bookingId));
+
+                assertEquals("No tienes acceso a esta reserva", exception.getMessage());
+
+                verify(repository).findById(bookingId);
                 verify(mapper, never()).toResponseDto(any());
         }
 
@@ -358,7 +376,7 @@ class BookingServiceTest {
                         when(reviewsClient.getReviewsByHotelId(booking.getHotelId()))
                                         .thenThrow(new RuntimeException("down"));
 
-                        BookingDetailResponseDto result = service.getBookingDetails(userId, id);
+                        BookingDetailResponseDto result = service.getBookingDetails(id, userId);
 
                         assertNotNull(result);
                         assertSame(response, result.booking());

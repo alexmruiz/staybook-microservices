@@ -40,8 +40,8 @@ public class BookingController {
     }
 
     @GetMapping("/{bookingId}") 
-    public BookingResponseDto findById(@PathVariable("bookingId") Long bookingId) {
-        return service.findById(bookingId);
+    public BookingResponseDto findById(@RequestHeader("X-User-Id") Long userId, @PathVariable("bookingId") Long bookingId) {
+        return service.findById(userId, bookingId);
     }
 
     @GetMapping

@@ -122,16 +122,22 @@ public class BookingService {
     /**
      * Busca una reserva por id, si no la encuentra lanza una excepción
      * 
-     * @param bookingId
-     * @return
+     * @param Long userId
+     * @param Long bookingId
+     * @return BookingResponseDto
      */
-    public BookingResponseDto findById(Long bookingId) {
+    public BookingResponseDto findById(Long userId, Long bookingId) {
+
         if (bookingId == null || bookingId < 1) {
             throw new BookingNotFoundException(BOOKING_NOT_FOUND + bookingId);
         }
 
         Booking booking = repository.findById(bookingId)
                 .orElseThrow(() -> new BookingNotFoundException(BOOKING_NOT_FOUND + bookingId));
+        
+        if (!booking.getUserId().equals(userId)) {
+            throw new BookingAccessDeniedException(ACCESS_DENIED);
+        }
 
         return mapper.toResponseDto(booking);
     }

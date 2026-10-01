@@ -97,25 +97,27 @@ class BookingControllerTest {
 
     @Test
     void findById_WhenExists_ShouldReturn200Ok() throws Exception {
-        when(service.findById(1L)).thenReturn(responseDto);
+        when(service.findById(11L, 1L)).thenReturn(responseDto);
 
-        mockMvc.perform(get("/api/bookings/{bookingId}", 1L))
+        mockMvc.perform(get("/api/bookings/{bookingId}", 1L)
+                .header("X-User-Id", "11"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.userId").value(1));
 
-        verify(service).findById(1L);
+        verify(service).findById(11L, 1L);
     }
 
     @Test
     @DisplayName("Debe devolver el status configurado por la excepción si no existe")
     void findById_WhenNotFound_ShouldReturnError() throws Exception {
-        when(service.findById(999L)).thenThrow(new BookingNotFoundException("Reserva no encontrada con id: "));
+        when(service.findById(11L, 999L)).thenThrow(new BookingNotFoundException("Reserva no encontrada con id: "));
 
-        mockMvc.perform(get("/api/bookings/{bookingId}", 999L))
+        mockMvc.perform(get("/api/bookings/{bookingId}", 999L)
+                 .header("X-User-Id", "11"))
                 .andExpect(status().isNotFound());
 
-        verify(service).findById(999L);
+        verify(service).findById(11L, 999L);
     }
 
     @Test
