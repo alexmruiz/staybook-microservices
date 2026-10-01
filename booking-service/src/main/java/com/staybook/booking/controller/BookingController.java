@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -20,7 +19,6 @@ import com.staybook.booking.dto.response.BookingResponseDto;
 import com.staybook.booking.service.BookingService;
 
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Positive;
 
 @RestController 
 @RequestMapping("/api/bookings")
@@ -47,13 +45,13 @@ public class BookingController {
     }
 
     @GetMapping
-    public Page<BookingResponseDto> findAll(@RequestParam @Positive Long userId, Pageable pageable) {
+    public Page<BookingResponseDto> findAll(@RequestHeader("X-User-Id") Long userId, Pageable pageable) {
         return service.findAll(pageable, userId);
     }
 
     @GetMapping("/{bookingId}/details")
-    public BookingDetailResponseDto getBookingDetails(@PathVariable("bookingId") Long bookingId) {
-        return service.getBookingDetails(bookingId);
+    public BookingDetailResponseDto getBookingDetails(@PathVariable("bookingId") Long bookingId, @RequestHeader("X-User-Id") Long userId) {
+        return service.getBookingDetails(bookingId, userId);
     }
 
     @PostMapping("/{bookingId}/confirm")
