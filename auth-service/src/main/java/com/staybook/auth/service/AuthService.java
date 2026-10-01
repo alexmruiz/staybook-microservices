@@ -85,7 +85,7 @@ public class AuthService {
             Auth user = (Auth) userDetails;
 
             // Generamos el token JWT con los datos del usuario autenticado
-            String jwtToken = jwtService.generateToken(userDetails);
+            String jwtToken = jwtService.generateToken(userDetails, user.getId());
 
             return new AuthResponseDto(jwtToken, "Bearer", jwtService.getJwtExpiration(), user.getEmail(),
                     user.getRole());
