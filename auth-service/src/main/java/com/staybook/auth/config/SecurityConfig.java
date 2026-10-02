@@ -10,6 +10,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ProblemDetail;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -21,6 +24,8 @@ import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Configuration
 @EnableWebSecurity
@@ -56,14 +61,16 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**", "/v3/api-docs/**", "/swagger-ui/**", "/api/openapi.yaml")
                         .permitAll().anyRequest().authenticated())
-                .oauth2ResourceServer(oauth2 -> oauth2
-                    .jwt(jwt -> {})
-                    .authenticationEntryPoint((request, response, exception) -> {
-                        log.warn("JWT authentication failed. method={}, path={}, exception={}, message={}",
-                            request.getMethod(), request.getRequestURI(), exception.getClass().getSimpleName(),
+                .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> {
+                }).authenticationEntryPoint((request, response, exception) -> {
+                    log.warn("JWT authentication failed. path={}, exception={}", request.getRequestURI(),
                             exception.getMessage());
-                        response.sendError(401, "Unauthorized");
-                    }));
+                    response.setStatus(HttpStatus.UNAUTHORIZED.value());
+                    response.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
+                    ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED,
+                            "Token inválido o ausente");
+                    new ObjectMapper().writeValue(response.getWriter(), problem);
+                }));
 
         return http.build();
     }
