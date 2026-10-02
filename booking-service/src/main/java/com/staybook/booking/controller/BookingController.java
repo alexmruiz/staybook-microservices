@@ -22,26 +22,24 @@ import com.staybook.booking.service.BookingService;
 
 import jakarta.validation.Valid;
 
-@RestController 
+@RestController
 @RequestMapping("/api/bookings")
-@Validated 
+@Validated
 public class BookingController {
-    
+
     private final BookingService service;
 
     public BookingController(BookingService service) {
         this.service = service;
     }
 
-    @PostMapping 
+    @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public BookingResponseDto save(
-        @AuthenticationPrincipal Jwt jwt,
-        @Valid @RequestBody BookingRequestDto requestDto){
+    public BookingResponseDto save(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody BookingRequestDto requestDto) {
         return service.create(userId(jwt), requestDto);
     }
 
-    @GetMapping("/{bookingId}") 
+    @GetMapping("/{bookingId}")
     public BookingResponseDto findById(@AuthenticationPrincipal Jwt jwt, @PathVariable("bookingId") Long bookingId) {
         return service.findById(userId(jwt), bookingId);
     }
@@ -58,12 +56,12 @@ public class BookingController {
     }
 
     @PostMapping("/{bookingId}/confirm")
-    public BookingResponseDto confirmBooking (@PathVariable("bookingId") Long bookingId) {
+    public BookingResponseDto confirmBooking(@PathVariable("bookingId") Long bookingId) {
         return service.confirmBooking(bookingId);
     }
 
     @PostMapping("/{bookingId}/cancel")
-    public BookingResponseDto cancelBooking (@PathVariable("bookingId") Long bookingId) {
+    public BookingResponseDto cancelBooking(@PathVariable("bookingId") Long bookingId) {
         return service.cancelBooking(bookingId);
     }
 

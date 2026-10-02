@@ -223,6 +223,7 @@ class BookingRepositoryTest {
         Booking booking = new Booking(HOTEL_ID, ROOM_ID, checkIn, checkOut, GUESTS_COUNT);
         booking.setStatus(BookingStatus.PENDING);
         booking.setTotalPrice(BigDecimal.ZERO);
+        booking.setUserId(12L);
         return booking;
     }
 }

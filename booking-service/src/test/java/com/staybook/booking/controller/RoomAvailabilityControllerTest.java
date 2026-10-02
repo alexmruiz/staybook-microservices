@@ -2,6 +2,7 @@ package com.staybook.booking.controller;
 
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -52,6 +53,7 @@ class RoomAvailabilityControllerTest {
                 .thenReturn(List.of(responseDto));
 
         mockMvc.perform(get("/api/room-availability")
+            .with(jwt().jwt(jwt -> jwt.claim("userId", 1L)))
                 .param("hotelId", hotelId.toString())
                 .param("roomTypeId", roomTypeId.toString())
                 .param("startDate", startDate.toString())

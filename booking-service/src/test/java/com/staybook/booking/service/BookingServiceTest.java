@@ -85,7 +85,7 @@ class BookingServiceTest {
 
         @BeforeEach
         void setUp() {
-                userId = 1L;
+                userId = 11L;
                 Long hotelId = 1L;
                 Long roomTypeId = 1L;
                 LocalDate checkIn = LocalDate.of(2026, 11, 5);
@@ -122,7 +122,7 @@ class BookingServiceTest {
                 BookingResponseDto result = service.create(userId, request);
 
                 assertNotNull(result);
-                assertEquals(1L, result.userId());
+                assertEquals(11L, result.userId());
                 assertEquals(1L, result.roomTypeId());
 
                 verify(mapper).toEntity(request);
@@ -217,7 +217,7 @@ class BookingServiceTest {
         @Test
         void findById_WhenUserDoesNotOwnBooking_ShouldThrowAccessDeniedException() {
                 Long bookingId = 1L;
-                Long anotherUserId = 11L;
+                Long anotherUserId = 171L;
 
                 when(repository.findById(bookingId)).thenReturn(Optional.of(booking));
 

@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -84,7 +85,7 @@ class BookingControllerTest {
         when(service.create(eq(1L), any(BookingRequestDto.class))).thenReturn(responseDto);
 
         mockMvc.perform(post("/api/bookings")
-            .header("X-User-Id", 1L)
+                .with(jwt().jwt(jwt -> jwt.claim("userId", 1L)))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(requestDto)))
                 .andExpect(status().isCreated())
@@ -100,7 +101,7 @@ class BookingControllerTest {
         when(service.findById(11L, 1L)).thenReturn(responseDto);
 
         mockMvc.perform(get("/api/bookings/{bookingId}", 1L)
-                .header("X-User-Id", "11"))
+            .with(jwt().jwt(jwt -> jwt.claim("userId", 11L))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.userId").value(1));
@@ -114,7 +115,7 @@ class BookingControllerTest {
         when(service.findById(11L, 999L)).thenThrow(new BookingNotFoundException("Reserva no encontrada con id: "));
 
         mockMvc.perform(get("/api/bookings/{bookingId}", 999L)
-                 .header("X-User-Id", "11"))
+            .with(jwt().jwt(jwt -> jwt.claim("userId", 11L))))
                 .andExpect(status().isNotFound());
 
         verify(service).findById(11L, 999L);
@@ -129,7 +130,7 @@ class BookingControllerTest {
         when(service.findAll(any(Pageable.class), eq(userId))).thenReturn(page);
 
         mockMvc.perform(get("/api/bookings")
-            .header("X-User-Id", userId)
+                .with(jwt().jwt(jwt -> jwt.claim("userId", userId)))
                 .param("page", "0")
                 .param("size", "10"))
                 .andDo(print())
@@ -150,7 +151,7 @@ class BookingControllerTest {
         when(service.findAll(any(Pageable.class), eq(userId))).thenReturn(empty);
 
         mockMvc.perform(get("/api/bookings")
-                .header("X-User-Id", userId)
+            .with(jwt().jwt(jwt -> jwt.claim("userId", userId)))
                 .param("page", "0")
                 .param("size", "10"))
                 .andExpect(status().isOk())
@@ -180,7 +181,7 @@ class BookingControllerTest {
 
         // Act & Assert
         mockMvc.perform(get("/api/bookings/1/details")
-        .header("X-User-Id", "2")
+            .with(jwt().jwt(jwt -> jwt.claim("userId", 2L)))
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.hotel.name").value("Hotel Palace"))
@@ -197,7 +198,7 @@ class BookingControllerTest {
 
         // Act & Assert
         mockMvc.perform(get("/api/bookings/1/details")
-        .header("X-User-Id", 2)
+            .with(jwt().jwt(jwt -> jwt.claim("userId", 2L)))
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.hotel").doesNotExist()) // o .value(null) según serialización
@@ -213,7 +214,8 @@ class BookingControllerTest {
 
             when(service.confirmBooking(bookingId)).thenReturn(responseDto);
 
-            mockMvc.perform(post("/api/bookings/{bookingId}/confirm", bookingId))
+                mockMvc.perform(post("/api/bookings/{bookingId}/confirm", bookingId)
+                    .with(jwt().jwt(jwt -> jwt.claim("userId", 1L))))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.id").value(bookingId.intValue()))
                     .andExpect(jsonPath("$.status").value("CONFIRMED"))
@@ -227,7 +229,8 @@ class BookingControllerTest {
 
             when(service.confirmBooking(bookingId)).thenThrow(new BookingNotFoundException(message));
 
-            mockMvc.perform(post("/api/bookings/{bookingId}/confirm", bookingId))
+                mockMvc.perform(post("/api/bookings/{bookingId}/confirm", bookingId)
+                    .with(jwt().jwt(jwt -> jwt.claim("userId", 1L))))
                     .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.detail").value(message));
         }
@@ -242,7 +245,8 @@ class BookingControllerTest {
 
             when(service.cancelBooking(bookingId)).thenReturn(responseDto);
 
-            mockMvc.perform(post("/api/bookings/{bookingId}/cancel", bookingId))
+                mockMvc.perform(post("/api/bookings/{bookingId}/cancel", bookingId)
+                    .with(jwt().jwt(jwt -> jwt.claim("userId", 1L))))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.id").value(bookingId.intValue()))
                     .andExpect(jsonPath("$.status").value("CONFIRMED"))
@@ -258,7 +262,8 @@ class BookingControllerTest {
 
             when(service.cancelBooking(bookingId)).thenThrow(new BookingNotFoundException(message));
 
-            mockMvc.perform(post("/api/bookings/{bookingId}/cancel", bookingId))
+                mockMvc.perform(post("/api/bookings/{bookingId}/cancel", bookingId)
+                    .with(jwt().jwt(jwt -> jwt.claim("userId", 1L))))
                     .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.detail").value(message));
         }
