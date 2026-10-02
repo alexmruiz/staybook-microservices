@@ -32,7 +32,6 @@ import com.staybook.booking.enums.BookingStatus;
 class BookingRepositoryTest {
 
     private static final long HOTEL_ID = 1L;
-    private static final long USER_ID = 2L;
     private static final long ROOM_ID = 3L;
     private static final int GUESTS_COUNT = 1;
     private static final int THREAD_POOL_SIZE = 2;
@@ -221,9 +220,10 @@ class BookingRepositoryTest {
     private Booking createTestBooking() {
         LocalDate checkIn = LocalDate.now().plusDays(1);
         LocalDate checkOut = checkIn.plusDays(1);
-        Booking booking = new Booking(HOTEL_ID, USER_ID, ROOM_ID, checkIn, checkOut, GUESTS_COUNT);
+        Booking booking = new Booking(HOTEL_ID, ROOM_ID, checkIn, checkOut, GUESTS_COUNT);
         booking.setStatus(BookingStatus.PENDING);
         booking.setTotalPrice(BigDecimal.ZERO);
+        booking.setUserId(12L);
         return booking;
     }
 }

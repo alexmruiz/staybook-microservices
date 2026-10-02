@@ -22,6 +22,7 @@ import com.staybook.booking.dto.response.ReviewSummaryDto;
 import com.staybook.booking.entity.Booking;
 import com.staybook.booking.entity.RoomAvailability;
 import com.staybook.booking.enums.BookingStatus;
+import com.staybook.booking.exception.BookingAccessDeniedException;
 import com.staybook.booking.exception.BookingNotFoundException;
 import com.staybook.booking.exception.InvalidBookingStateException;
 import com.staybook.booking.exception.InvalidDateRangeException;
@@ -36,10 +37,12 @@ public class BookingService {
 
     private static final Logger log = LoggerFactory.getLogger(BookingService.class);
 
-    private final BookingRepository repository;
-    private final BookingMapper mapper;
     private static final String BOOKING_NOT_FOUND = "Reserva no encontrada con id: ";
     private static final String ROOM_NOT_AVAILABLE = "Habitación no disponible";
+    private static final String ACCESS_DENIED = "No tienes acceso a esta reserva";
+
+    private final BookingRepository repository;
+    private final BookingMapper mapper;
     private final ReviewsClient reviewsClient;
     private final HotelsClient hotelsClient;
     private final RoomAvailabilityService roomAvailabilityService;
@@ -60,7 +63,7 @@ public class BookingService {
      * @return BookingResponseDto response
      */
     @Transactional
-    public BookingResponseDto create(BookingRequestDto request) {
+    public BookingResponseDto create(Long userId, BookingRequestDto request) {
         if (!request.checkInDate().isBefore(request.checkOutDate())) {
             throw new InvalidDateRangeException("La fecha de salida debe ser posterior a la fecha de entrada");
         }
@@ -97,6 +100,7 @@ public class BookingService {
         Booking booking = mapper.toEntity(request);
 
         booking.setStatus(BookingStatus.PENDING);
+        booking.setUserId(userId);
         booking.setTotalPrice(priceTotal);
         booking.setBookingReference(this.generateBookingReference());
 
@@ -118,16 +122,22 @@ public class BookingService {
     /**
      * Busca una reserva por id, si no la encuentra lanza una excepción
      * 
-     * @param bookingId
-     * @return
+     * @param Long userId
+     * @param Long bookingId
+     * @return BookingResponseDto
      */
-    public BookingResponseDto findById(Long bookingId) {
+    public BookingResponseDto findById(Long userId, Long bookingId) {
+
         if (bookingId == null || bookingId < 1) {
             throw new BookingNotFoundException(BOOKING_NOT_FOUND + bookingId);
         }
 
         Booking booking = repository.findById(bookingId)
                 .orElseThrow(() -> new BookingNotFoundException(BOOKING_NOT_FOUND + bookingId));
+        
+        if (!booking.getUserId().equals(userId)) {
+            throw new BookingAccessDeniedException(ACCESS_DENIED);
+        }
 
         return mapper.toResponseDto(booking);
     }
@@ -139,27 +149,28 @@ public class BookingService {
      * @return
      */
     public Page<BookingResponseDto> findAll(Pageable pageable, Long userId) {
-        return repository.findAllByUserId(userId, pageable)
-                .map(mapper::toResponseDto);
+        return repository.findAllByUserId(userId, pageable).map(mapper::toResponseDto);
     }
 
     /**
      * Devuelve una reserva con los datos del hotel y sus reseñas
+     * 
      * @param Long id -> bookingId
      * @return BookingDetailResponseDto
      */
-    public BookingDetailResponseDto getBookingDetails(Long id) {
+    public BookingDetailResponseDto getBookingDetails(Long id, Long userId) {
         Booking booking = repository.findById(id)
                 .orElseThrow(() -> new BookingNotFoundException(BOOKING_NOT_FOUND + id));
+
+        if (!booking.getUserId().equals(userId)) {
+            throw new BookingAccessDeniedException(ACCESS_DENIED);
+        }
 
         HotelSummaryDto hotelSummaryDto = fetchHotelSafely(booking.getHotelId());
 
         List<ReviewSummaryDto> reviewSummaryDto = fetchReviewsSafely(booking.getHotelId());
 
-        return new BookingDetailResponseDto(
-                mapper.toResponseDto(booking),
-                hotelSummaryDto,
-                reviewSummaryDto);
+        return new BookingDetailResponseDto(mapper.toResponseDto(booking), hotelSummaryDto, reviewSummaryDto);
     }
 
     private HotelSummaryDto fetchHotelSafely(Long hotelId) {
@@ -186,7 +197,7 @@ public class BookingService {
      * @param Long bookingId
      * @return BookingResponseDto
      */
-    @Transactional 
+    @Transactional
     public BookingResponseDto confirmBooking(Long bookingId) {
         Booking booking = repository.findByIdForUpdate(bookingId)
                 .orElseThrow(() -> new BookingNotFoundException(BOOKING_NOT_FOUND + bookingId));
@@ -201,17 +212,18 @@ public class BookingService {
     }
 
     /**
-     * Cancela una reserva, cambia su estado a cancelado.
-     * Para obtener todos los resultados envío al repositorio 0 en roomsRequested
+     * Cancela una reserva, cambia su estado a cancelado. Para obtener todos los
+     * resultados envío al repositorio 0 en roomsRequested
+     * 
      * @param Long bookingId
      * @return BookingResponseDto
      */
-    @Transactional 
+    @Transactional
     public BookingResponseDto cancelBooking(Long bookingId) {
         Booking booking = repository.findByIdForUpdate(bookingId)
                 .orElseThrow(() -> new BookingNotFoundException(BOOKING_NOT_FOUND + bookingId));
 
-        if (booking.getStatus() == BookingStatus.CANCELLED ) {
+        if (booking.getStatus() == BookingStatus.CANCELLED) {
             throw new InvalidBookingStateException("La reserva ya ha sido cancelada");
         }
 
@@ -220,8 +232,7 @@ public class BookingService {
         }
 
         List<RoomAvailability> availabilities = roomAvailabilityService.getAvailableRoomsForUpdate(booking.getHotelId(),
-                booking.getCheckInDate(), booking.getCheckOutDate(), 0,
-                booking.getRoomTypeId());
+                booking.getCheckInDate(), booking.getCheckOutDate(), 0, booking.getRoomTypeId());
 
         for (RoomAvailability roomAvailability : availabilities) {
             roomAvailability

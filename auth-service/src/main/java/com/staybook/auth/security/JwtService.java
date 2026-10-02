@@ -10,6 +10,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 
 @Service
@@ -27,7 +28,7 @@ public class JwtService {
     }
 
     // Método principal para generar el token JWT con los claims mínimos requeridos (sub, role, exp)
-    public String generateToken(UserDetails userDetails) {
+    public String generateToken(UserDetails userDetails, Long userId) {
         // Obtenemos el rol del usuario (ej. ROLE_ADMIN o ROLE_USER)
         String role = userDetails.getAuthorities().stream()
                 .findFirst()
@@ -37,9 +38,10 @@ public class JwtService {
         return Jwts.builder()
             .setSubject(userDetails.getUsername()) // 'sub': Identificador del usuario (email)
             .claim("role", role)                // 'role': Claim personalizado pedido en la tarea
+            .claim("userId", userId)
             .setIssuedAt(new Date(System.currentTimeMillis())) // Fecha de creación
             .setExpiration(new Date(System.currentTimeMillis() + jwtExpiration)) // 'exp': Expiración
-            .signWith(getSignInKey())           // Firma digital con nuestra clave secreta
+            .signWith(getSignInKey(), SignatureAlgorithm.HS256) // Firma digital HS256
             .compact();
     }
 

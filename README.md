@@ -13,7 +13,7 @@ El proyecto simula una plataforma de reservas donde diferentes servicios colabor
 | Java 21 | Docker |
 | Spring Boot 3 | Docker Compose |
 | Spring Data JPA | PostgreSQL |
-| Spring Security (JWT próximamente) | pgAdmin |
+| Spring Security | pgAdmin |
 | OpenFeign / WebClient | GitHub Actions (próximamente) |
 | Swagger OpenAPI | SonarCloud |
 

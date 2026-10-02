@@ -28,5 +28,6 @@
         <module>auth-service</module>
         <module>booking-service</module>
         <module>reviews-service</module>
+        <module>gateway-service</module>
     </modules>
 </project>

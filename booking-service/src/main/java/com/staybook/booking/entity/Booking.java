@@ -62,19 +62,13 @@ public class Booking {
     public Booking() {
     }
 
-    public Booking(Long userId, Long hotelId, Long roomTypeId, LocalDate checkInDate, LocalDate checkOutDate,
+    public Booking(Long hotelId, Long roomTypeId, LocalDate checkInDate, LocalDate checkOutDate,
             Integer roomsRequested) {
-        this.userId = userId;
         this.hotelId = hotelId;
         this.roomTypeId = roomTypeId;
         this.checkInDate = checkInDate;
         this.checkOutDate = checkOutDate;
         this.roomsRequested = roomsRequested;
-    }
-
-    // Convenience constructor used by some tests
-    public Booking(Long userId, Long hotelId, Long roomTypeId, LocalDate checkInDate, LocalDate checkOutDate) {
-        this(userId, hotelId, roomTypeId, checkInDate, checkOutDate, 1);
     }
 
     public Long getId() {

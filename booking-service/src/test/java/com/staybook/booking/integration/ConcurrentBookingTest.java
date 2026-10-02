@@ -55,7 +55,7 @@ class ConcurrentBookingTest {
         CompletableFuture<Boolean> f1 = CompletableFuture.supplyAsync(() -> {
             try {
                 startLatch.await();
-                bookingService.create(req1);
+                bookingService.create(1L, req1);
                 return true;
             } catch (RoomNotAvailableException e) {
                 return false;
@@ -69,7 +69,7 @@ class ConcurrentBookingTest {
         CompletableFuture<Boolean> f2 = CompletableFuture.supplyAsync(() -> {
             try {
                 startLatch.await();
-                bookingService.create(req2);
+                bookingService.create(2L, req2);
                 return true;
             } catch (RoomNotAvailableException e) {
                 return false;

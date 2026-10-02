@@ -1,11 +1,14 @@
 package com.staybook.booking.controller;
 
+import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -16,17 +19,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import static org.hamcrest.Matchers.hasSize;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -42,8 +43,6 @@ import com.staybook.booking.entity.Booking;
 import com.staybook.booking.enums.BookingStatus;
 import com.staybook.booking.exception.BookingNotFoundException;
 import com.staybook.booking.service.BookingService;
-
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 
 @WebMvcTest(BookingController.class)
 class BookingControllerTest {
@@ -74,7 +73,7 @@ class BookingControllerTest {
         LocalDateTime updatedAt = LocalDateTime.of(2026, 11, 5, 10, 0);
         String bookingReference = UUID.randomUUID().toString();
 
-        booking = new Booking(userId, hotelId, roomTypeId, checkIn, checkOut);
+        booking = new Booking(hotelId, roomTypeId, checkIn, checkOut, 1);
         responseDto = new BookingResponseDto(1L, userId, hotelId, roomTypeId, checkIn, checkOut, status, price,
                 createdAt,
                 updatedAt, bookingReference);
@@ -83,9 +82,10 @@ class BookingControllerTest {
 
     @Test
     void create_WhenValidRequest_ShouldReturn201Created() throws Exception {
-        when(service.create(any(BookingRequestDto.class))).thenReturn(responseDto);
+        when(service.create(eq(1L), any(BookingRequestDto.class))).thenReturn(responseDto);
 
         mockMvc.perform(post("/api/bookings")
+                .with(jwt().jwt(jwt -> jwt.claim("userId", 1L)))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(requestDto)))
                 .andExpect(status().isCreated())
@@ -93,30 +93,32 @@ class BookingControllerTest {
                 .andExpect(jsonPath("$.userId").value(1))
                 .andExpect(jsonPath("$.status").value("CONFIRMED")); // compare as string
 
-        verify(service).create(any(BookingRequestDto.class));
+        verify(service).create(eq(1L), any(BookingRequestDto.class));
     }
 
     @Test
     void findById_WhenExists_ShouldReturn200Ok() throws Exception {
-        when(service.findById(1L)).thenReturn(responseDto);
+        when(service.findById(11L, 1L)).thenReturn(responseDto);
 
-        mockMvc.perform(get("/api/bookings/{bookingId}", 1L))
+        mockMvc.perform(get("/api/bookings/{bookingId}", 1L)
+            .with(jwt().jwt(jwt -> jwt.claim("userId", 11L))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.userId").value(1));
 
-        verify(service).findById(1L);
+        verify(service).findById(11L, 1L);
     }
 
     @Test
     @DisplayName("Debe devolver el status configurado por la excepción si no existe")
     void findById_WhenNotFound_ShouldReturnError() throws Exception {
-        when(service.findById(999L)).thenThrow(new BookingNotFoundException("Reserva no encontrada con id: "));
+        when(service.findById(11L, 999L)).thenThrow(new BookingNotFoundException("Reserva no encontrada con id: "));
 
-        mockMvc.perform(get("/api/bookings/{bookingId}", 999L))
+        mockMvc.perform(get("/api/bookings/{bookingId}", 999L)
+            .with(jwt().jwt(jwt -> jwt.claim("userId", 11L))))
                 .andExpect(status().isNotFound());
 
-        verify(service).findById(999L);
+        verify(service).findById(11L, 999L);
     }
 
     @Test
@@ -128,7 +130,7 @@ class BookingControllerTest {
         when(service.findAll(any(Pageable.class), eq(userId))).thenReturn(page);
 
         mockMvc.perform(get("/api/bookings")
-                .param("userId", "1")
+                .with(jwt().jwt(jwt -> jwt.claim("userId", userId)))
                 .param("page", "0")
                 .param("size", "10"))
                 .andDo(print())
@@ -149,7 +151,7 @@ class BookingControllerTest {
         when(service.findAll(any(Pageable.class), eq(userId))).thenReturn(empty);
 
         mockMvc.perform(get("/api/bookings")
-                .param("userId", "2")
+            .with(jwt().jwt(jwt -> jwt.claim("userId", userId)))
                 .param("page", "0")
                 .param("size", "10"))
                 .andExpect(status().isOk())
@@ -175,10 +177,11 @@ class BookingControllerTest {
         BookingDetailResponseDto bookingDetailResponseDto = new BookingDetailResponseDto(responseDto, hotelDto,
                 reviewsDto);
 
-        when(service.getBookingDetails(1L)).thenReturn(bookingDetailResponseDto);
+        when(service.getBookingDetails(1L, 2L)).thenReturn(bookingDetailResponseDto);
 
         // Act & Assert
         mockMvc.perform(get("/api/bookings/1/details")
+            .with(jwt().jwt(jwt -> jwt.claim("userId", 2L)))
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.hotel.name").value("Hotel Palace"))
@@ -191,10 +194,11 @@ class BookingControllerTest {
         BookingDetailResponseDto bookingDetailResponseDtoNullHotel = new BookingDetailResponseDto(responseDto, null,
                 List.of());
 
-        when(service.getBookingDetails(1L)).thenReturn(bookingDetailResponseDtoNullHotel);
+        when(service.getBookingDetails(1L, 2L)).thenReturn(bookingDetailResponseDtoNullHotel);
 
         // Act & Assert
         mockMvc.perform(get("/api/bookings/1/details")
+            .with(jwt().jwt(jwt -> jwt.claim("userId", 2L)))
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.hotel").doesNotExist()) // o .value(null) según serialización
@@ -210,7 +214,8 @@ class BookingControllerTest {
 
             when(service.confirmBooking(bookingId)).thenReturn(responseDto);
 
-            mockMvc.perform(post("/api/bookings/{bookingId}/confirm", bookingId))
+                mockMvc.perform(post("/api/bookings/{bookingId}/confirm", bookingId)
+                    .with(jwt().jwt(jwt -> jwt.claim("userId", 1L))))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.id").value(bookingId.intValue()))
                     .andExpect(jsonPath("$.status").value("CONFIRMED"))
@@ -224,7 +229,8 @@ class BookingControllerTest {
 
             when(service.confirmBooking(bookingId)).thenThrow(new BookingNotFoundException(message));
 
-            mockMvc.perform(post("/api/bookings/{bookingId}/confirm", bookingId))
+                mockMvc.perform(post("/api/bookings/{bookingId}/confirm", bookingId)
+                    .with(jwt().jwt(jwt -> jwt.claim("userId", 1L))))
                     .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.detail").value(message));
         }
@@ -239,7 +245,8 @@ class BookingControllerTest {
 
             when(service.cancelBooking(bookingId)).thenReturn(responseDto);
 
-            mockMvc.perform(post("/api/bookings/{bookingId}/cancel", bookingId))
+                mockMvc.perform(post("/api/bookings/{bookingId}/cancel", bookingId)
+                    .with(jwt().jwt(jwt -> jwt.claim("userId", 1L))))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.id").value(bookingId.intValue()))
                     .andExpect(jsonPath("$.status").value("CONFIRMED"))
@@ -255,7 +262,8 @@ class BookingControllerTest {
 
             when(service.cancelBooking(bookingId)).thenThrow(new BookingNotFoundException(message));
 
-            mockMvc.perform(post("/api/bookings/{bookingId}/cancel", bookingId))
+                mockMvc.perform(post("/api/bookings/{bookingId}/cancel", bookingId)
+                    .with(jwt().jwt(jwt -> jwt.claim("userId", 1L))))
                     .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.detail").value(message));
         }

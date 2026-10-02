@@ -13,7 +13,7 @@ public class BookingMapper {
         if (dto == null)
             return null;
 
-        return new Booking(dto.userId(), dto.hotelId(), dto.roomTypeId(), dto.checkInDate(), dto.checkOutDate(),
+        return new Booking(dto.hotelId(), dto.roomTypeId(), dto.checkInDate(), dto.checkOutDate(),
                 dto.roomsRequested());
     }
 
