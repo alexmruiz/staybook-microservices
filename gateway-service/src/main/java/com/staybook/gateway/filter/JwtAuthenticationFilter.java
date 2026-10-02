@@ -1,22 +1,24 @@
 package com.staybook.gateway.filter;
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.JwtException;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
-import reactor.core.publisher.Mono;
 
-import java.nio.charset.StandardCharsets;
-import java.util.List;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jws;
+import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.security.Keys;
+import reactor.core.publisher.Mono;
 
 @Component
 public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
@@ -30,32 +32,32 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         String path = exchange.getRequest().getURI().getPath();
 
-        if (PUBLIC_PATHS.stream().anyMatch(path::startsWith)) {
+        if (PUBLIC_PATHS.contains(path)) {
             return chain.filter(exchange);
         }
 
         String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
+
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             return unauthorized(exchange);
         }
 
         try {
             String token = authHeader.substring(7);
-            Claims claims = Jwts.parserBuilder()
+            if (token.isBlank()) {
+                return unauthorized(exchange);
+            }
+
+            Jws<Claims> signedJwt = Jwts.parserBuilder()
                     .setSigningKey(Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8)))
                     .build()
-                    .parseClaimsJws(token)
-                    .getBody();
+                    .parseClaimsJws(token);
 
-            Number userIdClaims = claims.get("userId", Number.class);
-            Long userId = userIdClaims.longValue(); 
+            if (!SignatureAlgorithm.HS256.getValue().equals(signedJwt.getHeader().getAlgorithm())) {
+                return unauthorized(exchange);
+            }
 
-           ServerHttpRequest mutatedRequest = exchange.getRequest().mutate()
-                    .header("X-User-Id", String.valueOf(userId))
-                    .header("X-User-Role", claims.get("role", String.class))
-                    .build();
-
-            return chain.filter(exchange.mutate().request(mutatedRequest).build());
+            return chain.filter(exchange);
 
         } catch (JwtException e) {
             return unauthorized(exchange);
