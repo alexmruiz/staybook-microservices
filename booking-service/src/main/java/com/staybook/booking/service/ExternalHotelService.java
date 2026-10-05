@@ -2,6 +2,8 @@ package com.staybook.booking.service;
 
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import com.staybook.booking.client.HotelsClient;
@@ -13,6 +15,8 @@ import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 
 @Service
 public class ExternalHotelService {
+
+    private static final Logger log = LoggerFactory.getLogger(ExternalHotelService.class);
 
     private final HotelsClient hotelsClient;
     private final ReviewsClient reviewsClient;
@@ -29,6 +33,7 @@ public class ExternalHotelService {
 
     private HotelSummaryDto fallbackGetHotel(Long hotelId, Throwable exception) {
 
+        log.warn("Fallback activado para hotel {}: {}", hotelId, exception.getMessage());
         return null;
     }
 
@@ -38,7 +43,7 @@ public class ExternalHotelService {
     }
 
     private List<ReviewSummaryDto> fallbackGetReviews(Long hotelId, Throwable exception) {
-
+        log.warn("Fallback activado para reseñas del hotel {}: {}", hotelId, exception.getMessage());
         return List.of();
     }
 }

@@ -61,3 +61,15 @@ resilience4j:
         failureRateThreshold: 60
         waitDurationInOpenState: 5s
         permittedNumberOfCallsInHalfOpenState: 3
+        
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,circuitbreakers,circuitbreakerevents,metrics
+  endpoint:
+    health:
+      show-details: always
+  health:
+    circuitbreakers:
+      enabled: true

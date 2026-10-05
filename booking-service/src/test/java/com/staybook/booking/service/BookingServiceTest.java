@@ -350,7 +350,7 @@ class BookingServiceTest {
                         Long id = 1L;
                         booking.setId(id);
 
-                        HotelSummaryDto hotelDto = new HotelSummaryDto(booking.getHotelId(), "Hotel X", 4, List.of());
+                        HotelSummaryDto hotelDto = new HotelSummaryDto(id, "Hotel X", 4, List.of());
 
                         when(repository.findById(id)).thenReturn(Optional.of(booking));
                         when(mapper.toResponseDto(booking)).thenReturn(response);
