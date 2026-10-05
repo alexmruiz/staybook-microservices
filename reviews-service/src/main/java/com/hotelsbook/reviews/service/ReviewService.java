@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 
 import com.hotelsbook.reviews.dto.request.ReviewRequestDto;
 import com.hotelsbook.reviews.dto.response.ReviewResponseDto;
+import com.hotelsbook.reviews.dto.response.ReviewSummaryResponseDto;
 import com.hotelsbook.reviews.entity.ReviewEntity;
 import com.hotelsbook.reviews.exception.ReviewNotFoundException;
 import com.hotelsbook.reviews.mapper.ReviewMapper;
@@ -46,10 +47,7 @@ public class ReviewService {
      * @return List ReviewResponseDto
      */
     public List<ReviewResponseDto> findAll() {
-        return reviewRepository.findAll()
-                .stream()
-                .map(reviewMapper::toResponseDto)
-                .toList();
+        return reviewRepository.findAll().stream().map(reviewMapper::toResponseDto).toList();
     }
 
     /**
@@ -97,17 +95,42 @@ public class ReviewService {
         boolean existsReview = reviewRepository.existsById(id);
 
         if (!existsReview) {
-            throw new ReviewNotFoundException(
-                    "No se encontró la reseña con id: " + id);
+            throw new ReviewNotFoundException("No se encontró la reseña con id: " + id);
         }
 
         reviewRepository.deleteById(id);
     }
 
     public List<ReviewResponseDto> findByHotelId(Long hotelId) {
-        return reviewRepository.findByHotelId(hotelId)
-                .stream()
-                .map(reviewMapper::toResponseDto)
-                .toList();
+        return reviewRepository.findByHotelId(hotelId).stream().map(reviewMapper::toResponseDto).toList();
+    }
+
+    /**
+     * Calcula la calificación promedio de las reseñas del hotel.
+     *
+     * @param hotelId identificador del hotel
+     * @return resumen con las reseñas y su calificación promedio
+     */
+    public ReviewSummaryResponseDto getAverageQualification(Long hotelId) {
+        List<ReviewResponseDto> reviews = reviewRepository.findByHotelId(hotelId).stream()
+                .map(reviewMapper::toResponseDto).toList();
+
+        Double totalQualification = 0.00;
+        int totalReviews = 0;
+        Double qualification = 0.00;
+
+        if (!reviews.isEmpty()) {
+            for (ReviewResponseDto review : reviews) {
+                totalReviews = totalReviews + 1;
+                totalQualification = totalQualification + review.qualification();
+            }
+
+            qualification = totalQualification / totalReviews;
+        } else {
+            qualification = 0.00;
+        }
+
+        ReviewSummaryResponseDto reviewSummary = new ReviewSummaryResponseDto(reviews, qualification);
+        return reviewSummary;
     }
 }
