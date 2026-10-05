@@ -7,6 +7,9 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -18,14 +21,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -34,25 +34,21 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
-import com.staybook.booking.client.HotelsClient;
-import com.staybook.booking.client.ReviewsClient;
-import com.staybook.booking.entity.RoomAvailability;
-import com.staybook.booking.mapper.RoomAvailabilityMapper;
-
 import com.staybook.booking.dto.request.BookingRequestDto;
 import com.staybook.booking.dto.response.BookingDetailResponseDto;
 import com.staybook.booking.dto.response.BookingResponseDto;
 import com.staybook.booking.dto.response.HotelSummaryDto;
 import com.staybook.booking.dto.response.ReviewSummaryDto;
 import com.staybook.booking.entity.Booking;
+import com.staybook.booking.entity.RoomAvailability;
 import com.staybook.booking.enums.BookingStatus;
+import com.staybook.booking.exception.BookingAccessDeniedException;
 import com.staybook.booking.exception.BookingNotFoundException;
 import com.staybook.booking.exception.InvalidBookingStateException;
-import com.staybook.booking.exception.BookingAccessDeniedException;
 import com.staybook.booking.exception.InvalidDateRangeException;
 import com.staybook.booking.mapper.BookingMapper;
+import com.staybook.booking.mapper.RoomAvailabilityMapper;
 import com.staybook.booking.repository.BookingRepository;
-import org.mockito.ArgumentCaptor;
 
 @ExtendWith(MockitoExtension.class)
 class BookingServiceTest {
@@ -70,10 +66,7 @@ class BookingServiceTest {
         private RoomAvailabilityMapper roomAvailabilityMapper;
 
         @Mock
-        private ReviewsClient reviewsClient;
-
-        @Mock
-        private HotelsClient hotelsClient;
+        private ExternalHotelService externalHotelService;
 
         @InjectMocks
         private BookingService service;
@@ -82,7 +75,6 @@ class BookingServiceTest {
         private BookingRequestDto request;
         private BookingResponseDto response;
         private Long userId;
-
         @BeforeEach
         void setUp() {
                 userId = 11L;
@@ -99,8 +91,7 @@ class BookingServiceTest {
                 booking = new Booking(hotelId, roomTypeId, checkIn, checkOut, 3);
                 booking.setUserId(userId);
                 response = new BookingResponseDto(1L, userId, hotelId, roomTypeId, checkIn, checkOut, status, price,
-                                createdAt,
-                                updatedAt, bookingReference, 3);
+                                createdAt, updatedAt, bookingReference, 3);
                 request = new BookingRequestDto(userId, hotelId, roomTypeId, checkIn, checkOut, 3);
         }
 
@@ -113,7 +104,7 @@ class BookingServiceTest {
 
                 when(roomAvailabilityService.getAvailableRoomsForUpdate(request.hotelId(), request.checkInDate(),
                                 request.checkOutDate(), request.roomsRequested(), request.roomTypeId()))
-                                .thenReturn(java.util.List.of(availabilityEntity));
+                                                .thenReturn(java.util.List.of(availabilityEntity));
 
                 when(mapper.toEntity(request)).thenReturn(booking);
                 when(repository.save(booking)).thenReturn(booking);
@@ -139,7 +130,7 @@ class BookingServiceTest {
 
                 when(roomAvailabilityService.getAvailableRoomsForUpdate(request.hotelId(), request.checkInDate(),
                                 request.checkOutDate(), request.roomsRequested(), request.roomTypeId()))
-                                .thenReturn(java.util.List.of(availabilityWithId));
+                                                .thenReturn(java.util.List.of(availabilityWithId));
 
                 when(mapper.toEntity(request)).thenReturn(booking);
                 when(repository.save(booking)).thenReturn(booking);
@@ -166,16 +157,11 @@ class BookingServiceTest {
         @Test
         void create_whenCheckInAfterCheckOut_shouldThrowInvalidDateRangeException() {
                 // check-in posterior a check-out
-                BookingRequestDto badRequest = new BookingRequestDto(
-                                1L,
-                                1L,
-                                1L,
-                                LocalDate.of(2026, 11, 6), // checkIn
+                BookingRequestDto badRequest = new BookingRequestDto(1L, 1L, 1L, LocalDate.of(2026, 11, 6), // checkIn
                                 LocalDate.of(2026, 11, 5), // checkOut
                                 3);
 
-                InvalidDateRangeException ex = assertThrows(
-                                InvalidDateRangeException.class,
+                InvalidDateRangeException ex = assertThrows(InvalidDateRangeException.class,
                                 () -> service.create(userId, badRequest));
 
                 assertEquals("La fecha de salida debe ser posterior a la fecha de entrada", ex.getMessage());
@@ -205,8 +191,8 @@ class BookingServiceTest {
 
                 when(repository.findById(idInexistente)).thenReturn(Optional.empty());
 
-                BookingNotFoundException exception = assertThrows(
-                                BookingNotFoundException.class, () -> service.findById(11L, idInexistente));
+                BookingNotFoundException exception = assertThrows(BookingNotFoundException.class,
+                                () -> service.findById(11L, idInexistente));
 
                 assertEquals("Reserva no encontrada con id: 99", exception.getMessage());
 
@@ -221,8 +207,7 @@ class BookingServiceTest {
 
                 when(repository.findById(bookingId)).thenReturn(Optional.of(booking));
 
-                BookingAccessDeniedException exception = assertThrows(
-                                BookingAccessDeniedException.class,
+                BookingAccessDeniedException exception = assertThrows(BookingAccessDeniedException.class,
                                 () -> service.findById(anotherUserId, bookingId));
 
                 assertEquals("No tienes acceso a esta reserva", exception.getMessage());
@@ -248,7 +233,7 @@ class BookingServiceTest {
                 // cancel uses requestedRooms = 0 to fetch the full range (see implementation)
                 when(roomAvailabilityService.getAvailableRoomsForUpdate(booking.getHotelId(), booking.getCheckInDate(),
                                 booking.getCheckOutDate(), 0, booking.getRoomTypeId()))
-                                .thenReturn(java.util.List.of(availability));
+                                                .thenReturn(java.util.List.of(availability));
 
                 // Capture original available quantity before the service mutates the entity
                 int originalQuantity = availability.getAvailableQuantity();
@@ -256,10 +241,9 @@ class BookingServiceTest {
                 when(repository.save(booking)).thenReturn(booking);
 
                 BookingResponseDto cancelledResponse = new BookingResponseDto(bookingId, booking.getUserId(),
-                                booking.getHotelId(),
-                                booking.getRoomTypeId(), booking.getCheckInDate(), booking.getCheckOutDate(),
-                                BookingStatus.CANCELLED,
-                                BigDecimal.valueOf(0), null, null, "ref", booking.getRoomsRequested());
+                                booking.getHotelId(), booking.getRoomTypeId(), booking.getCheckInDate(),
+                                booking.getCheckOutDate(), BookingStatus.CANCELLED, BigDecimal.valueOf(0), null, null,
+                                "ref", booking.getRoomsRequested());
 
                 when(mapper.toResponseDto(booking)).thenReturn(cancelledResponse);
 
@@ -314,18 +298,18 @@ class BookingServiceTest {
         @Nested
         class BookingDetailResponseDtoTest {
 
+                HotelSummaryDto hotelDto = new HotelSummaryDto(1L, "Hotel X", 4, List.of());
+                ReviewSummaryDto reviewDto = new ReviewSummaryDto(1L, 2L, 4.5, "Nice");
+
                 @Test
                 void getBookingDetails_whenBookingExists_andClientsReturnData_shouldReturnDetailDto() {
                         Long id = 1L;
                         booking.setId(id);
 
-                        HotelSummaryDto hotelDto = new HotelSummaryDto(booking.getHotelId(), "Hotel X", 4, List.of());
-                        ReviewSummaryDto reviewDto = new ReviewSummaryDto(booking.getHotelId(), 2L, 4.5, "Nice");
-
                         when(repository.findById(id)).thenReturn(Optional.of(booking));
+                        when(externalHotelService.getHotel(booking.getHotelId())).thenReturn(hotelDto);
+                        when(externalHotelService.getReviews(booking.getHotelId())).thenReturn(List.of(reviewDto));
                         when(mapper.toResponseDto(booking)).thenReturn(response);
-                        when(hotelsClient.getHotelById(booking.getHotelId())).thenReturn(hotelDto);
-                        when(reviewsClient.getReviewsByHotelId(booking.getHotelId())).thenReturn(List.of(reviewDto));
 
                         BookingDetailResponseDto result = service.getBookingDetails(id, userId);
 
@@ -335,32 +319,30 @@ class BookingServiceTest {
                         assertEquals(List.of(reviewDto), result.reviews());
 
                         verify(repository).findById(id);
+                        verify(externalHotelService).getHotel(booking.getHotelId());
+                        verify(externalHotelService).getReviews(booking.getHotelId());
                         verify(mapper).toResponseDto(booking);
-                        verify(hotelsClient).getHotelById(booking.getHotelId());
-                        verify(reviewsClient).getReviewsByHotelId(booking.getHotelId());
                 }
 
                 @Test
                 void getBookingDetails_whenHotelClientFails_shouldReturnNullHotelAndReviewsPresent() {
-                        Long id = 1L;
-                        booking.setId(id);
-
-                        ReviewSummaryDto reviewDto = new ReviewSummaryDto(booking.getHotelId(), 2L, 4.5, "Nice");
-
-                        when(repository.findById(id)).thenReturn(Optional.of(booking));
+                        when(repository.findById(booking.getId())).thenReturn(Optional.of(booking));
                         when(mapper.toResponseDto(booking)).thenReturn(response);
-                        when(hotelsClient.getHotelById(booking.getHotelId())).thenThrow(new RuntimeException("down"));
-                        when(reviewsClient.getReviewsByHotelId(booking.getHotelId())).thenReturn(List.of(reviewDto));
 
-                        BookingDetailResponseDto result = service.getBookingDetails(id, userId);
+                        when(externalHotelService.getHotel(booking.getHotelId())).thenReturn(null);
+
+                        when(externalHotelService.getReviews(booking.getHotelId()))
+                                        .thenReturn(List.of(reviewDto));
+
+                        BookingDetailResponseDto result = service.getBookingDetails(booking.getId(), userId);
 
                         assertNotNull(result);
                         assertSame(response, result.booking());
                         assertNull(result.hotel());
                         assertEquals(List.of(reviewDto), result.reviews());
 
-                        verify(hotelsClient).getHotelById(booking.getHotelId());
-                        verify(reviewsClient).getReviewsByHotelId(booking.getHotelId());
+                        verify(externalHotelService).getHotel(booking.getHotelId());
+                        verify(externalHotelService).getReviews(booking.getHotelId());
                 }
 
                 @Test
@@ -368,13 +350,12 @@ class BookingServiceTest {
                         Long id = 1L;
                         booking.setId(id);
 
-                        HotelSummaryDto hotelDto = new HotelSummaryDto(booking.getHotelId(), "Hotel X", 4, List.of());
+                        HotelSummaryDto hotelDto = new HotelSummaryDto(id, "Hotel X", 4, List.of());
 
                         when(repository.findById(id)).thenReturn(Optional.of(booking));
                         when(mapper.toResponseDto(booking)).thenReturn(response);
-                        when(hotelsClient.getHotelById(booking.getHotelId())).thenReturn(hotelDto);
-                        when(reviewsClient.getReviewsByHotelId(booking.getHotelId()))
-                                        .thenThrow(new RuntimeException("down"));
+                        when(externalHotelService.getHotel(booking.getHotelId())).thenReturn(hotelDto);
+                        when(externalHotelService.getReviews(booking.getHotelId())).thenReturn(List.of());
 
                         BookingDetailResponseDto result = service.getBookingDetails(id, userId);
 
@@ -383,8 +364,8 @@ class BookingServiceTest {
                         assertEquals(hotelDto, result.hotel());
                         assertTrue(result.reviews().isEmpty());
 
-                        verify(hotelsClient).getHotelById(booking.getHotelId());
-                        verify(reviewsClient).getReviewsByHotelId(booking.getHotelId());
+                        verify(externalHotelService).getHotel(booking.getHotelId());
+                        verify(externalHotelService).getReviews(booking.getHotelId());
                 }
 
                 @Test
@@ -397,8 +378,7 @@ class BookingServiceTest {
                         assertEquals("Reserva no encontrada con id: 99", ex.getMessage());
 
                         verify(repository).findById(id);
-                        verifyNoInteractions(hotelsClient);
-                        verifyNoInteractions(reviewsClient);
+                        verifyNoInteractions(externalHotelService);
                 }
 
         }

@@ -1,0 +1,75 @@
+spring:
+  application:
+    name: booking-services
+  datasource:
+    url: jdbc:postgresql://localhost:5432/booking_db
+    username: postgres
+    password: root
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+      naming:
+        implicit-strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyLegacyJpaImpl
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    open-in-view: false
+    defer-datasource-initialization: true
+  sql:
+    init:
+      mode: always
+
+jwt:
+  secret: ${JWT_SECRET}
+
+server:
+  port: 8082
+  url: http://localhost:8082
+  # url: http://host.docker.internal:8082
+
+springdoc:
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui
+  api-docs:
+    enabled: true
+
+hotels-service:
+  base-url: http://localhost:8080
+
+reviews-service:
+  base-url: http://localhost:8081
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      hotelsServiceCB:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 5
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 60
+        waitDurationInOpenState: 5s
+        permittedNumberOfCallsInHalfOpenState: 3
+
+      reviewsServiceCB:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 5
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 60
+        waitDurationInOpenState: 5s
+        permittedNumberOfCallsInHalfOpenState: 3
+        
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,circuitbreakers,circuitbreakerevents,metrics
+  endpoint:
+    health:
+      show-details: always
+  health:
+    circuitbreakers:
+      enabled: true
