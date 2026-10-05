@@ -29,5 +29,6 @@
         <module>booking-service</module>
         <module>reviews-service</module>
         <module>gateway-service</module>
+        <module>configserver-service</module>
     </modules>
 </project>
