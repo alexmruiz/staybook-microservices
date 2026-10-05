@@ -11,5 +11,5 @@ spring:
       server:
         native:
           search-locations: classpath:/config-repo
-  jwt:
-    secret: ${JWT_SECRET} 
+jwt:
+  secret: ${JWT_SECRET} 
