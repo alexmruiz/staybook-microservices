@@ -22,9 +22,6 @@ spring:
     init:
       mode: always
 
-jwt:
-  secret: ${JWT_SECRET}
-
 server:
   port: 8082
   url: http://localhost:8082

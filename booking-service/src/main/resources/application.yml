@@ -24,9 +24,6 @@ spring:
   config:
     import: "optional:configserver:http://localhost:8888"
 
-jwt:
-  secret: ${JWT_SECRET}
-
 server:
   port: 8082
   url: http://localhost:8082

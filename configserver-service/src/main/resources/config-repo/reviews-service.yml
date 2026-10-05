@@ -1,46 +1,46 @@
 spring:
-	application:
-		name: reviews-service
+  application:
+    name: reviews-service
 
-	# Configuracion de la base de datos
-	datasource:
-		url: "jdbc:postgresql://localhost:5432/reviews_db?useSSL=false&serverTimezone=UTC"
-		# url: "jdbc:mysql://host.docker.internal:3306/db_hotelsbook"
-		username: postgres
-		password: root
-		driver-class-name: org.postgresql.Driver
+  # Configuracion de la base de datos
+  datasource:
+    url: "jdbc:postgresql://localhost:5432/reviews_db?useSSL=false&serverTimezone=UTC"
+    # url: "jdbc:mysql://host.docker.internal:3306/db_hotelsbook"
+    username: postgres
+    password: root
+    driver-class-name: org.postgresql.Driver
 
-	# Configuracion de Hibernate
-	jpa:
-		hibernate:
-			ddl-auto: create-drop
-		show-sql: true
-		properties:
-			hibernate:
-				dialect: org.hibernate.dialect.PostgreSQLDialect
-		defer-datasource-initialization: true
+  # Configuracion de Hibernate
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    defer-datasource-initialization: true
 
-	# Inyectar datos SQL al iniciar
-	sql:
-		init:
-			data-locations: classpath:import-reviews.sql
-			mode: always
+  # Inyectar datos SQL al iniciar
+  sql:
+    init:
+      data-locations: classpath:import-reviews.sql
+      mode: always
 
-	web:
-		resources:
-			static-locations: classpath:/,classpath:/static/
+  web:
+    resources:
+      static-locations: classpath:/,classpath:/static/
 
 server:
-	port: 8081
+  port: 8081
 
 # Configuracion OpenAPI/Swagger
 springdoc:
-	api-docs:
-		path: /v3/api-docs
-		groups:
-			enabled: true
-	swagger-ui:
-		path: /swagger-ui.html
-		enabled: true
-		operations-sorter: method
-		url: /api/openapi.yaml
+  api-docs:
+    path: /v3/api-docs
+    groups:
+      enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    operations-sorter: method
+    url: /api/openapi.yaml
