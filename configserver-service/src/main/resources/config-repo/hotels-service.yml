@@ -1,0 +1,45 @@
+spring:
+  application:
+    name: hotels-service
+
+  # Configuracion de la base de datos
+  datasource:
+    url: jdbc:postgresql://localhost:5432/hotels_db?createDatabaseIfNotExist=true
+    username: postgres
+    password: root
+    driver-class-name: org.postgresql.Driver
+
+  # Configuracion de Hibernate
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+      naming:
+        implicit-strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyLegacyJpaImpl
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    open-in-view: false
+    defer-datasource-initialization: true
+
+  sql:
+    init:
+      data-locations: classpath:import-hotels.sql
+      mode: always
+
+  web:
+    resources:
+      static-locations: classpath:/,classpath:/static/
+
+# Configuracion OpenAPI/Swagger
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+    groups:
+      enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    operations-sorter: method
+    url: /api/openapi.yaml
