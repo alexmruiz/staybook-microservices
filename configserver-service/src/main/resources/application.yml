@@ -1,0 +1,15 @@
+server:
+  port: 8888
+
+spring:
+  application:
+    name: config-server
+  profiles:
+    active: native
+  cloud:
+    config:
+      server:
+        native:
+          search-locations: classpath:/config-repo
+  jwt:
+  secret: ${JWT_SECRET:dev-only-secret-CHANGE-ME-not-for-real-use-32chars}

@@ -1,0 +1,54 @@
+spring:
+	application:
+		name: auth-service
+
+	# Configuracion de la base de datos
+	datasource:
+		url: jdbc:postgresql://localhost:5432/auth_db?createDatabaseIfNotExist=true
+		username: postgres
+		password: root
+		driver-class-name: org.postgresql.Driver
+
+	# Configuracion de Hibernate
+	jpa:
+		hibernate:
+			ddl-auto: update
+			naming:
+				implicit-strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyLegacyJpaImpl
+				physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+		show-sql: true
+		properties:
+			hibernate:
+				dialect: org.hibernate.dialect.PostgreSQLDialect
+		open-in-view: false
+		defer-datasource-initialization: true
+
+	# spring.sql.init.mode: always
+	web:
+		resources:
+			static-locations: classpath:/,classpath:/static/
+
+# Clave secreta para firmar los JWT (minimo 256 bits para HS256)
+# RECOMENDADO: definir siempre la variable de entorno JWT_SECRET en el entorno
+# de despliegue. No incluir valores secretos en ficheros versionados.
+# Para forzar que el arranque falle si no esta definida (mas seguro), no
+# incluimos un valor por defecto aqui: Spring fallara al resolver la propiedad.
+jwt:
+	secret: ${JWT_SECRET}
+	# Tiempo de expiracion del token en milisegundos (24 horas)
+	expiration: 86400000
+
+server:
+	port: 8083
+
+# Configuracion OpenAPI/Swagger
+springdoc:
+	api-docs:
+		path: /v3/api-docs
+		groups:
+			enabled: true
+	swagger-ui:
+		path: /swagger-ui.html
+		enabled: true
+		operations-sorter: method
+		url: /api/openapi.yaml
