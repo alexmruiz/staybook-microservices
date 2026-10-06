@@ -41,7 +41,7 @@ public class HotelService implements CrudService<HotelRequestDto, HotelResponseD
     private final AmenityRepository amenityRepository;
     private final CityRepository cityRepository;
     private final CityMapper cityMapper;
-    private final ReviewsClient reviewsClient;
+    private final ExternalReviewService externalReviewService;
 
     private static final String HOTEL_NOT_FOUND = "Hotel no encontrado con el id indicado";
 
@@ -58,14 +58,14 @@ public class HotelService implements CrudService<HotelRequestDto, HotelResponseD
      */
     public HotelService(HotelMapper mapper, HotelRepository repository, AmenityRepository amenityRepository,
             RoomTypeMapper roomTypeMapper, CityRepository cityRepository, CityMapper cityMapper,
-            ReviewsClient reviewsClient) {
+            ReviewsClient reviewsClient, ExternalReviewService externalReviewService) {
         this.mapper = mapper;
         this.repository = repository;
         this.amenityRepository = amenityRepository;
         this.roomTypeMapper = roomTypeMapper;
         this.cityRepository = cityRepository;
         this.cityMapper = cityMapper;
-        this.reviewsClient = reviewsClient;
+        this.externalReviewService = externalReviewService;
     }
 
     /**
@@ -231,7 +231,7 @@ public class HotelService implements CrudService<HotelRequestDto, HotelResponseD
         Hotel hotel = repository.findById(hotelId).orElseThrow(() -> new EntityNotFoundException(HOTEL_NOT_FOUND));
         HotelResponseDto hotelResponse = mapper.toResponseDto(hotel);
 
-        ReviewsSummaryResponseDto summary = reviewsClient.getSummaryByHotelId(hotelId);
+        ReviewsSummaryResponseDto summary = externalReviewService.getReviews(hotelId);
         return new HotelDetailResponseDto(hotelResponse, summary.reviews(), summary.averageQualification());
     }
 }
