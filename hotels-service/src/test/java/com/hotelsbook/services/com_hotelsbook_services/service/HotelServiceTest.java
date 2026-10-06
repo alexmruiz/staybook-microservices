@@ -12,6 +12,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -30,11 +31,15 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
+import com.hotelsbook.services.com_hotelsbook_services.client.ReviewsClient;
 import com.hotelsbook.services.com_hotelsbook_services.dto.request.AddressRequestDto;
 import com.hotelsbook.services.com_hotelsbook_services.dto.request.CityRequestDto;
 import com.hotelsbook.services.com_hotelsbook_services.dto.request.HotelRequestDto;
 import com.hotelsbook.services.com_hotelsbook_services.dto.request.RoomTypeRequestDto;
+import com.hotelsbook.services.com_hotelsbook_services.dto.response.HotelDetailResponseDto;
 import com.hotelsbook.services.com_hotelsbook_services.dto.response.HotelResponseDto;
+import com.hotelsbook.services.com_hotelsbook_services.dto.response.ReviewResponseDto;
+import com.hotelsbook.services.com_hotelsbook_services.dto.response.ReviewsSummaryResponseDto;
 import com.hotelsbook.services.com_hotelsbook_services.entity.Address;
 import com.hotelsbook.services.com_hotelsbook_services.entity.Amenity;
 import com.hotelsbook.services.com_hotelsbook_services.entity.City;
@@ -65,6 +70,9 @@ class HotelServiceTest {
 
     @Mock
     private RoomTypeMapper roomTypeMapper;
+
+    @Mock
+    private ReviewsClient reviewsClient;
 
     @InjectMocks
     private HotelService service;
@@ -440,6 +448,50 @@ class HotelServiceTest {
             verify(cityRepository).existsById(cityId);
             verify(repository, never()).findByAddressCityId(anyLong());
             verify(mapper, never()).toResponseDto(any());
+        }
+    }
+
+    @Nested
+    @DisplayName("Test getHotelWithReviews()")
+    class GetHotelWhithReviews {
+
+        @Test
+        void getHotelWhithReviews_sholudReturnResponseDto() {
+            Long hotelId = 21L;
+            ReviewResponseDto review = new ReviewResponseDto("text", 5.00);
+            List<ReviewResponseDto> reviews = new ArrayList<>();
+            reviews.add(review);
+            ReviewsSummaryResponseDto reviewsSummary = new ReviewsSummaryResponseDto(reviews, 4.00);
+
+            when(repository.findById(hotelId)).thenReturn(Optional.of(hotel));
+            when(mapper.toResponseDto(hotel)).thenReturn(response);
+            when(reviewsClient.getSummaryByHotelId(hotelId)).thenReturn(reviewsSummary);
+
+            HotelDetailResponseDto result = service.getHotelWithReviews(hotelId);
+
+            assertNotNull(result);
+            assertEquals(response, result.hotel());
+            assertEquals(reviews, result.reviews());
+            assertEquals(Double.valueOf(4.00), result.averageQualification());
+
+            verify(repository).findById(hotelId);
+            verify(mapper).toResponseDto(hotel);
+            verify(reviewsClient).getSummaryByHotelId(hotelId);
+        }
+
+        @Test
+        void getHotelWhithReviews_shouldThrowWhenHotelDoesNotExist() {
+            Long hotelId = 21L;
+            when(repository.findById(hotelId)).thenReturn(Optional.empty());
+
+            EntityNotFoundException exception = assertThrows(
+                    EntityNotFoundException.class,
+                    () -> service.getHotelWithReviews(hotelId));
+
+            assertEquals("Hotel no encontrado con el id indicado", exception.getMessage());
+            verify(repository).findById(hotelId);
+            verify(mapper, never()).toResponseDto(any());
+            verify(reviewsClient, never()).getSummaryByHotelId(anyLong());
         }
     }
 

@@ -8,11 +8,11 @@ import org.springframework.web.bind.annotation.*;
 
 import com.hotelsbook.reviews.dto.request.ReviewRequestDto;
 import com.hotelsbook.reviews.dto.response.ReviewResponseDto;
+import com.hotelsbook.reviews.dto.response.ReviewSummaryResponseDto;
 import com.hotelsbook.reviews.service.ReviewService;
 
 import jakarta.validation.Valid;
 
-@CrossOrigin(origins = "http://localhost:4200")
 @RestController
 @RequestMapping("/api/reviews")
 public class ReviewController {
@@ -56,4 +56,10 @@ public class ReviewController {
     public ResponseEntity<List<ReviewResponseDto>> findByHotelId(@PathVariable("hotelId") Long hotelId) {
         return ResponseEntity.ok(reviewService.findByHotelId(hotelId));
     }
-}
+
+    @GetMapping("/hotel/{hotelId}/summary")
+        public ResponseEntity<ReviewSummaryResponseDto> getAverageQualification(@PathVariable("hotelId") Long hotelId) {
+        return ResponseEntity.ok(reviewService.getAverageQualification(hotelId));
+    }
+
+}   

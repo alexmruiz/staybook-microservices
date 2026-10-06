@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 
 import com.hotelsbook.reviews.dto.request.ReviewRequestDto;
 import com.hotelsbook.reviews.dto.response.ReviewResponseDto;
+import com.hotelsbook.reviews.dto.response.ReviewSummaryResponseDto;
 import com.hotelsbook.reviews.entity.ReviewEntity;
 import com.hotelsbook.reviews.exception.ReviewNotFoundException;
 import com.hotelsbook.reviews.mapper.ReviewMapper;
@@ -46,10 +47,7 @@ public class ReviewService {
      * @return List ReviewResponseDto
      */
     public List<ReviewResponseDto> findAll() {
-        return reviewRepository.findAll()
-                .stream()
-                .map(reviewMapper::toResponseDto)
-                .toList();
+        return reviewRepository.findAll().stream().map(reviewMapper::toResponseDto).toList();
     }
 
     /**
@@ -97,17 +95,29 @@ public class ReviewService {
         boolean existsReview = reviewRepository.existsById(id);
 
         if (!existsReview) {
-            throw new ReviewNotFoundException(
-                    "No se encontró la reseña con id: " + id);
+            throw new ReviewNotFoundException("No se encontró la reseña con id: " + id);
         }
 
         reviewRepository.deleteById(id);
     }
 
     public List<ReviewResponseDto> findByHotelId(Long hotelId) {
-        return reviewRepository.findByHotelId(hotelId)
-                .stream()
-                .map(reviewMapper::toResponseDto)
-                .toList();
+        return reviewRepository.findByHotelId(hotelId).stream().map(reviewMapper::toResponseDto).toList();
+    }
+
+    /**
+     * Devuelve una lista de reviews y la media de la calificación de las reseñas
+     * 
+     * @param Long hotelId 
+     * @return ReviewSummaryResponseDto 
+     */
+    public ReviewSummaryResponseDto getAverageQualification(Long hotelId) {
+        List<ReviewResponseDto> reviews = reviewRepository.findByHotelId(hotelId).stream()
+                .map(reviewMapper::toResponseDto).toList();
+
+        double averageQualification = reviews.stream().mapToDouble(ReviewResponseDto::qualification).average()
+                .orElse(0.0);
+
+        return new ReviewSummaryResponseDto(reviews, averageQualification);
     }
 }

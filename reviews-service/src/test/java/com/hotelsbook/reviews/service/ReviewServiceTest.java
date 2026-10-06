@@ -9,6 +9,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.hotelsbook.reviews.dto.request.ReviewRequestDto;
 import com.hotelsbook.reviews.dto.response.ReviewResponseDto;
+import com.hotelsbook.reviews.dto.response.ReviewSummaryResponseDto;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -207,6 +208,57 @@ class ReviewServiceTest {
         assertNotNull(result);
         assertTrue(result.isEmpty());
 
+        verify(repository).findByHotelId(hotelId);
+        verify(mapper, never()).toResponseDto(any());
+    }
+
+    @Test
+    void getAverageQualification_WhenReviewsExist_ReturnsReviewsAndAverage() {
+        Long hotelId = 1L;
+        ReviewEntity secondReview = new ReviewEntity(hotelId, 4L, 2.00);
+        ReviewResponseDto secondResponse = new ReviewResponseDto(
+                3L, hotelId, 4L, 2.00, "segunda reseña", response.createdAt());
+        when(repository.findByHotelId(hotelId)).thenReturn(List.of(review, secondReview));
+        when(mapper.toResponseDto(review)).thenReturn(response);
+        when(mapper.toResponseDto(secondReview)).thenReturn(secondResponse);
+
+        ReviewSummaryResponseDto result = service.getAverageQualification(hotelId);
+
+        assertNotNull(result);
+        assertEquals(List.of(response, secondResponse), result.reviews());
+        assertEquals(Double.valueOf(3.00), result.averageQualification());
+
+        verify(repository).findByHotelId(hotelId);
+        verify(mapper).toResponseDto(review);
+        verify(mapper).toResponseDto(secondReview);
+    }
+
+    @Test
+    void getAverageQualification_WhenNoReviews_ReturnsZeroAverage() {
+        Long hotelId = 99L;
+        when(repository.findByHotelId(hotelId)).thenReturn(List.of());
+
+        ReviewSummaryResponseDto result = service.getAverageQualification(hotelId);
+
+        assertNotNull(result);
+        assertTrue(result.reviews().isEmpty());
+        assertEquals(Double.valueOf(0.00), result.averageQualification());
+
+        verify(repository).findByHotelId(hotelId);
+        verify(mapper, never()).toResponseDto(any());
+    }
+
+    @Test
+    void getAverageQualification_WhenRepositoryFails_PropagatesException() {
+        Long hotelId = 1L;
+        IllegalStateException repositoryException = new IllegalStateException("Error consultando las reseñas");
+        when(repository.findByHotelId(hotelId)).thenThrow(repositoryException);
+
+        IllegalStateException exception = assertThrows(
+                IllegalStateException.class,
+                () -> service.getAverageQualification(hotelId));
+
+        assertEquals(repositoryException.getMessage(), exception.getMessage());
         verify(repository).findByHotelId(hotelId);
         verify(mapper, never()).toResponseDto(any());
     }
