@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import com.hotelsbook.services.com_hotelsbook_services.dto.request.HotelRequestDto;
+import com.hotelsbook.services.com_hotelsbook_services.dto.response.HotelDetailResponseDto;
 import com.hotelsbook.services.com_hotelsbook_services.dto.response.HotelResponseDto;
 import com.hotelsbook.services.com_hotelsbook_services.service.HotelService;
 
@@ -54,5 +55,9 @@ public class HotelController {
     {
         service.deleteById(id);
     }
-    
+
+    @GetMapping("/{id}/details")
+    public HotelDetailResponseDto getHotelWhithReviews(@PathVariable("id") Long id) {
+        return service.getHotelWhithReviews(id);
+    }
 }

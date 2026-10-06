@@ -45,3 +45,7 @@ springdoc:
     enabled: true
     operations-sorter: method
     url: /api/openapi.yaml
+
+reviews:
+  service:
+    url: ${REVIEWS_SERVICE_URL:http://localhost:8081}

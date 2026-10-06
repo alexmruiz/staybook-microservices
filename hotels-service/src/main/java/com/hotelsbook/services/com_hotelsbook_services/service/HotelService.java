@@ -9,6 +9,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.hotelsbook.services.com_hotelsbook_services.client.ReviewsClient;
 import com.hotelsbook.services.com_hotelsbook_services.dto.request.*;
 import com.hotelsbook.services.com_hotelsbook_services.dto.response.*;
 import com.hotelsbook.services.com_hotelsbook_services.entity.*;
@@ -30,6 +31,7 @@ public class HotelService implements CrudService<HotelRequestDto, HotelResponseD
     private final AmenityRepository amenityRepository;
     private final CityRepository cityRepository;
     private final CityMapper cityMapper;
+    private final ReviewsClient reviewsClient;
 
     private static final String HOTEL_NOT_FOUND = "Hotel no encontrado con el id indicado";
 
@@ -42,20 +44,18 @@ public class HotelService implements CrudService<HotelRequestDto, HotelResponseD
      * @param addressMapper     Mapeador para transformar objetos Address
      * @param amenityRepository Repositorio de persistencia de datos para Amenity
      * @param roomTypeMapper    Mapeador para transformar objetos RoomType
+     * @param reviewsClient     Cliente de reviews
      */
-    public HotelService(
-            HotelMapper mapper,
-            HotelRepository repository,
-            AmenityRepository amenityRepository,
-            RoomTypeMapper roomTypeMapper,
-            CityRepository cityRepository,
-            CityMapper cityMapper) {
+    public HotelService(HotelMapper mapper, HotelRepository repository, AmenityRepository amenityRepository,
+            RoomTypeMapper roomTypeMapper, CityRepository cityRepository, CityMapper cityMapper,
+            ReviewsClient reviewsClient) {
         this.mapper = mapper;
         this.repository = repository;
         this.amenityRepository = amenityRepository;
         this.roomTypeMapper = roomTypeMapper;
         this.cityRepository = cityRepository;
         this.cityMapper = cityMapper;
+        this.reviewsClient = reviewsClient;
     }
 
     /**
@@ -78,8 +78,7 @@ public class HotelService implements CrudService<HotelRequestDto, HotelResponseD
         // Si se reciben IDs de amenities, se recuperan las entidades de la BD y se
         // asocian al hotel
         if (request.amenitiesIds() != null && !request.amenitiesIds().isEmpty()) {
-            Set<Amenity> amenities = amenityRepository.findAllById(request.amenitiesIds())
-                    .stream()
+            Set<Amenity> amenities = amenityRepository.findAllById(request.amenitiesIds()).stream()
                     .collect(Collectors.toSet());
 
             hotel.setAmenities(amenities);
@@ -129,8 +128,7 @@ public class HotelService implements CrudService<HotelRequestDto, HotelResponseD
      */
     @Override
     public Page<HotelResponseDto> findAll(Pageable pageable) {
-        return repository.findAll(pageable)
-                .map(mapper::toResponseDto);
+        return repository.findAll(pageable).map(mapper::toResponseDto);
     }
 
     /**
@@ -143,8 +141,7 @@ public class HotelService implements CrudService<HotelRequestDto, HotelResponseD
      */
     @Override
     public HotelResponseDto findById(Long id) {
-        Hotel hotel = repository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException(HOTEL_NOT_FOUND));
+        Hotel hotel = repository.findById(id).orElseThrow(() -> new EntityNotFoundException(HOTEL_NOT_FOUND));
         return mapper.toResponseDto(hotel);
     }
 
@@ -159,8 +156,7 @@ public class HotelService implements CrudService<HotelRequestDto, HotelResponseD
      */
     @Override
     public HotelResponseDto update(Long id, HotelRequestDto request) {
-        Hotel hotel = repository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException(HOTEL_NOT_FOUND));
+        Hotel hotel = repository.findById(id).orElseThrow(() -> new EntityNotFoundException(HOTEL_NOT_FOUND));
 
         hotel.setName(request.name());
         hotel.setDescription(request.description());
@@ -180,20 +176,17 @@ public class HotelService implements CrudService<HotelRequestDto, HotelResponseD
 
         // Actualización opcional de los tipos de habitación (RoomTypes)
         if (request.roomTypes() != null) {
-            Set<RoomType> newRoomTypes = request.roomTypes().stream()
-                    .map(dto -> {
-                        RoomType rt = roomTypeMapper.toEntity(dto);
-                        rt.setHotel(hotel);
-                        return rt;
-                    })
-                    .collect(Collectors.toSet());
+            Set<RoomType> newRoomTypes = request.roomTypes().stream().map(dto -> {
+                RoomType rt = roomTypeMapper.toEntity(dto);
+                rt.setHotel(hotel);
+                return rt;
+            }).collect(Collectors.toSet());
             hotel.setRoomTypes(newRoomTypes);
         }
 
         // Actualización opcional de los servicios (Amenities) por sus IDs
         if (request.amenitiesIds() != null && !request.amenitiesIds().isEmpty()) {
-            Set<Amenity> amenities = amenityRepository.findAllById(request.amenitiesIds())
-                    .stream()
+            Set<Amenity> amenities = amenityRepository.findAllById(request.amenitiesIds()).stream()
                     .collect(Collectors.toSet());
 
             hotel.setAmenities(amenities);
@@ -215,9 +208,20 @@ public class HotelService implements CrudService<HotelRequestDto, HotelResponseD
             throw new EntityNotFoundException(HOTEL_NOT_FOUND);
         }
 
-        return repository.findByAddressCityId(cityId)
-                .stream()
-                .map(mapper::toResponseDto)
-                .toList();
+        return repository.findByAddressCityId(cityId).stream().map(mapper::toResponseDto).toList();
+    }
+
+    /**
+     * Obtiene un hotel junto con sus reseñas y la calificación media.
+     *
+     * @param hotelId identificador del hotel
+     * @return detalles del hotel con sus reseñas y calificación media
+     */
+    public HotelDetailResponseDto getHotelWhithReviews(Long hotelId) {
+        Hotel hotel = repository.findById(hotelId).orElseThrow(() -> new EntityNotFoundException(HOTEL_NOT_FOUND));
+        HotelResponseDto hotelResponse = mapper.toResponseDto(hotel);
+
+        ReviewsSummaryResponseDto summary = reviewsClient.getSummaryByHotelId(hotelId);
+        return new HotelDetailResponseDto(hotelResponse, summary.reviews(), summary.averageQualification());
     }
 }
