@@ -10,12 +10,22 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.hotelsbook.services.com_hotelsbook_services.client.ReviewsClient;
-import com.hotelsbook.services.com_hotelsbook_services.dto.request.*;
-import com.hotelsbook.services.com_hotelsbook_services.dto.response.*;
-import com.hotelsbook.services.com_hotelsbook_services.entity.*;
+import com.hotelsbook.services.com_hotelsbook_services.dto.request.HotelRequestDto;
+import com.hotelsbook.services.com_hotelsbook_services.dto.response.HotelDetailResponseDto;
+import com.hotelsbook.services.com_hotelsbook_services.dto.response.HotelResponseDto;
+import com.hotelsbook.services.com_hotelsbook_services.dto.response.ReviewsSummaryResponseDto;
+import com.hotelsbook.services.com_hotelsbook_services.entity.Address;
+import com.hotelsbook.services.com_hotelsbook_services.entity.Amenity;
+import com.hotelsbook.services.com_hotelsbook_services.entity.City;
+import com.hotelsbook.services.com_hotelsbook_services.entity.Hotel;
+import com.hotelsbook.services.com_hotelsbook_services.entity.RoomType;
 import com.hotelsbook.services.com_hotelsbook_services.exception.EntityNotFoundException;
-import com.hotelsbook.services.com_hotelsbook_services.mapper.*;
-import com.hotelsbook.services.com_hotelsbook_services.repository.*;
+import com.hotelsbook.services.com_hotelsbook_services.mapper.CityMapper;
+import com.hotelsbook.services.com_hotelsbook_services.mapper.HotelMapper;
+import com.hotelsbook.services.com_hotelsbook_services.mapper.RoomTypeMapper;
+import com.hotelsbook.services.com_hotelsbook_services.repository.AmenityRepository;
+import com.hotelsbook.services.com_hotelsbook_services.repository.CityRepository;
+import com.hotelsbook.services.com_hotelsbook_services.repository.HotelRepository;
 
 /**
  * Servicio encargado de gestionar la lógica de negocio relativa a los hoteles.
@@ -217,7 +227,7 @@ public class HotelService implements CrudService<HotelRequestDto, HotelResponseD
      * @param hotelId identificador del hotel
      * @return detalles del hotel con sus reseñas y calificación media
      */
-    public HotelDetailResponseDto getHotelWhithReviews(Long hotelId) {
+    public HotelDetailResponseDto getHotelWithReviews(Long hotelId) {
         Hotel hotel = repository.findById(hotelId).orElseThrow(() -> new EntityNotFoundException(HOTEL_NOT_FOUND));
         HotelResponseDto hotelResponse = mapper.toResponseDto(hotel);
 

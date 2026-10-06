@@ -32,11 +32,11 @@ import com.hotelsbook.services.com_hotelsbook_services.dto.request.AddressReques
 import com.hotelsbook.services.com_hotelsbook_services.dto.request.CityRequestDto;
 import com.hotelsbook.services.com_hotelsbook_services.dto.request.HotelRequestDto;
 import com.hotelsbook.services.com_hotelsbook_services.dto.request.RoomTypeRequestDto;
+import com.hotelsbook.services.com_hotelsbook_services.dto.response.AmenityResponseDto;
 import com.hotelsbook.services.com_hotelsbook_services.dto.response.HotelDetailResponseDto;
 import com.hotelsbook.services.com_hotelsbook_services.dto.response.HotelResponseDto;
-import com.hotelsbook.services.com_hotelsbook_services.dto.response.RoomTypeResponseDto;
-import com.hotelsbook.services.com_hotelsbook_services.dto.response.AmenityResponseDto;
 import com.hotelsbook.services.com_hotelsbook_services.dto.response.ReviewResponseDto;
+import com.hotelsbook.services.com_hotelsbook_services.dto.response.RoomTypeResponseDto;
 import com.hotelsbook.services.com_hotelsbook_services.entity.RoomTypeName;
 import com.hotelsbook.services.com_hotelsbook_services.exception.EntityNotFoundException;
 import com.hotelsbook.services.com_hotelsbook_services.service.HotelService;
@@ -155,7 +155,7 @@ class HotelControllerTest {
         ReviewResponseDto review = new ReviewResponseDto("Buen servicio", 4.5);
         HotelDetailResponseDto detailResponse =
                 new HotelDetailResponseDto(response, List.of(review), 4.5);
-        when(service.getHotelWhithReviews(1L)).thenReturn(detailResponse);
+        when(service.getHotelWithReviews(1L)).thenReturn(detailResponse);
 
         mockMvc.perform(get("/api/hotels/{id}/details", 1L))
                 .andExpect(status().isOk())
@@ -164,19 +164,19 @@ class HotelControllerTest {
                 .andExpect(jsonPath("$.reviews[0].qualification").value(4.5))
                 .andExpect(jsonPath("$.averageQualification").value(4.5));
 
-        verify(service).getHotelWhithReviews(1L);
+        verify(service).getHotelWithReviews(1L);
     }
 
     @Test
     void getHotelWhithReviews_WhenHotelDoesNotExist_ShouldReturn404() throws Exception {
         String errorMessage = "Hotel no encontrado con el id indicado";
-        when(service.getHotelWhithReviews(1L))
+        when(service.getHotelWithReviews(1L))
                 .thenThrow(new EntityNotFoundException(errorMessage));
 
         mockMvc.perform(get("/api/hotels/{id}/details", 1L))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.detail").value(errorMessage));
 
-        verify(service).getHotelWhithReviews(1L);
+        verify(service).getHotelWithReviews(1L);
     }
 }

@@ -452,7 +452,7 @@ class HotelServiceTest {
     }
 
     @Nested
-    @DisplayName("Test getHotelWhithReviews()")
+    @DisplayName("Test getHotelWithReviews()")
     class GetHotelWhithReviews {
 
         @Test
@@ -467,7 +467,7 @@ class HotelServiceTest {
             when(mapper.toResponseDto(hotel)).thenReturn(response);
             when(reviewsClient.getSummaryByHotelId(hotelId)).thenReturn(reviewsSummary);
 
-            HotelDetailResponseDto result = service.getHotelWhithReviews(hotelId);
+            HotelDetailResponseDto result = service.getHotelWithReviews(hotelId);
 
             assertNotNull(result);
             assertEquals(response, result.hotel());
@@ -486,7 +486,7 @@ class HotelServiceTest {
 
             EntityNotFoundException exception = assertThrows(
                     EntityNotFoundException.class,
-                    () -> service.getHotelWhithReviews(hotelId));
+                    () -> service.getHotelWithReviews(hotelId));
 
             assertEquals("Hotel no encontrado con el id indicado", exception.getMessage());
             verify(repository).findById(hotelId);
