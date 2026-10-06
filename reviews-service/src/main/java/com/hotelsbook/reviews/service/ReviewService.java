@@ -106,31 +106,18 @@ public class ReviewService {
     }
 
     /**
-     * Calcula la calificación promedio de las reseñas del hotel.
-     *
-     * @param hotelId identificador del hotel
-     * @return resumen con las reseñas y su calificación promedio
+     * Devuelve una lista de reviews y la media de la calificación de las reseñas
+     * 
+     * @param Long hotelId 
+     * @return ReviewSummaryResponseDto 
      */
     public ReviewSummaryResponseDto getAverageQualification(Long hotelId) {
         List<ReviewResponseDto> reviews = reviewRepository.findByHotelId(hotelId).stream()
                 .map(reviewMapper::toResponseDto).toList();
 
-        Double totalQualification = 0.00;
-        int totalReviews = 0;
-        Double qualification = 0.00;
+        double averageQualification = reviews.stream().mapToDouble(ReviewResponseDto::qualification).average()
+                .orElse(0.0);
 
-        if (!reviews.isEmpty()) {
-            for (ReviewResponseDto review : reviews) {
-                totalReviews = totalReviews + 1;
-                totalQualification = totalQualification + review.qualification();
-            }
-
-            qualification = totalQualification / totalReviews;
-        } else {
-            qualification = 0.00;
-        }
-
-        ReviewSummaryResponseDto reviewSummary = new ReviewSummaryResponseDto(reviews, qualification);
-        return reviewSummary;
+        return new ReviewSummaryResponseDto(reviews, averageQualification);
     }
 }
