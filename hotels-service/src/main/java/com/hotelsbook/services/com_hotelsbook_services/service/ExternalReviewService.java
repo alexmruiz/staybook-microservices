@@ -4,12 +4,14 @@ import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
 
 import com.hotelsbook.services.com_hotelsbook_services.client.ReviewsClient;
 import com.hotelsbook.services.com_hotelsbook_services.dto.response.ReviewsSummaryResponseDto;
 
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 
+@Service 
 public class ExternalReviewService {
 
     private static final Logger log = LoggerFactory.getLogger(ExternalReviewService.class);
