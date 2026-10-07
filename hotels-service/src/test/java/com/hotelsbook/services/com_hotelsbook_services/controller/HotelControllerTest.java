@@ -19,15 +19,18 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hotelsbook.services.com_hotelsbook_services.config.SecurityConfig;
 import com.hotelsbook.services.com_hotelsbook_services.dto.request.AddressRequestDto;
 import com.hotelsbook.services.com_hotelsbook_services.dto.request.CityRequestDto;
 import com.hotelsbook.services.com_hotelsbook_services.dto.request.HotelRequestDto;
@@ -41,7 +44,9 @@ import com.hotelsbook.services.com_hotelsbook_services.entity.RoomTypeName;
 import com.hotelsbook.services.com_hotelsbook_services.exception.EntityNotFoundException;
 import com.hotelsbook.services.com_hotelsbook_services.service.HotelService;
 
-@WebMvcTest(HotelController.class)
+@WebMvcTest(value = HotelController.class, properties = "jwt.secret=01234567890123456789012345678901")
+@Import(SecurityConfig.class)
+@WithMockUser(roles = "USER")
 class HotelControllerTest {
 
     @Autowired
