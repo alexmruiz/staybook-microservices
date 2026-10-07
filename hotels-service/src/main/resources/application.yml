@@ -3,6 +3,13 @@ spring:
     import: "optional:configserver:http://localhost:8888"
   application:
     name: hotels-service
+  cloud:
+    openfeign:
+      client:
+        config:
+          reviews-service:
+            connectTimeout: 2000
+            readTimeout: 5000
 
   # Configuracion de la base de datos
   datasource:
@@ -49,3 +56,14 @@ springdoc:
 reviews:
   service:
     url: ${REVIEWS_SERVICE_URL:http://localhost:8081}
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      reviewsService:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 5
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 2

@@ -74,6 +74,9 @@ class HotelServiceTest {
     @Mock
     private ReviewsClient reviewsClient;
 
+    @Mock
+    private ExternalReviewService externalReviewService;
+
     @InjectMocks
     private HotelService service;
 
@@ -453,10 +456,10 @@ class HotelServiceTest {
 
     @Nested
     @DisplayName("Test getHotelWithReviews()")
-    class GetHotelWhithReviews {
+    class GetHotelWithReviews {
 
         @Test
-        void getHotelWhithReviews_sholudReturnResponseDto() {
+        void getHotelWithReviews_shouldReturnResponseDto() {
             Long hotelId = 21L;
             ReviewResponseDto review = new ReviewResponseDto("text", 5.00);
             List<ReviewResponseDto> reviews = new ArrayList<>();
@@ -465,7 +468,7 @@ class HotelServiceTest {
 
             when(repository.findById(hotelId)).thenReturn(Optional.of(hotel));
             when(mapper.toResponseDto(hotel)).thenReturn(response);
-            when(reviewsClient.getSummaryByHotelId(hotelId)).thenReturn(reviewsSummary);
+            when(externalReviewService.getReviews(hotelId)).thenReturn(reviewsSummary);
 
             HotelDetailResponseDto result = service.getHotelWithReviews(hotelId);
 
@@ -476,11 +479,11 @@ class HotelServiceTest {
 
             verify(repository).findById(hotelId);
             verify(mapper).toResponseDto(hotel);
-            verify(reviewsClient).getSummaryByHotelId(hotelId);
+            verify(externalReviewService).getReviews(hotelId);
         }
 
         @Test
-        void getHotelWhithReviews_shouldThrowWhenHotelDoesNotExist() {
+        void getHotelWithReviews_shouldThrowWhenHotelDoesNotExist() {
             Long hotelId = 21L;
             when(repository.findById(hotelId)).thenReturn(Optional.empty());
 
@@ -491,7 +494,7 @@ class HotelServiceTest {
             assertEquals("Hotel no encontrado con el id indicado", exception.getMessage());
             verify(repository).findById(hotelId);
             verify(mapper, never()).toResponseDto(any());
-            verify(reviewsClient, never()).getSummaryByHotelId(anyLong());
+            verify(externalReviewService, never()).getReviews(anyLong());
         }
     }
 

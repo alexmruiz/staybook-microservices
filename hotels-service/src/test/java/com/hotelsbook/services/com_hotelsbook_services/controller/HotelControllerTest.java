@@ -151,7 +151,7 @@ class HotelControllerTest {
     }
 
     @Test
-    void getHotelWhithReviews_WhenHotelExists_ShouldReturn200AndDetails() throws Exception {
+    void getHotelWithReviews_WhenHotelExists_ShouldReturn200AndDetails() throws Exception {
         ReviewResponseDto review = new ReviewResponseDto("Buen servicio", 4.5);
         HotelDetailResponseDto detailResponse =
                 new HotelDetailResponseDto(response, List.of(review), 4.5);
@@ -168,7 +168,7 @@ class HotelControllerTest {
     }
 
     @Test
-    void getHotelWhithReviews_WhenHotelDoesNotExist_ShouldReturn404() throws Exception {
+    void getHotelWithReviews_WhenHotelDoesNotExist_ShouldReturn404() throws Exception {
         String errorMessage = "Hotel no encontrado con el id indicado";
         when(service.getHotelWithReviews(1L))
                 .thenThrow(new EntityNotFoundException(errorMessage));
