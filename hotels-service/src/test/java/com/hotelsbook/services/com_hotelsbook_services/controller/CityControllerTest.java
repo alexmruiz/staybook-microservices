@@ -3,6 +3,7 @@ package com.hotelsbook.services.com_hotelsbook_services.controller;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -21,11 +22,14 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithAnonymousUser;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -36,10 +40,13 @@ import com.hotelsbook.services.com_hotelsbook_services.dto.response.CityResponse
 import com.hotelsbook.services.com_hotelsbook_services.dto.response.HotelResponseDto;
 import com.hotelsbook.services.com_hotelsbook_services.exception.EntityNotFoundException;
 import com.hotelsbook.services.com_hotelsbook_services.exception.ImportCityException;
+import com.hotelsbook.services.com_hotelsbook_services.config.SecurityConfig;
 import com.hotelsbook.services.com_hotelsbook_services.service.CityService;
 import com.hotelsbook.services.com_hotelsbook_services.service.HotelService;
 
-@WebMvcTest(CityController.class)
+@WebMvcTest(value = CityController.class, properties = "jwt.secret=01234567890123456789012345678901")
+@Import(SecurityConfig.class)
+@WithMockUser(roles = "USER")
 class CityControllerTest {
 
     @Autowired
@@ -205,6 +212,7 @@ class CityControllerTest {
 
         @Test
         @DisplayName("Debe devolver 200 OK y el resumen cuando la importación tiene éxito")
+        @WithMockUser(roles = "ADMIN")
         void importCitiesForCountry_WhenSuccessful_ShouldReturn200OkAndSummary() throws Exception {
             String country = "Peru";
             CityImportResponseDto importResponse = new CityImportResponseDto(country, 3, 1);
@@ -222,6 +230,7 @@ class CityControllerTest {
 
         @Test
         @DisplayName("Debe devolver 404 cuando falla la importación")
+        @WithMockUser(roles = "ADMIN")
         void importCitiesForCountry_WhenImportFails_ShouldReturn404() throws Exception {
             String country = "Peru";
             String errorMessage = "Error al obtener ciudades de la API externa para el país: " + country;
@@ -233,6 +242,27 @@ class CityControllerTest {
                     .andExpect(jsonPath("$.detail").value(errorMessage));
 
             verify(cityService).importCitiesForCountry(country);
+        }
+
+        @Test
+        @DisplayName("Debe devolver 403 cuando el usuario no tiene el rol ADMIN")
+        void importCitiesForCountry_WhenUserHasOnlyUserRole_ShouldReturn403() throws Exception {
+            mockMvc.perform(post("/api/cities/import")
+                    .param("country", "Peru"))
+                    .andExpect(status().isForbidden());
+
+            verify(cityService, never()).importCitiesForCountry(any());
+        }
+
+        @Test
+        @DisplayName("Debe devolver 401 cuando la petición no está autenticada")
+        @WithAnonymousUser
+        void importCitiesForCountry_WhenAnonymous_ShouldReturn401() throws Exception {
+            mockMvc.perform(post("/api/cities/import")
+                    .param("country", "Peru"))
+                    .andExpect(status().isUnauthorized());
+
+            verify(cityService, never()).importCitiesForCountry(any());
         }
     }
 }
