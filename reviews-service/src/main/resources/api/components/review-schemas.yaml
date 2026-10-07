@@ -33,8 +33,27 @@ ReviewResponseDto:
       format: double
       description: Calificación otorgada al hotel
       example: 4.5
+    description:
+      type: string
+      description: Texto de la reseña
     createdAt:
       type: string
       format: date-time
       description: Fecha y hora de creación de la reseña
       example: '2026-08-24T17:30:00'
+    userId:
+      type: integer
+      format: int64
+      description: Identificador del usuario autor de la reseña
+
+ReviewSummaryResponseDto:
+  type: object
+  properties:
+    reviews:
+      type: array
+      items:
+        $ref: '#/ReviewResponseDto'
+    averageQualification:
+      type: number
+      format: double
+      nullable: true

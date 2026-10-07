@@ -71,3 +71,17 @@ CityPageResponseDto:
     empty:
       type: boolean
       example: false
+
+CityImportResponseDto:
+  type: object
+  title: CityImportResponseDto
+  properties:
+    countryName:
+      type: string
+      example: España
+    insertedCount:
+      type: integer
+      example: 12
+    discardedCount:
+      type: integer
+      example: 3

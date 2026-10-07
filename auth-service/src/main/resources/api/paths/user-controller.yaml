@@ -12,13 +12,13 @@ userProfile:
         content:
           application/json:
             schema:
-              $ref: '../schemas/schemas.yaml#/components/schemas/UserResponseDto'
+              $ref: '../components/auth-schemas.yaml#/UserResponseDto'
       '401':
         description: Usuario no autenticado
         content:
           application/json:
             schema:
-              $ref: '../schemas/schemas.yaml#/components/schemas/ErrorResponse'
+              $ref: '../components/auth-schemas.yaml#/ErrorResponse'
 
   put:
     tags:
@@ -32,23 +32,23 @@ userProfile:
       content:
         application/json:
           schema:
-            $ref: '../schemas/schemas.yaml#/components/schemas/RegisterRequestDto'
+            $ref: '../components/auth-schemas.yaml#/RegisterRequestDto'
     responses:
       '200':
         description: Perfil actualizado exitosamente
         content:
           application/json:
             schema:
-              $ref: '../schemas/schemas.yaml#/components/schemas/UserResponseDto'
+              $ref: '../components/auth-schemas.yaml#/UserResponseDto'
       '400':
         description: Datos de entrada inválidos
         content:
           application/json:
             schema:
-              $ref: '../schemas/schemas.yaml#/components/schemas/ErrorResponse'
+              $ref: '../components/auth-schemas.yaml#/ErrorResponse'
       '401':
         description: Usuario no autenticado
         content:
           application/json:
             schema:
-              $ref: '../schemas/schemas.yaml#/components/schemas/ErrorResponse'
+              $ref: '../components/auth-schemas.yaml#/ErrorResponse'

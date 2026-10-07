@@ -53,10 +53,11 @@ AuthResponseDto:
       description: Tipo de token
       example: Bearer
     expiresIn:
+    expiresIn:
       type: integer
       format: int64
       description: Tiempo de expiración del token en milisegundos o segundos
-      example: 86400
+      example: 86400000
     email:
       type: string
       format: email
@@ -72,6 +73,27 @@ AuthResponseDto:
     - expiresIn
     - email
     - role
+
+ErrorResponse:
+  type: object
+  description: Formato de error basado en RFC 9457 Problem Details
+  properties:
+    type:
+      type: string
+      format: uri
+      example: about:blank
+    title:
+      type: string
+      example: Unauthorized
+    status:
+      type: integer
+      example: 401
+    detail:
+      type: string
+      example: Token inválido o ausente
+    instance:
+      type: string
+      format: uri
 
 UserResponseDto:
   type: object
