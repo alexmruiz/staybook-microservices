@@ -456,10 +456,10 @@ class HotelServiceTest {
 
     @Nested
     @DisplayName("Test getHotelWithReviews()")
-    class GetHotelWhithReviews {
+    class GetHotelWithReviews {
 
         @Test
-        void getHotelWhithReviews_sholudReturnResponseDto() {
+        void getHotelWithReviews_shouldReturnResponseDto() {
             Long hotelId = 21L;
             ReviewResponseDto review = new ReviewResponseDto("text", 5.00);
             List<ReviewResponseDto> reviews = new ArrayList<>();
@@ -483,7 +483,7 @@ class HotelServiceTest {
         }
 
         @Test
-        void getHotelWhithReviews_shouldThrowWhenHotelDoesNotExist() {
+        void getHotelWithReviews_shouldThrowWhenHotelDoesNotExist() {
             Long hotelId = 21L;
             when(repository.findById(hotelId)).thenReturn(Optional.empty());
 
