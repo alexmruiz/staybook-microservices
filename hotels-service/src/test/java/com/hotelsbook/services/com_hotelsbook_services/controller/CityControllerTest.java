@@ -229,16 +229,16 @@ class CityControllerTest {
         }
 
         @Test
-        @DisplayName("Debe devolver 404 cuando falla la importación")
+        @DisplayName("Debe devolver 502 cuando falla la importación")
         @WithMockUser(roles = "ADMIN")
-        void importCitiesForCountry_WhenImportFails_ShouldReturn404() throws Exception {
+        void importCitiesForCountry_WhenImportFails_ShouldReturn502BadGateway() throws Exception {
             String country = "Peru";
             String errorMessage = "Error al obtener ciudades de la API externa para el país: " + country;
             when(cityService.importCitiesForCountry(country)).thenThrow(new ImportCityException(errorMessage));
 
             mockMvc.perform(post("/api/cities/import")
                     .param("country", country))
-                    .andExpect(status().isNotFound())
+                    .andExpect(status().isBadGateway())
                     .andExpect(jsonPath("$.detail").value(errorMessage));
 
             verify(cityService).importCitiesForCountry(country);
