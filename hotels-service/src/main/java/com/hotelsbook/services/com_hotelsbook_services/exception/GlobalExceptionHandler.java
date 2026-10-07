@@ -23,14 +23,14 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(EntityNotFoundException.class)
     public ProblemDetail handleReviewNotFound(EntityNotFoundException ex) {
         return ProblemDetail.forStatusAndDetail(
-                HttpStatus.BAD_GATEWAY,
+                HttpStatus.NOT_FOUND,
                 ex.getMessage());
     }
 
     @ExceptionHandler(ImportCityException.class)
     public ProblemDetail handleImportCityException(ImportCityException ex) {
         log.error("Error no esperado en la api: {}", ex.getMessage());
-        return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_GATEWAY , ex.getMessage());
     }
 
     /**
