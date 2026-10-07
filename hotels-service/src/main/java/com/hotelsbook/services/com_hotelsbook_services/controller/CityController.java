@@ -63,8 +63,8 @@ public class CityController {
         return ResponseEntity.ok(hotelService.findByCity(cityId));
     }
 
-    @GetMapping("/import")
+    @PostMapping("/import")
     public ResponseEntity<CityImportResponseDto> importCitiesForcountry(@RequestParam String country) {
-        return ResponseEntity.ok(cityService.importCitiesForcountry(country));
+        return ResponseEntity.ok(cityService.importCitiesForCountry(country));
     }
 }

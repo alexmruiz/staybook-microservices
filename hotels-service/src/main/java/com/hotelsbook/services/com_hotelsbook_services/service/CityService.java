@@ -1,8 +1,12 @@
 package com.hotelsbook.services.com_hotelsbook_services.service;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.hotelsbook.services.com_hotelsbook_services.client.CountriesNowClient;
 import com.hotelsbook.services.com_hotelsbook_services.dto.request.CityRequestDto;
@@ -12,6 +16,7 @@ import com.hotelsbook.services.com_hotelsbook_services.dto.response.CityResponse
 import com.hotelsbook.services.com_hotelsbook_services.dto.response.CountriesNowResponse;
 import com.hotelsbook.services.com_hotelsbook_services.entity.City;
 import com.hotelsbook.services.com_hotelsbook_services.exception.EntityNotFoundException;
+import com.hotelsbook.services.com_hotelsbook_services.exception.ImportCityException;
 import com.hotelsbook.services.com_hotelsbook_services.mapper.CityMapper;
 import com.hotelsbook.services.com_hotelsbook_services.repository.CityRepository;
 
@@ -47,8 +52,7 @@ public class CityService implements CrudService<CityRequestDto, CityResponseDto>
 
     @Override
     public Page<CityResponseDto> findAll(Pageable pageable) {
-        return cityRepository.findAll(pageable)
-                .map(cityMapper::toResponseDto);
+        return cityRepository.findAll(pageable).map(cityMapper::toResponseDto);
     }
 
     /**
@@ -59,8 +63,7 @@ public class CityService implements CrudService<CityRequestDto, CityResponseDto>
      */
     @Override
     public CityResponseDto findById(Long id) {
-        City city = cityRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException(CITY_NOT_FOUND + id));
+        City city = cityRepository.findById(id).orElseThrow(() -> new EntityNotFoundException(CITY_NOT_FOUND + id));
         return cityMapper.toResponseDto(city);
     }
 
@@ -98,17 +101,26 @@ public class CityService implements CrudService<CityRequestDto, CityResponseDto>
 
         cityRepository.delete(existCity);
     }
-
-    public CityImportResponseDto importCitiesForcountry(String countryName) {
+   
+    /**
+     * Importa de la apli contruies-now países y ciudades. Descarta las existentes y valida 
+     * que no estén en blando.
+     * 
+     * @param String countryName
+     * @return devuelve el número de ciudades insertadas y rechadas
+     */
+     @Transactional
+    public CityImportResponseDto importCitiesForCountry(String countryName) {
         CountriesNowRequest request = new CountriesNowRequest(countryName);
         CountriesNowResponse response = countriesNowClient.getCitiesByCountry(request);
 
         if (response == null || response.error() || response.data() == null) {
-            throw new RuntimeException("Error al obtener ciudades de la API externa para el país: " + countryName);
+            throw new ImportCityException("Error al obtener ciudades de la API externa para el país: " + countryName);
         }
 
         int insertedCount = 0;
         int discardedCount = 0;
+        List<City> cities = new ArrayList<>();
 
         for (String cityName : response.data()) {
             if (cityName == null || cityName.isBlank() || cityName.length() > 50) {
@@ -121,17 +133,16 @@ public class CityService implements CrudService<CityRequestDto, CityResponseDto>
                 City city = new City();
                 city.setName(cityName.trim());
                 city.setCountry(countryName.trim());
-                cityRepository.save(city);
+                cities.add(city);
                 insertedCount++;
             } else {
                 discardedCount++;
             }
         }
+        cityRepository.saveAll(cities);
 
         return new CityImportResponseDto(countryName, insertedCount, discardedCount);
 
     }
-
-
 
 }
