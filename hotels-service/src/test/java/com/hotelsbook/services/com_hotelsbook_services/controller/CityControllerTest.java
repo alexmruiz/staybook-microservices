@@ -31,9 +31,11 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hotelsbook.services.com_hotelsbook_services.dto.request.CityRequestDto;
+import com.hotelsbook.services.com_hotelsbook_services.dto.response.CityImportResponseDto;
 import com.hotelsbook.services.com_hotelsbook_services.dto.response.CityResponseDto;
 import com.hotelsbook.services.com_hotelsbook_services.dto.response.HotelResponseDto;
 import com.hotelsbook.services.com_hotelsbook_services.exception.EntityNotFoundException;
+import com.hotelsbook.services.com_hotelsbook_services.exception.ImportCityException;
 import com.hotelsbook.services.com_hotelsbook_services.service.CityService;
 import com.hotelsbook.services.com_hotelsbook_services.service.HotelService;
 
@@ -194,6 +196,43 @@ class CityControllerTest {
                     .andExpect(jsonPath("$[0].description").value("Calle Mayor 1"));
 
             verify(hotelService).findByCity(1L);
+        }
+    }
+
+    @Nested
+    @DisplayName("POST /api/cities/import")
+    class ImportCitiesTests {
+
+        @Test
+        @DisplayName("Debe devolver 200 OK y el resumen cuando la importación tiene éxito")
+        void importCitiesForCountry_WhenSuccessful_ShouldReturn200OkAndSummary() throws Exception {
+            String country = "Peru";
+            CityImportResponseDto importResponse = new CityImportResponseDto(country, 3, 1);
+            when(cityService.importCitiesForCountry(country)).thenReturn(importResponse);
+
+            mockMvc.perform(post("/api/cities/import")
+                    .param("country", country))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.countryName").value(country))
+                    .andExpect(jsonPath("$.insertedCount").value(3))
+                    .andExpect(jsonPath("$.discardedCount").value(1));
+
+            verify(cityService).importCitiesForCountry(country);
+        }
+
+        @Test
+        @DisplayName("Debe devolver 404 cuando falla la importación")
+        void importCitiesForCountry_WhenImportFails_ShouldReturn404() throws Exception {
+            String country = "Peru";
+            String errorMessage = "Error al obtener ciudades de la API externa para el país: " + country;
+            when(cityService.importCitiesForCountry(country)).thenThrow(new ImportCityException(errorMessage));
+
+            mockMvc.perform(post("/api/cities/import")
+                    .param("country", country))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.detail").value(errorMessage));
+
+            verify(cityService).importCitiesForCountry(country);
         }
     }
 }
