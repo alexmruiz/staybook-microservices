@@ -110,3 +110,27 @@ hotelById:
         description: Hotel eliminado correctamente
       '404':
         description: Hotel no encontrado
+
+hotelDetails:
+  get:
+    tags:
+      - Hoteles
+    summary: Obtener hotel con detalles de reseñas
+    description: Devuelve el hotel, sus reseñas y la valoración media.
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID del hotel
+        schema:
+          type: integer
+          format: int64
+    responses:
+      '200':
+        description: Hotel y detalles de reseñas obtenidos correctamente
+        content:
+          application/json:
+            schema:
+              $ref: '../components/hotel-schemas.yaml#/HotelDetailResponseDto'
+      '404':
+        description: Hotel no encontrado

@@ -1,55 +1,79 @@
-# Development Notes
+# Desarrollo y validación
+
+Esta guía documenta cómo validar los módulos y qué tener en cuenta al trabajar con inicialización de datos, pruebas y cambios de esquema. Los comandos se ejecutan desde la raíz del repositorio.
 
 ## Inicialización de datos
 
-- `hotels-service` incluye un script de datos en `src/main/resources/import-hotels.sql` que se carga automáticamente por Spring Boot cuando `spring.sql.init.mode` está configurado como `always`.
-- En entornos de test, esto puede provocar colisiones con datos insertados por pruebas unitarias o de integración. Para los tests que gestionan sus propios datos use:
-  - `@DataJpaTest(properties = "spring.sql.init.mode=never")` para desactivar la importación global.
-  - Mover scripts de test a `src/test/resources` y controlarlos con `@Sql` cuando se necesiten.
+Los datos de ejemplo se encuentran en recursos de aplicación:
 
-Nota importante: algunos módulos incluyen un `application-test.properties` que actualmente tiene `spring.sql.init.mode=always`. Esto provoca que los scripts de `src/main/resources` (por ejemplo `import-hotels.sql`) se ejecuten durante tests y ocasione conflictos de datos o fallos por duplicidad. Recomendaciones:
+| Servicio | Script | Configuración actual |
+|---|---|---|
+| Hotels Service | `hotels-service/src/main/resources/import-hotels.sql` | `spring.sql.init.mode=always` |
+| Reviews Service | `reviews-service/src/main/resources/import-reviews.sql` | `spring.sql.init.mode=always` |
 
-- Dejar por defecto `spring.sql.init.mode=never` en el perfil de test y activar la importación sólo en los tests que la requieran (con `@Sql` o un profile `integration`).
-- Para pruebas de integración que necesitan los datos del script, use Testcontainers (Postgres) o active explícitamente la importación en un profile `integration` (no en el profile de unidad).
-- Evite depender de scripts en `src/main/resources` para pruebas unitarias; mueva datos de ejemplo a `src/test/resources` si son necesarios en muchas pruebas.
+Los archivos `application-test.properties` de Hotels, Booking, Reviews y Auth configuran una base de datos H2 en memoria y también establecen `spring.sql.init.mode=always`. Algunos tests activan explícitamente el perfil `test`. Por tanto, cuando un contexto de prueba carga esos ajustes, Spring puede ejecutar los scripts SQL disponibles en `src/main/resources`; esto puede interferir con las pruebas que preparan sus propios registros o esperan una base vacía.
 
-## Errores de path variables inválidos
+Como excepción deliberada, `HotelRepositoryTest` desactiva la inicialización SQL con `@DataJpaTest(properties = "spring.sql.init.mode=never")`.
 
-- Si un cliente envía literalmente `"{id}"` en lugar de un número, el servidor lanzará `MethodArgumentTypeMismatchException` y devolverá HTTP 400 con un mensaje legible.
-- El proyecto incluye un manejador global en `hotels-service` que captura `MethodArgumentTypeMismatchException` y convierte el error en un `400 Bad Request`.
+### Criterios recomendados
 
-Nota: el manejador global se encuentra en `hotels-service/src/main/java/.../GlobalExceptionHandler.java` y utiliza `ProblemDetail` para devolver respuestas consistentes. Asegúrate de no duplicar lógica similar en otros módulos para mantener comportamientos uniformes.
+- Usar `spring.sql.init.mode=never` como valor por defecto en los perfiles de prueba.
+- Mantener fixtures específicos de pruebas en `src/test/resources` y cargarlos explícitamente con `@Sql` cuando corresponda.
+- Si un servicio necesita datos de demostración al iniciarse localmente, habilitar esa carga en una configuración o perfil de desarrollo explícito, en lugar de depender de ella en todos los entornos.
+- Al investigar errores de unicidad o resultados inesperados, comprobar qué perfil está activo y si se ejecutan scripts de inicialización antes de cada prueba.
 
-## Ejecución de tests
+Los cuatro módulos de dominio configuran H2 para sus pruebas. H2 facilita pruebas rápidas, pero no reproduce necesariamente todas las diferencias de PostgreSQL. Para validar comportamiento específico de PostgreSQL puede añadirse una suite de integración con Testcontainers; aunque Hotels declara dependencias de Testcontainers, actualmente no hay pruebas que las utilicen.
 
-Ejecutar los tests por módulo:
+## Manejo de errores HTTP
+
+Hotels, Booking, Reviews y Auth tienen su propio `GlobalExceptionHandler`. Los manejadores son locales a cada servicio y devuelven respuestas basadas en `ProblemDetail`, pero los errores concretos y sus códigos HTTP dependen de las excepciones que maneja cada uno.
+
+Hotels incluye un caso explícito para `MethodArgumentTypeMismatchException`: cuando un parámetro de ruta tipado recibe un valor que no se puede convertir, responde con HTTP 400 y un `ProblemDetail`. No se debe asumir que los demás servicios tienen el mismo tratamiento para ese error; al incorporar un caso equivalente, añádase al manejador del servicio correspondiente y cúbrase con una prueba.
+
+Al ampliar el manejo de errores:
+
+- Mantener la lógica dentro del servicio dueño del endpoint, evitando acoplar microservicios independientes.
+- Preservar los códigos HTTP adecuados para el dominio y una estructura de respuesta coherente.
+- Añadir pruebas para el estado HTTP y el cuerpo devuelto, tanto en casos esperados como en errores de validación.
+
+## Ejecutar las pruebas
+
+Desde la raíz, se puede validar cada módulo por separado:
 
 ```bash
-mvn -f hotels-service test
-mvn -f booking-service test
-mvn -f reviews-service test
+mvn -pl hotels-service test
+mvn -pl booking-service test
+mvn -pl reviews-service test
+mvn -pl auth-service test
+mvn -pl gateway-service test
+mvn -pl configserver-service test
 ```
 
-Si un test falla por violación de unicidad en la base de datos (por ejemplo `cities.name`), revisa si `import-hotels.sql` está siendo ejecutado en el contexto de la prueba y desactívalo o usa datos únicos en la prueba.
-
-Alternativa (desde la raíz del repo, útil en monorepos):
+Para ejecutar las pruebas de todo el reactor Maven:
 
 ```bash
-# Ejecutar tests de un módulo preciso
-mvn -pl booking-service test
+mvn test
+```
 
-# Ejecutar tests de un módulo y compilar los módulos necesarios
+Si un módulo requiere compilar módulos del mismo reactor de los que depende, añadir `-am` al comando selectivo, por ejemplo:
+
+```bash
 mvn -pl booking-service -am test
 ```
 
-Consejo: en CI, separar los jobs en "unit" (rápidos, sin inicializaciones globales) e "integration" (lentos, pueden usar Testcontainers o importar scripts). Mantener los tests unitarios independientes de `src/main/resources` reduce flakiness.
+Ante una violación de unicidad o una prueba que encuentra datos inesperados, comprobar primero la configuración del perfil y la ejecución de `import-hotels.sql` o `import-reviews.sql`. Para evitar dependencia entre pruebas, cada una debería crear los datos que necesita y no depender del orden de ejecución.
 
-## Recomendaciones
+## Esquema de base de datos y entornos
 
-- Para evitar sorpresas, mover la inicialización de datos de ejemplo a `src/test/resources` o condicionar su ejecución mediante profiles (`spring.profiles.active`).
-- Usar `spring.jpa.hibernate.ddl-auto=update` en entornos de desarrollo si se quiere conservar datos entre reinicios; para producción usar migraciones gestionadas (Flyway/Liquibase).
+La configuración actual no es una configuración de producción:
 
-Adicionalmente:
+| Servicio | `spring.jpa.hibernate.ddl-auto` |
+|---|---|
+| Hotels Service | `create-drop` |
+| Booking Service | `create-drop` |
+| Reviews Service | `create-drop` |
+| Auth Service | `update` |
 
-- No use `spring.jpa.hibernate.ddl-auto=update` en CI ni producción; emplee migraciones (Flyway/Liquibase) para cambios de esquema reproducibles.
-- Documente en el `README` del módulo cuándo y cómo se ejecutan los scripts de inicialización (profile requerido, ubicación del script, etc.).
+`create-drop` crea el esquema al iniciar y lo elimina al cerrar el contexto de Hibernate; no debe utilizarse cuando se necesita conservar datos. `update` intenta adaptar el esquema automáticamente, pero no ofrece cambios versionados ni reproducibles entre entornos.
+
+No hay migraciones Flyway o Liquibase configuradas actualmente. Antes de desplegar con datos persistentes, conviene definir una estrategia de migraciones versionadas y usar perfiles de configuración separados para desarrollo, pruebas y producción. No se debe presentar la configuración actual de inicialización o de generación de esquema como preparada para producción.

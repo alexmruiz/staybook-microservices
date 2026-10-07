@@ -3,6 +3,7 @@ bookings:
     post:
       summary: Crear reserva
       operationId: createBooking
+      description: El propietario de la reserva se obtiene del claim userId del JWT.
       requestBody:
         required: true
         content:
@@ -17,15 +18,10 @@ bookings:
               schema:
                 $ref: '../components/schemas.yaml#/components/schemas/BookingResponseDto'
     get:
-      summary: Listar reservas filtradas por usuario
+      summary: Listar reservas del usuario autenticado
       operationId: listBookings
+      description: El servicio filtra las reservas usando el claim userId del JWT.
       parameters:
-        - name: userId
-          in: query
-          required: true
-          schema:
-            type: integer
-            format: int64
         - name: page
           in: query
           schema:

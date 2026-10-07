@@ -9,26 +9,26 @@ register:
       content:
         application/json:
           schema:
-            $ref: '../schemas/schemas.yaml#/components/schemas/RegisterRequestDto'
+            $ref: '../components/auth-schemas.yaml#/RegisterRequestDto'
     responses:
       '201':
         description: Usuario registrado exitosamente
         content:
           application/json:
             schema:
-              $ref: '../schemas/schemas.yaml#/components/schemas/UserResponseDto'
+              $ref: '../components/auth-schemas.yaml#/UserResponseDto'
       '400':
         description: Datos de entrada inválidos
         content:
           application/json:
             schema:
-              $ref: '../schemas/schemas.yaml#/components/schemas/ErrorResponse'
+              $ref: '../components/auth-schemas.yaml#/ErrorResponse'
       '409':
         description: El email ya está registrado
         content:
           application/json:
             schema:
-              $ref: '../schemas/schemas.yaml#/components/schemas/ErrorResponse'
+              $ref: '../components/auth-schemas.yaml#/ErrorResponse'
 
 login:
   post:
@@ -41,23 +41,23 @@ login:
       content:
         application/json:
           schema:
-            $ref: '../schemas/schemas.yaml#/components/schemas/LoginRequestDto'
+            $ref: '../components/auth-schemas.yaml#/LoginRequestDto'
     responses:
       '200':
         description: Autenticación exitosa
         content:
           application/json:
             schema:
-              $ref: '../schemas/schemas.yaml#/components/schemas/AuthResponseDto'
+              $ref: '../components/auth-schemas.yaml#/AuthResponseDto'
       '400':
         description: Credenciales inválidas o datos incompletos
         content:
           application/json:
             schema:
-              $ref: '../schemas/schemas.yaml#/components/schemas/ErrorResponse'
+              $ref: '../components/auth-schemas.yaml#/ErrorResponse'
       '401':
         description: Email o contraseña incorrectos
         content:
           application/json:
             schema:
-              $ref: '../schemas/schemas.yaml#/components/schemas/ErrorResponse'
+              $ref: '../components/auth-schemas.yaml#/ErrorResponse'

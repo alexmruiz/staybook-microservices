@@ -159,3 +159,40 @@ HotelPageResponseDto:
     empty:
       type: boolean
       example: false
+
+HotelDetailResponseDto:
+  type: object
+  title: HotelDetailResponseDto
+  properties:
+    hotel:
+      $ref: './hotel-schemas.yaml#/HotelResponseDto'
+    reviews:
+      type: array
+      items:
+        $ref: '#/ReviewResponseDto'
+    averageQualification:
+      type: number
+      format: double
+      nullable: true
+
+ReviewResponseDto:
+  type: object
+  description: Reseña devuelta por Reviews Service
+  properties:
+    id:
+      type: integer
+      format: int64
+    hotelId:
+      type: integer
+      format: int64
+    userId:
+      type: integer
+      format: int64
+    qualification:
+      type: number
+      format: double
+    description:
+      type: string
+    createdAt:
+      type: string
+      format: date-time

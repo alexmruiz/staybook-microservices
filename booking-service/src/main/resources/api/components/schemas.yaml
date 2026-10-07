@@ -1,7 +1,13 @@
 components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   schemas:
     BookingRequestDto:
       type: object
+      description: userId es requerido por el DTO; el servicio asigna el propietario a partir del JWT.
       properties:
         userId:
           type: integer

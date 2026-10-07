@@ -35,15 +35,15 @@ reviews:
               items:
                 $ref: '../components/review-schemas.yaml#/ReviewResponseDto'
 
-hotelsByHotelId:
+reviewsByHotelId:
   get:
     tags:
       - Reseñas
     summary: Obtener reseñas por hotel
-    description: Devuelve una lista de reseñas filtradas por el parámetro `hotelId` pasado como query param
+    description: Devuelve las reseñas asociadas al hotel indicado.
     parameters:
       - name: hotelId
-        in: query
+        in: path
         required: true
         description: ID del hotel
         schema:
@@ -59,7 +59,31 @@ hotelsByHotelId:
               items:
                 $ref: '../components/review-schemas.yaml#/ReviewResponseDto'
       '400':
-        description: Parámetro `hotelId` inválido o ausente
+        description: ID del hotel inválido
+
+reviewSummary:
+  get:
+    tags:
+      - Reseñas
+    summary: Obtener resumen de valoraciones de un hotel
+    description: Devuelve las reseñas y la valoración media; Hotels Service consume esta operación.
+    parameters:
+      - name: hotelId
+        in: path
+        required: true
+        description: ID del hotel
+        schema:
+          type: integer
+          format: int64
+    responses:
+      '200':
+        description: Resumen de reseñas obtenido correctamente
+        content:
+          application/json:
+            schema:
+              $ref: '../components/review-schemas.yaml#/ReviewSummaryResponseDto'
+      '400':
+        description: ID del hotel inválido
 
 reviewById:
   get:

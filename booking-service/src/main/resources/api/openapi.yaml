@@ -19,5 +19,8 @@ paths:
   /api/room-availability:
     $ref: './paths/room-availability-controller.yaml#/roomAvailability'
 
+security:
+  - BearerAuth: []
+
 components:
   $ref: './components/schemas.yaml#/components'

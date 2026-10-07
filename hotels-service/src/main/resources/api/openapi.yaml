@@ -19,6 +19,8 @@ tags:
 paths:
   /api/cities:
     $ref: './paths/city-controller.yaml#/cities'
+  /api/cities/import:
+    $ref: './paths/city-controller.yaml#/cityImport'
   /api/cities/{id}:
     $ref: './paths/city-controller.yaml#/cityById'
   /api/cities/{cityId}/hotels:
@@ -27,7 +29,19 @@ paths:
     $ref: './paths/hotel-controller.yaml#/hotels'
   /api/hotels/{id}:
     $ref: './paths/hotel-controller.yaml#/hotelById'
+  /api/hotels/{id}/details:
+    $ref: './paths/hotel-controller.yaml#/hotelDetails'
   /api/amenities:
     $ref: './paths/amenity-controller.yaml#/amenities'
   /api/amenities/{id}:
     $ref: './paths/amenity-controller.yaml#/amenityById'
+
+security:
+  - BearerAuth: []
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

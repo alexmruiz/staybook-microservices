@@ -137,6 +137,33 @@ cityHotels:
       '404':
         description: Ciudad no encontrada
 
+cityImport:
+  post:
+    tags:
+      - Ciudades
+    summary: Importar ciudades de un país
+    description: Requiere un JWT con la autoridad ROLE_ADMIN.
+    parameters:
+      - name: country
+        in: query
+        required: true
+        description: País del que se importarán ciudades
+        schema:
+          type: string
+    responses:
+      '200':
+        description: Resultado de la importación
+        content:
+          application/json:
+            schema:
+              $ref: '../components/city-schemas.yaml#/CityImportResponseDto'
+      '400':
+        description: Parámetro country ausente o inválido
+      '401':
+        description: Token ausente o inválido
+      '403':
+        description: El usuario no tiene el rol requerido
+
 PageParam:
   name: page
   in: query
