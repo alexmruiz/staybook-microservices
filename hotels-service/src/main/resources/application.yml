@@ -67,3 +67,6 @@ resilience4j:
         failure-rate-threshold: 50
         wait-duration-in-open-state: 10s
         permitted-number-of-calls-in-half-open-state: 2
+
+countries-now:
+  base-url: https://countriesnow.space/api/v0.1

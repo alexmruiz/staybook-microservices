@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.hotelsbook.services.com_hotelsbook_services.dto.request.CityRequestDto;
+import com.hotelsbook.services.com_hotelsbook_services.dto.response.CityImportResponseDto;
 import com.hotelsbook.services.com_hotelsbook_services.dto.response.CityResponseDto;
 import com.hotelsbook.services.com_hotelsbook_services.dto.response.HotelResponseDto;
 import com.hotelsbook.services.com_hotelsbook_services.service.CityService;
@@ -60,5 +61,10 @@ public class CityController {
     @GetMapping("/{cityId}/hotels")
     public ResponseEntity<List<HotelResponseDto>> findHotelsByCity(@PathVariable Long cityId) {
         return ResponseEntity.ok(hotelService.findByCity(cityId));
+    }
+
+    @PostMapping("/import")
+    public ResponseEntity<CityImportResponseDto> importCitiesForcountry(@RequestParam String country) {
+        return ResponseEntity.ok(cityService.importCitiesForCountry(country));
     }
 }

@@ -4,11 +4,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -25,10 +27,15 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
+import com.hotelsbook.services.com_hotelsbook_services.client.CountriesNowClient;
 import com.hotelsbook.services.com_hotelsbook_services.dto.request.CityRequestDto;
+import com.hotelsbook.services.com_hotelsbook_services.dto.request.CountriesNowRequest;
+import com.hotelsbook.services.com_hotelsbook_services.dto.response.CityImportResponseDto;
 import com.hotelsbook.services.com_hotelsbook_services.dto.response.CityResponseDto;
+import com.hotelsbook.services.com_hotelsbook_services.dto.response.CountriesNowResponse;
 import com.hotelsbook.services.com_hotelsbook_services.entity.City;
 import com.hotelsbook.services.com_hotelsbook_services.exception.EntityNotFoundException;
+import com.hotelsbook.services.com_hotelsbook_services.exception.ImportCityException;
 import com.hotelsbook.services.com_hotelsbook_services.mapper.CityMapper;
 import com.hotelsbook.services.com_hotelsbook_services.repository.CityRepository;
 
@@ -39,6 +46,9 @@ class CityServiceTest {
 
     @Mock
     private CityMapper cityMapper;
+
+    @Mock
+    private CountriesNowClient countriesNowClient;
 
     @InjectMocks
     private CityService cityService;
@@ -245,6 +255,89 @@ class CityServiceTest {
 
             verify(cityRepository).findAll(pageable);
             verify(cityMapper, never()).toResponseDto(any());
+        }
+    }
+
+    @Nested
+    @DisplayName("Método importCitiesForCountry()")
+    class ImportCitiesTests {
+
+        @Test
+        @DisplayName("Debe importar ciudades nuevas y descartar duplicadas o inválidas")
+        void importCitiesForCountry_WhenApiReturnsCities_ShouldImportNewCities() {
+            String countryName = "Peru";
+            CountriesNowRequest request = new CountriesNowRequest(countryName);
+            CountriesNowResponse apiResponse = new CountriesNowResponse(
+                    false,
+                    "Cities found",
+                    List.of("Lima", "Madrid", ""));
+
+            when(countriesNowClient.getCitiesByCountry(request)).thenReturn(apiResponse);
+            when(cityRepository.findByName("Lima")).thenReturn(Optional.empty());
+            when(cityRepository.findByName("Madrid")).thenReturn(Optional.of(city));
+
+            CityImportResponseDto result = cityService.importCitiesForCountry(countryName);
+
+            assertEquals(countryName, result.countryName());
+            assertEquals(1, result.insertedCount());
+            assertEquals(2, result.discardedCount());
+
+            verify(countriesNowClient).getCitiesByCountry(request);
+            verify(cityRepository).saveAll(argThat(cities -> {
+                List<City> savedCities = new ArrayList<>();
+                cities.forEach(savedCities::add);
+                return savedCities.size() == 1
+                        && "Lima".equals(savedCities.get(0).getName())
+                        && countryName.equals(savedCities.get(0).getCountry());
+            }));
+        }
+
+        @Test
+        @DisplayName("Debe lanzar ImportCityException cuando la API informa un error")
+        void importCitiesForCountry_WhenApiReturnsError_ShouldThrowException() {
+            String countryName = "Peru";
+            CountriesNowRequest request = new CountriesNowRequest(countryName);
+            when(countriesNowClient.getCitiesByCountry(request))
+                    .thenReturn(new CountriesNowResponse(true, "Request failed", List.of()));
+
+            ImportCityException exception = assertThrows(
+                    ImportCityException.class,
+                    () -> cityService.importCitiesForCountry(countryName));
+
+            assertEquals(
+                    "Error al obtener ciudades de la API externa para el país: " + countryName,
+                    exception.getMessage());
+            verify(cityRepository, never()).saveAll(any());
+            verify(cityRepository, never()).findByName(any());
+        }
+
+        @Test
+        @DisplayName("Debe lanzar ImportCityException cuando la API devuelve una respuesta nula")
+        void importCitiesForCountry_WhenApiReturnsNull_ShouldThrowException() {
+            String countryName = "Peru";
+            when(countriesNowClient.getCitiesByCountry(new CountriesNowRequest(countryName))).thenReturn(null);
+
+            assertThrows(
+                    ImportCityException.class,
+                    () -> cityService.importCitiesForCountry(countryName));
+
+            verify(cityRepository, never()).saveAll(any());
+            verify(cityRepository, never()).findByName(any());
+        }
+
+        @Test
+        @DisplayName("Debe lanzar ImportCityException cuando la respuesta no contiene ciudades")
+        void importCitiesForCountry_WhenApiReturnsNullData_ShouldThrowException() {
+            String countryName = "Peru";
+            when(countriesNowClient.getCitiesByCountry(new CountriesNowRequest(countryName)))
+                    .thenReturn(new CountriesNowResponse(false, "No data", null));
+
+            assertThrows(
+                    ImportCityException.class,
+                    () -> cityService.importCitiesForCountry(countryName));
+
+            verify(cityRepository, never()).saveAll(any());
+            verify(cityRepository, never()).findByName(any());
         }
     }
 
