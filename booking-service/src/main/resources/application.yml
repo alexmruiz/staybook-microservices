@@ -24,6 +24,10 @@ spring:
   config:
     import: "optional:configserver:http://localhost:8888"
 
+  web:
+    resources:
+      static-locations: classpath:/,classpath:/static/
+
 server:
   port: 8082
   url: http://localhost:8082
@@ -33,6 +37,7 @@ springdoc:
   swagger-ui:
     enabled: true
     path: /swagger-ui
+    url: /api/openapi.yaml
   api-docs:
     enabled: true
 

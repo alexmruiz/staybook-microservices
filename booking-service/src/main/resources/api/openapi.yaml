@@ -7,17 +7,17 @@ servers:
   - url: /
 paths:
   /api/bookings:
-    $ref: './paths/bookings-controller.yaml#/bookings'
+    $ref: './paths/bookings-controller.yaml#/bookings/~1api~1bookings'
   /api/bookings/{bookingId}:
-    $ref: './paths/bookings-controller.yaml#/bookingById'
+    $ref: './paths/bookings-controller.yaml#/bookingById/~1api~1bookings~1{bookingId}'
   /api/bookings/{bookingId}/details:
-    $ref: './paths/bookings-controller.yaml#/bookingDetails'
+    $ref: './paths/bookings-controller.yaml#/bookingDetails/~1api~1bookings~1{bookingId}~1details'
   /api/bookings/{bookingId}/confirm:
-    $ref: './paths/bookings-controller.yaml#/bookingConfirm'
+    $ref: './paths/bookings-controller.yaml#/bookingConfirm/~1api~1bookings~1{bookingId}~1confirm'
   /api/bookings/{bookingId}/cancel:
-    $ref: './paths/bookings-controller.yaml#/bookingCancel'
+    $ref: './paths/bookings-controller.yaml#/bookingCancel/~1api~1bookings~1{bookingId}~1cancel'
   /api/room-availability:
-    $ref: './paths/room-availability-controller.yaml#/roomAvailability'
+    $ref: './paths/room-availability-controller.yaml#/roomAvailability/~1api~1room-availability'
 
 security:
   - BearerAuth: []
