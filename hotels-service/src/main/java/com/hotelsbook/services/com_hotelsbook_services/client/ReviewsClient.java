@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 import com.hotelsbook.services.com_hotelsbook_services.dto.response.ReviewsSummaryResponseDto;
 
-@FeignClient(name = "reviews-service", url = "${reviews.service.url}")
+@FeignClient(name = "reviews-service", url = "${reviews.service.url:http://localhost:8081}")
 public interface ReviewsClient {
 
     @GetMapping("/api/reviews/hotel/{hotelId}/summary")
