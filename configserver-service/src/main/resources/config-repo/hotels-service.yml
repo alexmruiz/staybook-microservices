@@ -47,7 +47,7 @@ springdoc:
 
 reviews:
   service:
-    url: ${REVIEWS_SERVICE_URL:http://localhost:8081}
+    url: http://localhost:8081
 
 resilience4j:
   circuitbreaker:
