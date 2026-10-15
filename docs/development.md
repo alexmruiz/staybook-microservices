@@ -8,8 +8,8 @@ Los datos de ejemplo se encuentran en recursos de aplicación:
 
 | Servicio | Script | Configuración actual |
 |---|---|---|
-| Hotels Service | `hotels-service/src/main/resources/import-hotels.sql` | `spring.sql.init.mode=always` |
-| Reviews Service | `reviews-service/src/main/resources/import-reviews.sql` | `spring.sql.init.mode=always` |
+| Hotels Service | `hotels-service/src/main/resources/data.sql` | `spring.sql.init.data-locations=classpath:data.sql` |
+| Reviews Service | `reviews-service/src/main/resources/data.sql` | `spring.sql.init.data-locations=classpath:data.sql` |
 
 Los archivos `application-test.properties` de Hotels, Booking, Reviews y Auth configuran una base de datos H2 en memoria y también establecen `spring.sql.init.mode=always`. Algunos tests activan explícitamente el perfil `test`. Por tanto, cuando un contexto de prueba carga esos ajustes, Spring puede ejecutar los scripts SQL disponibles en `src/main/resources`; esto puede interferir con las pruebas que preparan sus propios registros o esperan una base vacía.
 
@@ -61,7 +61,7 @@ Si un módulo requiere compilar módulos del mismo reactor de los que depende, a
 mvn -pl booking-service -am test
 ```
 
-Ante una violación de unicidad o una prueba que encuentra datos inesperados, comprobar primero la configuración del perfil y la ejecución de `import-hotels.sql` o `import-reviews.sql`. Para evitar dependencia entre pruebas, cada una debería crear los datos que necesita y no depender del orden de ejecución.
+Ante una violación de unicidad o una prueba que encuentra datos inesperados, comprobar primero la configuración del perfil y la ejecución de `data.sql`. Para evitar dependencia entre pruebas, cada una debería crear los datos que necesita y no depender del orden de ejecución.
 
 ## Esquema de base de datos y entornos
 
@@ -70,10 +70,12 @@ La configuración actual no es una configuración de producción:
 | Servicio | `spring.jpa.hibernate.ddl-auto` |
 |---|---|
 | Hotels Service | `create-drop` |
-| Booking Service | `create-drop` |
-| Reviews Service | `create-drop` |
+| Booking Service | `update` |
+| Reviews Service | `update` |
 | Auth Service | `update` |
 
-`create-drop` crea el esquema al iniciar y lo elimina al cerrar el contexto de Hibernate; no debe utilizarse cuando se necesita conservar datos. `update` intenta adaptar el esquema automáticamente, pero no ofrece cambios versionados ni reproducibles entre entornos.
+`create-drop` crea el esquema al iniciar y lo elimina al cerrar el contexto de Hibernate; no debe utilizarse cuando se necesita conservar datos. `update` intenta adaptar el esquema automáticamente, pero no ofrece cambios versionados ni reproducibles entre entornos. Además, no garantiza el orden físico de las columnas: aunque un atributo esté declarado primero en una entidad, Hibernate y la base de datos no aseguran que aparezca primero en la tabla; con `update`, las columnas existentes tampoco se reordenan.
+
+El orden de las columnas es principalmente visual y no cambia las claves ni el resultado de las consultas. Si se necesita imponer un orden físico, hay que gestionar el esquema explícitamente mediante SQL o una estrategia de migraciones; no basta con cambiar el orden de los atributos Java. Para que las consultas devuelvan un orden predecible, se deben especificar las columnas en vez de depender de `SELECT *`.
 
 No hay migraciones Flyway o Liquibase configuradas actualmente. Antes de desplegar con datos persistentes, conviene definir una estrategia de migraciones versionadas y usar perfiles de configuración separados para desarrollo, pruebas y producción. No se debe presentar la configuración actual de inicialización o de generación de esquema como preparada para producción.
