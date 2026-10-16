@@ -30,5 +30,6 @@
         <module>reviews-service</module>
         <module>gateway-service</module>
         <module>configserver-service</module>
+        <module>notifications-service</module>
     </modules>
 </project>
