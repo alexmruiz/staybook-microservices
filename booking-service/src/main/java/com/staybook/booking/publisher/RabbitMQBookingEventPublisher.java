@@ -2,13 +2,14 @@ package com.staybook.booking.publisher;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
+import org.springframework.amqp.AmqpException;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Component;
 
 import com.staybook.booking.dto.event.BookingEventDto;
+import com.staybook.booking.enums.BookingStatus;
 
-@Component 
+@Component
 public class RabbitMQBookingEventPublisher implements BookingEventPublisher {
 
     private static final Logger log = LoggerFactory.getLogger(RabbitMQBookingEventPublisher.class);
@@ -23,14 +24,20 @@ public class RabbitMQBookingEventPublisher implements BookingEventPublisher {
 
     @Override
     public void publish(BookingEventDto event) {
-
-        String routingKey = "booking" + event.eventType();
+        
+        String routingKey = switch (event.eventType()) {
+        case CONFIRMED -> "booking.confirmed";
+        case CANCELLED -> "booking.cancelled";
+        default -> throw new IllegalArgumentException(
+                "Tipo de evento de reserva no soportado: " + event.eventType());
+        };
 
         try {
             rabbitTemplate.convertAndSend(EXCHANGE_NAME, routingKey, event);
             log.info("Evento publicado con éxito: id={}, type={}", event.eventId(), event.eventType());
-        } catch (Exception e) {
-            log.error("Error al publicar el evento {}: {}", event.eventId(), e.getMessage());
+        } catch (AmqpException e) {
+            log.error("Error al publicar el evento {}: {}", event.eventId(), e);
+            throw e;
         }
     }
 

@@ -1,4 +1,9 @@
 spring:
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:staybook}
+    password: ${RABBITMQ_PASSWORD:staybook-dev}
   datasource:
     url: jdbc:postgresql://localhost:5432/booking_db
     username: postgres
