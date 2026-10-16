@@ -34,6 +34,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
+import com.staybook.booking.dto.event.BookingEventDto;
 import com.staybook.booking.dto.request.BookingRequestDto;
 import com.staybook.booking.dto.response.BookingDetailResponseDto;
 import com.staybook.booking.dto.response.BookingResponseDto;
@@ -48,6 +49,7 @@ import com.staybook.booking.exception.InvalidBookingStateException;
 import com.staybook.booking.exception.InvalidDateRangeException;
 import com.staybook.booking.mapper.BookingMapper;
 import com.staybook.booking.mapper.RoomAvailabilityMapper;
+import com.staybook.booking.publisher.BookingEventPublisher;
 import com.staybook.booking.repository.BookingRepository;
 
 @ExtendWith(MockitoExtension.class)
@@ -67,6 +69,9 @@ class BookingServiceTest {
 
         @Mock
         private ExternalHotelService externalHotelService;
+
+        @Mock
+        private BookingEventPublisher publisher;
 
         @InjectMocks
         private BookingService service;
@@ -264,6 +269,7 @@ class BookingServiceTest {
                 assertEquals(originalQuantity + booking.getRoomsRequested(), saved.get(0).getAvailableQuantity());
 
                 verify(repository).save(booking);
+                verify(publisher, times(1)).publish(any(BookingEventDto.class));
 
                 // Act - second cancel should fail (idempotency)
                 InvalidBookingStateException ex = assertThrows(InvalidBookingStateException.class,
@@ -350,18 +356,18 @@ class BookingServiceTest {
                         Long id = 1L;
                         booking.setId(id);
 
-                        HotelSummaryDto hotelDto = new HotelSummaryDto(id, "Hotel X", 4, List.of());
+                        HotelSummaryDto hotelDtoFails = new HotelSummaryDto(id, "Hotel X", 4, List.of());
 
                         when(repository.findById(id)).thenReturn(Optional.of(booking));
                         when(mapper.toResponseDto(booking)).thenReturn(response);
-                        when(externalHotelService.getHotel(booking.getHotelId())).thenReturn(hotelDto);
+                        when(externalHotelService.getHotel(booking.getHotelId())).thenReturn(hotelDtoFails);
                         when(externalHotelService.getReviews(booking.getHotelId())).thenReturn(List.of());
 
                         BookingDetailResponseDto result = service.getBookingDetails(id, userId);
 
                         assertNotNull(result);
                         assertSame(response, result.booking());
-                        assertEquals(hotelDto, result.hotel());
+                        assertEquals(hotelDtoFails, result.hotel());
                         assertTrue(result.reviews().isEmpty());
 
                         verify(externalHotelService).getHotel(booking.getHotelId());
@@ -410,6 +416,19 @@ class BookingServiceTest {
                         verify(repository).findByIdForUpdate(bookingId);
                         verify(repository).save(booking);
                         verify(mapper).toResponseDto(booking);
+
+                        ArgumentCaptor<BookingEventDto> eventCaptor = ArgumentCaptor.forClass(BookingEventDto.class);
+                        verify(publisher).publish(eventCaptor.capture());
+                        BookingEventDto event = eventCaptor.getValue();
+                        assertNotNull(event.eventId());
+                        assertEquals(BookingStatus.CONFIRMED, event.eventType());
+                        assertEquals(1, event.version());
+                        assertEquals(bookingId, event.bookingId());
+                        assertEquals(booking.getBookingReference(), event.bookingReference());
+                        assertEquals(booking.getUserId(), event.userId());
+                        assertEquals(booking.getCheckInDate(), event.checkInDate());
+                        assertEquals(booking.getCheckOutDate(), event.checkOutDate());
+                        assertNotNull(event.occurredAt());
                 }
 
                 @Test
@@ -441,6 +460,7 @@ class BookingServiceTest {
                         verify(repository).findByIdForUpdate(bookingId);
                         verify(repository, never()).save(any());
                         verify(mapper, never()).toResponseDto(any());
+                        verifyNoInteractions(publisher);
                 }
         }
 
