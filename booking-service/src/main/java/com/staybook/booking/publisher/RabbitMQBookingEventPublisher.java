@@ -7,7 +7,6 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Component;
 
 import com.staybook.booking.dto.event.BookingEventDto;
-import com.staybook.booking.enums.BookingStatus;
 
 @Component
 public class RabbitMQBookingEventPublisher implements BookingEventPublisher {
