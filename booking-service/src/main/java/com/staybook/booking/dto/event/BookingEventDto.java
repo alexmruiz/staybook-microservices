@@ -2,13 +2,13 @@ package com.staybook.booking.dto.event;
 
 import java.time.LocalDate;
 
-import com.staybook.booking.enums.BookingStatus;
+import com.staybook.booking.enums.BookingEventType;
 
 import java.time.Instant;
 
 public record BookingEventDto(
     String eventId,
-    BookingStatus eventType,
+    BookingEventType eventType,
     Integer version,
     Instant occurredAt,
     Long bookingId,
