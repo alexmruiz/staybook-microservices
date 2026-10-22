@@ -36,7 +36,8 @@ public class RabbitMqConfig {
     @Bean
     Binding bookingEventsBinding(
             Queue bookingEventsQueue,
-            TopicExchange bookingEventsExchange) {
+            TopicExchange bookingEventsExchange
+    ) {
         return BindingBuilder
                 .bind(bookingEventsQueue)
                 .to(bookingEventsExchange)
@@ -48,7 +49,8 @@ public class RabbitMqConfig {
         ObjectMapper rabbitObjectMapper = objectMapper.copy();
         rabbitObjectMapper.findAndRegisterModules();
         rabbitObjectMapper.disable(
-                SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+                SerializationFeature.WRITE_DATES_AS_TIMESTAMPS
+        );
 
         return new Jackson2JsonMessageConverter(rabbitObjectMapper);
     }
