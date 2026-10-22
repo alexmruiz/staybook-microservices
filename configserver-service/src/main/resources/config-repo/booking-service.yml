@@ -4,6 +4,7 @@ spring:
     port: ${RABBITMQ_PORT:5672}
     username: ${RABBITMQ_USERNAME:staybook}
     password: ${RABBITMQ_PASSWORD:staybook-dev}
+    connection-timeout: 2s
   datasource:
     url: jdbc:postgresql://localhost:5432/booking_db
     username: postgres

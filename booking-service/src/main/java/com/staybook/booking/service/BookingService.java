@@ -7,6 +7,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -28,7 +29,6 @@ import com.staybook.booking.exception.InvalidBookingStateException;
 import com.staybook.booking.exception.InvalidDateRangeException;
 import com.staybook.booking.exception.RoomNotAvailableException;
 import com.staybook.booking.mapper.BookingMapper;
-import com.staybook.booking.publisher.BookingEventPublisher;
 import com.staybook.booking.repository.BookingRepository;
 
 @Service
@@ -42,17 +42,17 @@ public class BookingService {
     private final BookingMapper mapper;
     private final RoomAvailabilityService roomAvailabilityService;
     private final ExternalHotelService externalHotelService;
-    private final BookingEventPublisher bookingEventPublisher;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     public BookingService(BookingRepository repository, BookingMapper mapper,
             RoomAvailabilityService roomAvailabilityService, ExternalHotelService externalHotelService,
-            BookingEventPublisher bookingEventPublisher
+            ApplicationEventPublisher applicationEventPublisher
             ) {
         this.repository = repository;
         this.mapper = mapper;
         this.roomAvailabilityService = roomAvailabilityService;
         this.externalHotelService = externalHotelService;
-        this.bookingEventPublisher = bookingEventPublisher;
+        this.applicationEventPublisher = applicationEventPublisher;
     }
 
     /**
@@ -236,7 +236,7 @@ public class BookingService {
     }
 
     private void publishEvent (Booking booking, BookingEventType type) {
-        BookingEventDto bookingEventDto = new BookingEventDto(
+        BookingEventDto event = new BookingEventDto(
             UUID.randomUUID().toString(),
             type,
             1,
@@ -245,8 +245,7 @@ public class BookingService {
             booking.getBookingReference(),
             booking.getUserId(),
             booking.getCheckInDate(),
-            booking.getCheckOutDate()
-        );
-        bookingEventPublisher.publish(bookingEventDto);
+            booking.getCheckOutDate());
+    applicationEventPublisher.publishEvent(event);
     }
 }
