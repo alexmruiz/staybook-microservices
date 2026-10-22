@@ -45,7 +45,8 @@ public class BookingService {
     private final BookingEventPublisher bookingEventPublisher;
 
     public BookingService(BookingRepository repository, BookingMapper mapper,
-            RoomAvailabilityService roomAvailabilityService, ExternalHotelService externalHotelService, BookingEventPublisher bookingEventPublisher) {
+            RoomAvailabilityService roomAvailabilityService, ExternalHotelService externalHotelService,
+            BookingEventPublisher bookingEventPublisher) {
         this.repository = repository;
         this.mapper = mapper;
         this.roomAvailabilityService = roomAvailabilityService;
