@@ -15,43 +15,36 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class RabbitMqConfig {
 
-    public static final String BOOKING_EVENTS_EXCHANGE =
-            "booking.events.exchange";
+        public static final String BOOKING_EVENTS_EXCHANGE = "booking.events.exchange";
 
-    public static final String BOOKING_EVENTS_QUEUE =
-            "notifications.booking.events";
+        public static final String BOOKING_EVENTS_QUEUE = "notifications.booking.events";
 
-    @Bean
-    TopicExchange bookingEventsExchange() {
-        return new TopicExchange(BOOKING_EVENTS_EXCHANGE, true, false);
-    }
+        @Bean
+        TopicExchange bookingEventsExchange() {
+                return new TopicExchange(BOOKING_EVENTS_EXCHANGE, true, false);
+        }
 
-    @Bean
-    Queue bookingEventsQueue() {
-        return QueueBuilder
-                .durable(BOOKING_EVENTS_QUEUE)
-                .build();
-    }
+        @Bean
+        Queue bookingEventsQueue() {
+                return QueueBuilder.durable(BOOKING_EVENTS_QUEUE).build();
+        }
 
-    @Bean
-    Binding bookingEventsBinding(
-            Queue bookingEventsQueue,
-            TopicExchange bookingEventsExchange
-    ) {
-        return BindingBuilder
-                .bind(bookingEventsQueue)
-                .to(bookingEventsExchange)
-                .with("booking.#");
-    }
+        @Bean
+        Binding bookingConfirmedBinding(Queue bookingEventsQueue, TopicExchange bookingEventsExchange) {
+                return BindingBuilder.bind(bookingEventsQueue).to(bookingEventsExchange).with("booking.confirmed");
+        }
 
-    @Bean
-    MessageConverter rabbitMessageConverter(ObjectMapper objectMapper) {
-        ObjectMapper rabbitObjectMapper = objectMapper.copy();
-        rabbitObjectMapper.findAndRegisterModules();
-        rabbitObjectMapper.disable(
-                SerializationFeature.WRITE_DATES_AS_TIMESTAMPS
-        );
+        @Bean
+        Binding bookingCancelledBinding(Queue bookingEventsQueue, TopicExchange bookingEventsExchange) {
+                return BindingBuilder.bind(bookingEventsQueue).to(bookingEventsExchange).with("booking.cancelled");
+        }
 
-        return new Jackson2JsonMessageConverter(rabbitObjectMapper);
-    }
+        @Bean
+        MessageConverter rabbitMessageConverter(ObjectMapper objectMapper) {
+                ObjectMapper rabbitObjectMapper = objectMapper.copy();
+                rabbitObjectMapper.findAndRegisterModules();
+                rabbitObjectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+
+                return new Jackson2JsonMessageConverter(rabbitObjectMapper);
+        }
 }
