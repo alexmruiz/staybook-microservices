@@ -10,7 +10,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
+import com.staybook.notifications.client.UserClient;
 import com.staybook.notifications.dto.BookingEventDto;
+import com.staybook.notifications.dto.UserSummaryResponseDto;
 import com.staybook.notifications.entity.ProcessedEvent;
 import com.staybook.notifications.enums.BookingEventType;
 import com.staybook.notifications.repository.ProcessedEventRepository;
@@ -25,16 +27,16 @@ public class NotificationsService {
     private final JavaMailSender mailSender;
     private final ProcessedEventRepository processedEventRepository;
     private final String from;
-    private final String defaultRecipient;
+    private final UserClient userClient;
 
     public NotificationsService(JavaMailSender mailSender,
             ProcessedEventRepository processedEventRepository,
             @Value("${notifications.mail.from}") String from,
-            @Value("${notifications.mail.default-recipient}") String defaultRecipient) {
+            UserClient userClient) {
         this.mailSender = mailSender;
         this.processedEventRepository = processedEventRepository;
         this.from = from;
-        this.defaultRecipient = defaultRecipient;
+        this.userClient = userClient;
     }
 
     @Transactional 
@@ -49,9 +51,11 @@ public class NotificationsService {
     }
 
     private SimpleMailMessage buildMessage(BookingEventDto event) {
+        UserSummaryResponseDto user = userClient.getUserById(event.userId());
+
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(from);
-        message.setTo(defaultRecipient);
+        message.setTo(user.email());
         message.setSubject(subjectFor(event.eventType()));
         message.setText(bodyFor(event));
         return message;
@@ -69,8 +73,10 @@ public class NotificationsService {
             case BOOKING_CONFIRMED -> "confirmada";
             case BOOKING_CANCELLED -> "cancelada";
         };
-        return "Su reserva %s ha sido %s.%nEntrada: %s%nSalida: %s"
-                .formatted(event.bookingReference(), action,
+                UserSummaryResponseDto user = userClient.getUserById(event.userId());
+
+        return "Hola %s %s. Su reserva %s ha sido %s.%nEntrada: %s%nSalida: %s"
+                .formatted(user.name(), user.surname(), event.bookingReference(), action,
                         event.checkInDate(), event.checkOutDate());
     }
 }

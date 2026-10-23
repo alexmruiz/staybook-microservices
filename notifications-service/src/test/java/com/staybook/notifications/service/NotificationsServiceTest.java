@@ -25,6 +25,7 @@ import org.springframework.mail.MailSendException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 
+import com.staybook.notifications.client.UserClient;
 import com.staybook.notifications.dto.BookingEventDto;
 import com.staybook.notifications.entity.ProcessedEvent;
 import com.staybook.notifications.enums.BookingEventType;
@@ -42,11 +43,14 @@ class NotificationsServiceTest {
     @Mock
     private ProcessedEventRepository processedEventRepository;
 
+    @Mock
+    private UserClient userClient;
+
     private NotificationsService service;
 
     @BeforeEach
     void setUp() {
-        service = new NotificationsService(mailSender, processedEventRepository, FROM, RECIPIENT);
+        service = new NotificationsService(mailSender, processedEventRepository, FROM, userClient);
     }
 
     @Test
