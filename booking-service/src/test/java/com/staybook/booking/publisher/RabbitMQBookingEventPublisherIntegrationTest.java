@@ -35,8 +35,7 @@ class RabbitMQBookingEventPublisherIntegrationTest {
 
     @Container
     private static final RabbitMQContainer rabbitMq = new RabbitMQContainer(
-            DockerImageName.parse("rabbitmq:4-management"))
-            .withUser("staybook-test", "staybook-test-password");
+            DockerImageName.parse("rabbitmq:4-management"));
 
     private CachingConnectionFactory connectionFactory;
     private RabbitAdmin rabbitAdmin;
@@ -50,7 +49,7 @@ class RabbitMQBookingEventPublisherIntegrationTest {
 
         BookingEventDto event = createEvent(eventType);
         String queueName = "booking.publisher.integration." + UUID.randomUUID();
-        Queue queue = new Queue(queueName, false, false, true);
+        Queue queue = new Queue(queueName, true, false, true);
         TopicExchange exchange = new TopicExchange(
                 RabbitMqConfig.BOOKING_EVENTS_EXCHANGE,
                 true,

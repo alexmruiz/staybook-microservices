@@ -33,8 +33,7 @@ class RabbitMqConfigIntegrationTest {
 
     @Container
     private static final RabbitMQContainer rabbitMq = new RabbitMQContainer(
-            DockerImageName.parse("rabbitmq:4-management"))
-            .withUser("notifications-test", "notifications-test-password");
+            DockerImageName.parse("rabbitmq:4-management"));
 
     private AnnotationConfigApplicationContext context;
     private RabbitTemplate rabbitTemplate;
