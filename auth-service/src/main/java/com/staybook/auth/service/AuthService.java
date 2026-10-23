@@ -144,9 +144,6 @@ public class AuthService {
     }
 
     public UserBookingResponseDto getUserById(Long userId) {
-        if (userId == null) {
-            return null;
-        }
 
         Auth auth = repository.findById(userId).orElseThrow(()-> new IdNotFoundException("Id no encontrado"));
 
