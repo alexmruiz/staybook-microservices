@@ -2,23 +2,26 @@ package com.staybook.booking.service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.staybook.booking.repository.BookingRepository;
-
+import com.staybook.booking.dto.event.BookingEventDto;
+import com.staybook.booking.dto.request.BookingRequestDto;
 import com.staybook.booking.dto.response.BookingDetailResponseDto;
 import com.staybook.booking.dto.response.BookingResponseDto;
 import com.staybook.booking.dto.response.HotelSummaryDto;
 import com.staybook.booking.dto.response.ReviewSummaryDto;
 import com.staybook.booking.entity.Booking;
 import com.staybook.booking.entity.RoomAvailability;
+import com.staybook.booking.enums.BookingEventType;
 import com.staybook.booking.enums.BookingStatus;
 import com.staybook.booking.exception.BookingAccessDeniedException;
 import com.staybook.booking.exception.BookingNotFoundException;
@@ -26,7 +29,7 @@ import com.staybook.booking.exception.InvalidBookingStateException;
 import com.staybook.booking.exception.InvalidDateRangeException;
 import com.staybook.booking.exception.RoomNotAvailableException;
 import com.staybook.booking.mapper.BookingMapper;
-import com.staybook.booking.dto.request.BookingRequestDto;
+import com.staybook.booking.repository.BookingRepository;
 
 @Service
 public class BookingService {
@@ -39,13 +42,17 @@ public class BookingService {
     private final BookingMapper mapper;
     private final RoomAvailabilityService roomAvailabilityService;
     private final ExternalHotelService externalHotelService;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     public BookingService(BookingRepository repository, BookingMapper mapper,
-            RoomAvailabilityService roomAvailabilityService, ExternalHotelService externalHotelService) {
+            RoomAvailabilityService roomAvailabilityService, ExternalHotelService externalHotelService,
+            ApplicationEventPublisher applicationEventPublisher
+            ) {
         this.repository = repository;
         this.mapper = mapper;
         this.roomAvailabilityService = roomAvailabilityService;
         this.externalHotelService = externalHotelService;
+        this.applicationEventPublisher = applicationEventPublisher;
     }
 
     /**
@@ -182,7 +189,11 @@ public class BookingService {
 
         booking.setStatus(BookingStatus.CONFIRMED);
 
-        return mapper.toResponseDto(repository.save(booking));
+        Booking saved = repository.save(booking);
+
+        publishEvent(saved, BookingEventType.BOOKING_CONFIRMED);
+
+        return mapper.toResponseDto(saved);
     }
 
     /**
@@ -217,6 +228,24 @@ public class BookingService {
 
         booking.setStatus(BookingStatus.CANCELLED);
 
-        return mapper.toResponseDto(repository.save(booking));
+        Booking saved = repository.save(booking);
+
+        publishEvent(saved, BookingEventType.BOOKING_CANCELLED);
+
+        return mapper.toResponseDto(saved);
+    }
+
+    private void publishEvent (Booking booking, BookingEventType type) {
+        BookingEventDto event = new BookingEventDto(
+            UUID.randomUUID().toString(),
+            type,
+            1,
+            Instant.now(),
+            booking.getId(),
+            booking.getBookingReference(),
+            booking.getUserId(),
+            booking.getCheckInDate(),
+            booking.getCheckOutDate());
+    applicationEventPublisher.publishEvent(event);
     }
 }
