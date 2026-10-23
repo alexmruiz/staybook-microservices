@@ -10,6 +10,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -29,6 +30,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -42,6 +44,7 @@ import com.staybook.booking.dto.response.HotelSummaryDto;
 import com.staybook.booking.dto.response.ReviewSummaryDto;
 import com.staybook.booking.entity.Booking;
 import com.staybook.booking.entity.RoomAvailability;
+import com.staybook.booking.enums.BookingEventType;
 import com.staybook.booking.enums.BookingStatus;
 import com.staybook.booking.exception.BookingAccessDeniedException;
 import com.staybook.booking.exception.BookingNotFoundException;
@@ -49,7 +52,6 @@ import com.staybook.booking.exception.InvalidBookingStateException;
 import com.staybook.booking.exception.InvalidDateRangeException;
 import com.staybook.booking.mapper.BookingMapper;
 import com.staybook.booking.mapper.RoomAvailabilityMapper;
-import com.staybook.booking.publisher.BookingEventPublisher;
 import com.staybook.booking.repository.BookingRepository;
 
 @ExtendWith(MockitoExtension.class)
@@ -71,7 +73,7 @@ class BookingServiceTest {
         private ExternalHotelService externalHotelService;
 
         @Mock
-        private BookingEventPublisher publisher;
+        private ApplicationEventPublisher applicationEventPublisher;
 
         @InjectMocks
         private BookingService service;
@@ -269,7 +271,18 @@ class BookingServiceTest {
                 assertEquals(originalQuantity + booking.getRoomsRequested(), saved.get(0).getAvailableQuantity());
 
                 verify(repository).save(booking);
-                verify(publisher, times(1)).publish(any(BookingEventDto.class));
+                ArgumentCaptor<BookingEventDto> eventCaptor = ArgumentCaptor.forClass(BookingEventDto.class);
+                verify(applicationEventPublisher, times(1)).publishEvent(eventCaptor.capture());
+                BookingEventDto event = eventCaptor.getValue();
+                assertNotNull(event.eventId());
+                assertEquals(BookingEventType.BOOKING_CANCELLED, event.eventType());
+                assertEquals(1, event.version());
+                assertEquals(bookingId, event.bookingId());
+                assertEquals(booking.getBookingReference(), event.bookingReference());
+                assertEquals(booking.getUserId(), event.userId());
+                assertEquals(booking.getCheckInDate(), event.checkInDate());
+                assertEquals(booking.getCheckOutDate(), event.checkOutDate());
+                assertNotNull(event.occurredAt());
 
                 // Act - second cancel should fail (idempotency)
                 InvalidBookingStateException ex = assertThrows(InvalidBookingStateException.class,
@@ -418,10 +431,10 @@ class BookingServiceTest {
                         verify(mapper).toResponseDto(booking);
 
                         ArgumentCaptor<BookingEventDto> eventCaptor = ArgumentCaptor.forClass(BookingEventDto.class);
-                        verify(publisher).publish(eventCaptor.capture());
+                        verify(applicationEventPublisher).publishEvent(eventCaptor.capture());
                         BookingEventDto event = eventCaptor.getValue();
                         assertNotNull(event.eventId());
-                        assertEquals(BookingStatus.CONFIRMED, event.eventType());
+                        assertEquals(BookingEventType.BOOKING_CONFIRMED, event.eventType());
                         assertEquals(1, event.version());
                         assertEquals(bookingId, event.bookingId());
                         assertEquals(booking.getBookingReference(), event.bookingReference());
@@ -429,6 +442,26 @@ class BookingServiceTest {
                         assertEquals(booking.getCheckInDate(), event.checkInDate());
                         assertEquals(booking.getCheckOutDate(), event.checkOutDate());
                         assertNotNull(event.occurredAt());
+                }
+
+                @Test
+                void confirmBooking_whenEventPublicationFails_shouldPropagateException() {
+                        Long bookingId = 1L;
+                        booking.setId(bookingId);
+                        booking.setStatus(BookingStatus.PENDING);
+
+                        when(repository.findByIdForUpdate(bookingId)).thenReturn(Optional.of(booking));
+                        when(repository.save(booking)).thenReturn(booking);
+                        doThrow(new IllegalStateException("No se pudo publicar el evento"))
+                                        .when(applicationEventPublisher).publishEvent(any(Object.class));
+
+                        IllegalStateException exception = assertThrows(IllegalStateException.class,
+                                        () -> service.confirmBooking(bookingId));
+
+                        assertEquals("No se pudo publicar el evento", exception.getMessage());
+                        verify(repository).save(booking);
+                        verify(applicationEventPublisher).publishEvent(any(BookingEventDto.class));
+                        verify(mapper, never()).toResponseDto(any());
                 }
 
                 @Test
@@ -460,7 +493,7 @@ class BookingServiceTest {
                         verify(repository).findByIdForUpdate(bookingId);
                         verify(repository, never()).save(any());
                         verify(mapper, never()).toResponseDto(any());
-                        verifyNoInteractions(publisher);
+                        verify(applicationEventPublisher, never()).publishEvent(any(Object.class));
                 }
         }
 
