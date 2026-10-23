@@ -19,6 +19,12 @@ public class GlobalExceptionHandler {
         return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
     }
 
+    // 400 NOT FOUND 
+    @ExceptionHandler(IdNotFoundException.class)
+    public ProblemDetail handleIdNotFound(IdNotFoundException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
+
     // 400 BAD REQUEST - Credenciales invalidas
     @ExceptionHandler(InvalidCredentialsException.class)
     public ProblemDetail handleInvalidCredentials(InvalidCredentialsException ex) {
