@@ -11,7 +11,7 @@ Los datos de ejemplo se encuentran en recursos de aplicación:
 | Hotels Service | `hotels-service/src/main/resources/data.sql` | `spring.sql.init.data-locations=classpath:data.sql` |
 | Reviews Service | `reviews-service/src/main/resources/data.sql` | `spring.sql.init.data-locations=classpath:data.sql` |
 
-Los archivos `application-test.properties` de Hotels, Booking, Reviews y Auth configuran una base de datos H2 en memoria y también establecen `spring.sql.init.mode=always`. Algunos tests activan explícitamente el perfil `test`. Por tanto, cuando un contexto de prueba carga esos ajustes, Spring puede ejecutar los scripts SQL disponibles en `src/main/resources`; esto puede interferir con las pruebas que preparan sus propios registros o esperan una base vacía.
+Los archivos `application-test.properties` de Hotels, Booking, Reviews y Auth configuran una base de datos H2 en memoria y también establecen `spring.sql.init.mode=always`. Algunos tests activan explícitamente el perfil `test`. Por tanto, cuando un contexto de prueba carga esos ajustes, Spring puede ejecutar los scripts SQL disponibles en `src/main/resources`; esto puede interferir con las pruebas que preparan sus propios registros o esperan una base vacía. Notifications configura H2 en `src/test/resources/application.properties`, con `ddl-auto=create-drop`, y desactiva el inicio automático del listener RabbitMQ. Sus pruebas unitarias no necesitan servicios externos; la prueba de integración de configuración inicia RabbitMQ con Testcontainers cuando Docker está disponible y se omite si no lo está.
 
 Como excepción deliberada, `HotelRepositoryTest` desactiva la inicialización SQL con `@DataJpaTest(properties = "spring.sql.init.mode=never")`.
 
@@ -22,7 +22,7 @@ Como excepción deliberada, `HotelRepositoryTest` desactiva la inicialización S
 - Si un servicio necesita datos de demostración al iniciarse localmente, habilitar esa carga en una configuración o perfil de desarrollo explícito, en lugar de depender de ella en todos los entornos.
 - Al investigar errores de unicidad o resultados inesperados, comprobar qué perfil está activo y si se ejecutan scripts de inicialización antes de cada prueba.
 
-Los cuatro módulos de dominio configuran H2 para sus pruebas. H2 facilita pruebas rápidas, pero no reproduce necesariamente todas las diferencias de PostgreSQL. Para validar comportamiento específico de PostgreSQL puede añadirse una suite de integración con Testcontainers; aunque Hotels declara dependencias de Testcontainers, actualmente no hay pruebas que las utilicen.
+Los cinco servicios que usan persistencia configuran H2 para sus pruebas. H2 facilita pruebas rápidas, pero no reproduce necesariamente todas las diferencias de PostgreSQL. Para validar comportamiento específico de PostgreSQL puede añadirse una suite de integración con Testcontainers; aunque Hotels declara dependencias de Testcontainers, actualmente no hay pruebas que las utilicen.
 
 ## Manejo de errores HTTP
 
@@ -47,6 +47,7 @@ mvn -pl reviews-service test
 mvn -pl auth-service test
 mvn -pl gateway-service test
 mvn -pl configserver-service test
+mvn -pl notifications-service test
 ```
 
 Para ejecutar las pruebas de todo el reactor Maven:
@@ -73,6 +74,7 @@ La configuración actual no es una configuración de producción:
 | Booking Service | `update` |
 | Reviews Service | `update` |
 | Auth Service | `update` |
+| Notifications Service | `update` (valor predeterminado; configurable con `SPRING_JPA_HIBERNATE_DDL_AUTO`) |
 
 `create-drop` crea el esquema al iniciar y lo elimina al cerrar el contexto de Hibernate; no debe utilizarse cuando se necesita conservar datos. `update` intenta adaptar el esquema automáticamente, pero no ofrece cambios versionados ni reproducibles entre entornos. Además, no garantiza el orden físico de las columnas: aunque un atributo esté declarado primero en una entidad, Hibernate y la base de datos no aseguran que aparezca primero en la tabla; con `update`, las columnas existentes tampoco se reordenan.
 

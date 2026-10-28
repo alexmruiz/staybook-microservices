@@ -14,7 +14,7 @@ StayBook modela un flujo de reservas mediante microservicios independientes: cat
 | **Booking Service** | Consulta disponibilidad y gestiona la creación, consulta, confirmación y cancelación de reservas; usa el JWT para asignar el usuario y filtrar las consultas. |
 | **Reviews Service** | Gestiona reseñas y proporciona consultas por hotel y resúmenes de valoraciones. |
 | **Auth Service** | Registra usuarios, autentica credenciales, emite JWT y permite consultar o actualizar el perfil propio. |
-| **Notifications Service** | Servicio preparado para procesar notificaciones de reserva; actualmente contiene el esqueleto del servicio y su conexión a PostgreSQL. |
+| **Notifications Service** | Consume eventos de confirmación y cancelación de reservas desde RabbitMQ, registra los eventos procesados y envía correos por SMTP. |
 | **Gateway Service** | Enruta las solicitudes a los servicios y comprueba los JWT de las rutas protegidas. |
 | **Config Server** | Proporciona configuración externa a los servicios que usan Spring Cloud Config. |
 
@@ -31,8 +31,8 @@ flowchart LR
     Booking -->|HTTP / RestClient| Hotels
     Booking -->|HTTP / RestClient| Reviews
     Hotels -->|HTTP / OpenFeign| Reviews
-    Booking -. eventos de reserva .-> Rabbit[RabbitMQ]
-    Rabbit -. futuro consumo .-> Notifications[Notifications :8084]
+    Booking -. evento tras confirmar la transacción .-> Rabbit[RabbitMQ]
+    Rabbit -->|booking.confirmed / booking.cancelled| Notifications[Notifications :8084]
     Notifications --> NotificationsDB[(notifications_db)]
     Notifications -. correo local .-> Mailpit[Mailpit :8025]
 
@@ -48,7 +48,7 @@ flowchart LR
     Config -. configuración .-> Gateway
 ```
 
-Los servicios de dominio mantienen bases de datos PostgreSQL independientes. Las entidades JPA pertenecen a cada servicio; la comunicación entre ellos se realiza mediante HTTP o mensajería, no mediante acceso compartido a sus bases de datos. La integración de eventos entre Booking y Notifications está preparada en la infraestructura local, pero la publicación y el consumo funcional de eventos aún forman parte del trabajo pendiente. Booking obtiene del JWT el usuario asociado a las reservas y usa esa identidad para filtrar las consultas.
+Los servicios de dominio mantienen bases de datos PostgreSQL independientes. Las entidades JPA pertenecen a cada servicio; la comunicación entre ellos se realiza mediante HTTP o mensajería, no mediante acceso compartido a sus bases de datos. Booking publica eventos de confirmación y cancelación en RabbitMQ después de confirmar la transacción; Notifications los consume, evita volver a procesar identificadores ya registrados y envía el correo a la dirección configurada. Booking obtiene del JWT el usuario asociado a las reservas y usa esa identidad para filtrar las consultas.
 
 El Gateway es el punto de entrada previsto para las API en local. Solo el registro y el inicio de sesión están exentos de JWT en el filtro del Gateway; las demás rutas requieren un token Bearer válido. El endpoint de importación de ciudades requiere además el rol `ROLE_ADMIN`.
 
@@ -60,8 +60,8 @@ El Gateway es el punto de entrada previsto para las API en local. Solo el regist
 - **Spring Security** y **JWT** para autenticación y autorización
 - **Spring Cloud Gateway** para el enrutamiento de API
 - **Spring Cloud OpenFeign** y **Spring `RestClient`** para comunicación HTTP entre servicios
-- **RabbitMQ** como broker preparado para eventos de reserva
-- **Mailpit** para capturar correos durante el desarrollo local
+- **RabbitMQ** como broker de eventos de confirmación y cancelación de reservas
+- **Mailpit** para capturar los correos SMTP de Notifications durante el desarrollo local
 - **Resilience4j** para tolerancia a fallos en llamadas remotas
 - **Springdoc OpenAPI** para documentar los contratos REST
 - **JUnit, Spring Boot Test y H2** para pruebas
@@ -76,7 +76,7 @@ El Gateway es el punto de entrada previsto para las API en local. Solo el regist
 | Hotels Service | `8080` | `hotels_db` |
 | Reviews Service | `8081` | `reviews_db` |
 | Booking Service | `8082` | `booking_db` |
-| Notifications Service | Sin API pública asignada actualmente | `notifications_db` |
+| Notifications Service | `8084` (consumidor interno, sin API REST pública) | `notifications_db` |
 | Config Server | `8888` | — |
 
 El detalle de rutas, métodos, autenticación y parámetros está en la [referencia de la API](./docs/api-end-point.md). La arquitectura y las responsabilidades de cada componente se describen en [docs/architecture.md](./docs/architecture.md).
@@ -132,12 +132,15 @@ mvn -pl booking-service -am test
    mvn -pl hotels-service spring-boot:run
    mvn -pl reviews-service spring-boot:run
    mvn -pl booking-service spring-boot:run
+   mvn -pl notifications-service spring-boot:run
    mvn -pl gateway-service spring-boot:run
    ```
 
 Hotels y Reviews importan configuración del Config Server de forma opcional; para el funcionamiento normal, inicia Config Server antes que esos servicios. La configuración específica de cada uno está en `configserver-service/src/main/resources/config-repo/`. Para conectar cada proceso a PostgreSQL, configura `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME` y `SPRING_DATASOURCE_PASSWORD`; esas variables de entorno pueden sobrescribir la configuración remota. Notifications utiliza por defecto `localhost:5433/notifications_db`, que corresponde al puerto publicado por el Compose. Usa la base de datos correspondiente a cada servicio y no guardes credenciales reales en el repositorio. Auth, Hotels, Booking y Gateway deben utilizar el mismo `JWT_SECRET` para emitir y validar tokens; consulta la [guía de configuración JWT](./docs/JWT-DEV.md).
 
-> **Persistencia local:** la configuración actual usa `ddl-auto=create-drop` en Hotels y `ddl-auto=update` en Booking, Reviews y Auth. No conectes esta configuración a datos que deban conservarse ni la consideres preparada para producción. Consulta [desarrollo y validación](./docs/development.md).
+Notifications también necesita RabbitMQ y SMTP: por defecto se conecta a RabbitMQ en `localhost:5672` y a Mailpit en `localhost:1025`. Se pueden cambiar los hosts y puertos con `RABBITMQ_HOST`, `RABBITMQ_PORT`, `MAIL_HOST` y `MAIL_PORT`; las credenciales de RabbitMQ y PostgreSQL se configuran mediante variables de entorno. El remitente y el destinatario predeterminado del correo se establecen con `notifications.mail.from` y `notifications.mail.default-recipient`. El destinatario es actualmente una configuración única, no el correo del usuario asociado a `userId`.
+
+> **Persistencia local:** la configuración actual usa `ddl-auto=create-drop` en Hotels y `ddl-auto=update` en Booking, Reviews, Auth y Notifications. No conectes esta configuración a datos que deban conservarse ni la consideres preparada para producción. Consulta [desarrollo y validación](./docs/development.md).
 
 ## Documentación interactiva
 
@@ -163,6 +166,8 @@ El archivo [infra/docker-compose.yml](./infra/docker-compose.yml) proporciona lo
 | PostgreSQL Notifications | `5433` | Base `notifications_db` |
 | Mailpit SMTP | `1025` | Captura de correo SMTP |
 | Mailpit Web | `8025` | Bandeja local de correos |
+
+Para procesar eventos, inicia Notifications además de esta infraestructura y de Booking. Notifications consume la cola `notifications.booking.events`, enlazada al exchange `booking.events.exchange` para las claves `booking.confirmed` y `booking.cancelled`. No expone rutas REST ni se enruta desde Gateway; consulta la [descripción de arquitectura](./docs/architecture.md) y el [contrato de mensajería](./docs/api-end-point.md).
 
 Para detener los contenedores sin borrar sus volúmenes:
 

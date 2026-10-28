@@ -86,8 +86,18 @@ El DTO actual de creación de reservas también incluye `userId` en el cuerpo de
 | `PUT` | `/api/reviews/{id}` | Actualiza una reseña. |
 | `DELETE` | `/api/reviews/{id}` | Elimina una reseña. |
 
+## Notifications Service
+
+Notifications no expone endpoints HTTP ni se publica a través del Gateway. Su interfaz con Booking es un mensaje JSON asíncrono en RabbitMQ:
+
+| Exchange | Cola | Claves de enrutamiento |
+|---|---|---|
+| `booking.events.exchange` | `notifications.booking.events` | `booking.confirmed`, `booking.cancelled` |
+
+Booking publica estos eventos después de confirmar la transacción. El mensaje contiene `eventId`, `eventType`, `version`, `occurredAt`, `bookingId`, `bookingReference`, `userId`, `checkInDate` y `checkOutDate`; las fechas se serializan como valores ISO. Notifications valida los campos, registra `eventId` para ignorar eventos ya procesados y envía un correo al destinatario configurado. Actualmente el destinatario es un valor de configuración único; `userId` no se resuelve a una dirección de correo.
+
 ## Contratos OpenAPI
 
-Cada servicio mantiene su contrato OpenAPI en `src/main/resources/api/`. Estos contratos incluyen los endpoints expuestos y deben actualizarse junto con los controladores cuando cambien rutas, parámetros, autenticación o respuestas.
+Los servicios con API REST mantienen su contrato OpenAPI en `src/main/resources/api/`. Estos contratos incluyen los endpoints expuestos y deben actualizarse junto con los controladores cuando cambien rutas, parámetros, autenticación o respuestas. Notifications es consumidor de mensajería, no una API REST; su contrato se describe en la sección anterior.
 
 Consulta la [documentación de arquitectura](./architecture.md) para ver responsabilidades de servicios, puertos locales y comunicación entre componentes.

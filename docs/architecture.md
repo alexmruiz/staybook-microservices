@@ -29,7 +29,7 @@ Cliente ── HTTP ───────► │ Gateway (8090)     │
 
 El gateway enruta las rutas de hoteles, reservas, valoraciones y autenticación al servicio correspondiente. Los servicios también pueden comunicarse directamente entre sí; por ejemplo, Booking consulta Hotels y Reviews, y Hotels consulta Reviews para obtener resúmenes de valoraciones.
 
-Notifications no tiene actualmente una API pública ni una ruta en el Gateway. Su configuración local se encuentra en [infra/docker-compose.yml](../infra/docker-compose.yml), que levanta RabbitMQ, la base de datos PostgreSQL independiente de Notifications y Mailpit. La publicación y el consumo funcional de eventos quedan fuera del esqueleto actual del servicio.
+Notifications escucha la cola `notifications.booking.events` de RabbitMQ y no tiene una API REST pública ni una ruta en el Gateway. Booking publica eventos después de confirmar la transacción de reserva; el servicio consume las confirmaciones y cancelaciones, registra los identificadores procesados en su propia base de datos y envía un correo por SMTP. La configuración local de [infra/docker-compose.yml](../infra/docker-compose.yml) levanta RabbitMQ, la base de datos PostgreSQL independiente de Notifications y Mailpit.
 
 ## Servicios y responsabilidades
 
@@ -39,11 +39,11 @@ Notifications no tiene actualmente una API pública ni una ruta en el Gateway. S
 | **Booking Service** | Gestiona las reservas y la disponibilidad de habitaciones; consulta Hotels y Reviews cuando necesita sus datos. |
 | **Reviews Service** | Gestiona las valoraciones de los hoteles. |
 | **Auth Service** | Gestiona el registro, el inicio de sesión y los perfiles de usuario; su API define autenticación mediante JWT. |
-| **Notifications Service** | Servicio independiente para futuras notificaciones derivadas de eventos de reservas; mantiene su propia base de datos. |
+| **Notifications Service** | Consume eventos de confirmación y cancelación de reservas desde RabbitMQ, evita reprocesar identificadores registrados y envía correos SMTP; mantiene su propia base de datos. |
 | **Gateway Service** | Enruta las solicitudes HTTP entrantes hacia las API de los servicios. |
 | **Config Server** | Ofrece configuración externa basada en los archivos de `config-repo`. La importación del servidor de configuración es opcional en los servicios que la declaran. |
 
-Las llamadas de Booking a Hotels y Reviews usan clientes HTTP basados en `RestClient`. Hotels consulta Reviews mediante OpenFeign. RabbitMQ se reserva para eventos asíncronos entre servicios; no sustituye las consultas HTTP que necesitan una respuesta inmediata.
+Las llamadas de Booking a Hotels y Reviews usan clientes HTTP basados en `RestClient`. Hotels consulta Reviews mediante OpenFeign. Para notificaciones asíncronas, Booking publica en el exchange topic durable `booking.events.exchange` después del commit de la transacción. Notifications enlaza a ese exchange la cola durable `notifications.booking.events` con las claves `booking.confirmed` y `booking.cancelled`, y procesa mensajes JSON. Los reintentos del listener están habilitados (hasta 3 intentos); la deduplicación se basa en `eventId` persistido en `notifications_db`. El correo se envía al destinatario predeterminado configurado, no a una dirección obtenida del usuario.
 
 ## Persistencia
 
@@ -71,7 +71,7 @@ En desarrollo local, `auth_db`, `hotels_db`, `booking_db` y `reviews_db` pueden 
 | Auth Service | 8083 |
 | Gateway Service | 8090 |
 | Config Server | 8888 |
-| Notifications Service | Sin API pública asignada actualmente |
+| Notifications Service | 8084 (consumidor interno; sin API REST pública) |
 
 ## Infraestructura de mensajería y correo
 
@@ -84,6 +84,8 @@ El Compose de [infraestructura](../infra/docker-compose.yml) define:
 | PostgreSQL Notifications | 5433 | Persistencia de Notifications |
 | Mailpit SMTP | 1025 | Servidor SMTP local |
 | Mailpit Web | 8025 | Visualización de correos |
+
+El remitente y el destinatario predeterminado se configuran con `notifications.mail.from` y `notifications.mail.default-recipient`. Los hosts y puertos externos pueden ajustarse mediante variables de entorno; no se necesita configurar una ruta del Gateway para que Notifications consuma los mensajes.
 
 Para iniciar esta infraestructura:
 
