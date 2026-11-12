@@ -27,6 +27,7 @@ import org.springframework.mail.javamail.JavaMailSender;
 
 import com.staybook.notifications.client.AuthClient;
 import com.staybook.notifications.dto.BookingEventDto;
+import com.staybook.notifications.dto.UserSummaryResponseDto;
 import com.staybook.notifications.entity.ProcessedEvent;
 import com.staybook.notifications.enums.BookingEventType;
 import com.staybook.notifications.repository.ProcessedEventRepository;
@@ -57,6 +58,7 @@ class NotificationsServiceTest {
     void sendBookingStatus_whenConfirmed_shouldSaveEventAndSendConfirmationEmail() {
         BookingEventDto event = createEvent(BookingEventType.BOOKING_CONFIRMED);
         when(processedEventRepository.existsByEventId(event.eventId())).thenReturn(false);
+        when(authClient.getUserById(event.userId())).thenReturn(createUser());
 
         service.sendBookingStatus(event);
 
@@ -69,9 +71,10 @@ class NotificationsServiceTest {
         assertEquals(RECIPIENT, sentMessage.getTo()[0]);
         assertEquals("Reserva confirmada - StayBook", sentMessage.getSubject());
         assertEquals(
-                "Su reserva SB-ABC12345 ha sido confirmada.%nEntrada: 2026-11-05%nSalida: 2026-11-07"
-                        .formatted(),
+                ("Hola Ada Lovelace. Su reserva SB-ABC12345 ha sido confirmada.%n"
+                        + "Entrada: 2026-11-05%nSalida: 2026-11-07").formatted(),
                 sentMessage.getText());
+        verify(authClient).getUserById(event.userId());
         verifySaveHappensBeforeMailSend();
     }
 
@@ -79,6 +82,7 @@ class NotificationsServiceTest {
     void sendBookingStatus_whenCancelled_shouldSaveEventAndSendCancellationEmail() {
         BookingEventDto event = createEvent(BookingEventType.BOOKING_CANCELLED);
         when(processedEventRepository.existsByEventId(event.eventId())).thenReturn(false);
+        when(authClient.getUserById(event.userId())).thenReturn(createUser());
 
         service.sendBookingStatus(event);
 
@@ -91,9 +95,10 @@ class NotificationsServiceTest {
         assertEquals(RECIPIENT, sentMessage.getTo()[0]);
         assertEquals("Reserva cancelada - StayBook", sentMessage.getSubject());
         assertEquals(
-                "Su reserva SB-ABC12345 ha sido cancelada.%nEntrada: 2026-11-05%nSalida: 2026-11-07"
-                        .formatted(),
+                ("Hola Ada Lovelace. Su reserva SB-ABC12345 ha sido cancelada.%n"
+                        + "Entrada: 2026-11-05%nSalida: 2026-11-07").formatted(),
                 sentMessage.getText());
+        verify(authClient).getUserById(event.userId());
         verifySaveHappensBeforeMailSend();
     }
 
@@ -107,6 +112,7 @@ class NotificationsServiceTest {
         verify(processedEventRepository).existsByEventId(event.eventId());
         verify(processedEventRepository, never()).saveAndFlush(any(ProcessedEvent.class));
         verifyNoInteractions(mailSender);
+        verifyNoInteractions(authClient);
     }
 
     @Test
@@ -128,13 +134,30 @@ class NotificationsServiceTest {
     void sendBookingStatus_whenSendingEmailFails_shouldPropagateException() {
         BookingEventDto event = createEvent(BookingEventType.BOOKING_CONFIRMED);
         when(processedEventRepository.existsByEventId(event.eventId())).thenReturn(false);
+        when(authClient.getUserById(event.userId())).thenReturn(createUser());
         doThrow(new MailSendException("SMTP no disponible"))
                 .when(mailSender).send(any(SimpleMailMessage.class));
 
         assertThrows(MailSendException.class, () -> service.sendBookingStatus(event));
 
         verify(processedEventRepository).saveAndFlush(any(ProcessedEvent.class));
+        verify(authClient).getUserById(event.userId());
         verify(mailSender).send(any(SimpleMailMessage.class));
+    }
+
+    @Test
+    void sendBookingStatus_whenUserLookupFails_shouldPropagateAndNotSendEmail() {
+        BookingEventDto event = createEvent(BookingEventType.BOOKING_CONFIRMED);
+        when(processedEventRepository.existsByEventId(event.eventId())).thenReturn(false);
+        when(authClient.getUserById(event.userId())).thenThrow(new IllegalStateException("Auth no disponible"));
+
+        IllegalStateException exception = assertThrows(
+                IllegalStateException.class,
+                () -> service.sendBookingStatus(event));
+
+        assertEquals("Auth no disponible", exception.getMessage());
+        verify(authClient).getUserById(event.userId());
+        verifyNoInteractions(mailSender);
     }
 
     private ProcessedEvent captureSavedEvent() {
@@ -153,6 +176,10 @@ class NotificationsServiceTest {
         InOrder inOrder = inOrder(processedEventRepository, mailSender);
         inOrder.verify(processedEventRepository).saveAndFlush(any(ProcessedEvent.class));
         inOrder.verify(mailSender).send(any(SimpleMailMessage.class));
+    }
+
+    private UserSummaryResponseDto createUser() {
+        return new UserSummaryResponseDto(42L, RECIPIENT, "Ada", "Lovelace");
     }
 
     private BookingEventDto createEvent(BookingEventType eventType) {
