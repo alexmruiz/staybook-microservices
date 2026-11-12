@@ -40,6 +40,9 @@ public class Auth implements UserDetails{
 	@Column(nullable = false)
 	private String surname;
 
+	@Column(nullable = false)
+	private boolean emailVerified = false;
+
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
 	private TypeRole role;
@@ -89,7 +92,7 @@ public class Auth implements UserDetails{
 
     @Override
     public boolean isEnabled() {
-        return true;
+        return emailVerified;
     }
 
 
@@ -155,6 +158,14 @@ public class Auth implements UserDetails{
 
 	public void setUpdatedAt(LocalDateTime updatedAt) {
 		this.updatedAt = updatedAt;
+	}
+
+	public boolean isEmailVerified() {
+		return emailVerified;
+	}
+
+	public void setEmailVerified(boolean emailVerified) {
+		this.emailVerified = emailVerified;
 	}
 
 }
