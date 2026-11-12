@@ -31,7 +31,7 @@ public class UserController {
     }
 
     @PutMapping("/me")
-    public UserResponseDto updateMyProfile(Principal principal, @Valid  @RequestBody RegisterRequestDto requestDto) {
+    public UserResponseDto updateMyProfile(Principal principal, @Valid @RequestBody RegisterRequestDto requestDto) {
         String userEmail = principal.getName();
         return service.updateUserProfile(userEmail, requestDto);
     }

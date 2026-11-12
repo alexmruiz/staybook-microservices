@@ -138,3 +138,27 @@ UserResponseDto:
     - role
     - createdAt
     - updatedAt
+
+InternalUserResponseDto:
+  type: object
+  description: Resumen de usuario devuelto a servicios internos
+  properties:
+    id:
+      type: integer
+      format: int64
+      example: 42
+    email:
+      type: string
+      format: email
+      example: usuario@example.com
+    name:
+      type: string
+      example: Ada
+    surname:
+      type: string
+      example: Lovelace
+  required:
+    - id
+    - email
+    - name
+    - surname

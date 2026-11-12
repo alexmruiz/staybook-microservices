@@ -26,6 +26,9 @@ paths:
   /api/users/me:
     $ref: './paths/user-controller.yaml#/userProfile'
 
+  /internal/users/{userId}:
+    $ref: './paths/internal-user-controller.yaml#/internalUser'
+
 components:
   schemas:
     LoginRequestDto:
@@ -39,6 +42,9 @@ components:
 
     UserResponseDto:
       $ref: './components/auth-schemas.yaml#/UserResponseDto'
+
+    InternalUserResponseDto:
+      $ref: './components/auth-schemas.yaml#/InternalUserResponseDto'
 
   securitySchemes:
     BearerAuth:

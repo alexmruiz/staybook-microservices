@@ -10,7 +10,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
+import com.staybook.notifications.client.AuthClient;
 import com.staybook.notifications.dto.BookingEventDto;
+import com.staybook.notifications.dto.UserSummaryResponseDto;
 import com.staybook.notifications.entity.ProcessedEvent;
 import com.staybook.notifications.enums.BookingEventType;
 import com.staybook.notifications.repository.ProcessedEventRepository;
@@ -25,16 +27,16 @@ public class NotificationsService {
     private final JavaMailSender mailSender;
     private final ProcessedEventRepository processedEventRepository;
     private final String from;
-    private final String defaultRecipient;
+    private final AuthClient authClient;
 
     public NotificationsService(JavaMailSender mailSender,
             ProcessedEventRepository processedEventRepository,
             @Value("${notifications.mail.from}") String from,
-            @Value("${notifications.mail.default-recipient}") String defaultRecipient) {
+            AuthClient authClient) {
         this.mailSender = mailSender;
         this.processedEventRepository = processedEventRepository;
         this.from = from;
-        this.defaultRecipient = defaultRecipient;
+        this.authClient = authClient;
     }
 
     @Transactional 
@@ -49,11 +51,13 @@ public class NotificationsService {
     }
 
     private SimpleMailMessage buildMessage(BookingEventDto event) {
+        UserSummaryResponseDto user = authClient.getUserById(event.userId());
+
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(from);
-        message.setTo(defaultRecipient);
+        message.setTo(user.email());
         message.setSubject(subjectFor(event.eventType()));
-        message.setText(bodyFor(event));
+        message.setText(bodyFor(event, user));
         return message;
     }
 
@@ -64,13 +68,14 @@ public class NotificationsService {
         };
     }
 
-    private String bodyFor(BookingEventDto event) {
+    private String bodyFor(BookingEventDto event, UserSummaryResponseDto user) {
         String action = switch (event.eventType()) {
             case BOOKING_CONFIRMED -> "confirmada";
             case BOOKING_CANCELLED -> "cancelada";
         };
-        return "Su reserva %s ha sido %s.%nEntrada: %s%nSalida: %s"
-                .formatted(event.bookingReference(), action,
+
+        return "Hola %s %s. Su reserva %s ha sido %s.%nEntrada: %s%nSalida: %s"
+                .formatted(user.name(), user.surname(), event.bookingReference(), action,
                         event.checkInDate(), event.checkOutDate());
     }
 }

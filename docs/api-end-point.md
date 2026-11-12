@@ -22,8 +22,11 @@ Authorization: Bearer <token>
 | `POST` | `/api/auth/login` | Autentica al usuario y devuelve un token JWT. No requiere token. |
 | `GET` | `/api/users/me` | Devuelve el perfil del usuario autenticado. |
 | `PUT` | `/api/users/me` | Actualiza el perfil del usuario autenticado. |
+| `GET` | `/internal/users/{userId}` | Consulta interna del resumen de un usuario para otros servicios. No se enruta por el Gateway. |
 
-Las dos rutas de `/api/users/me` requieren un token válido.
+Las dos rutas de `/api/users/me` requieren un token válido. La ruta interna también exige actualmente JWT porque Auth requiere autenticación para todas las rutas que no estén explícitamente permitidas. Devuelve `id`, `email`, `name` y `surname`, y responde 404 si no existe el identificador.
+
+Notifications llama directamente a Auth mediante OpenFeign y envía la cabecera `X-Internal-Api-Key`. Auth todavía no valida esa cabecera; por tanto, no sustituye el JWT que exige esta ruta. La autenticación de servicio a servicio queda pendiente y la llamada puede responder 401 con la configuración actual.
 
 ## Hotels Service
 

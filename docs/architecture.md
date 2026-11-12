@@ -24,12 +24,19 @@ Cliente ── HTTP ───────► │ Gateway (8090)     │
                                           │
                                           ▼
                                   Notifications Service
-                                  PostgreSQL + Mailpit
+                                   │       │
+                              HTTP/Feign  correo
+                                   ▼       ▼
+                              Auth Service Mailpit
+                                  │
+                               auth_db
 ```
 
 El gateway enruta las rutas de hoteles, reservas, valoraciones y autenticación al servicio correspondiente. Los servicios también pueden comunicarse directamente entre sí; por ejemplo, Booking consulta Hotels y Reviews, y Hotels consulta Reviews para obtener resúmenes de valoraciones.
 
-Notifications escucha la cola `notifications.booking.events` de RabbitMQ y no tiene una API REST pública ni una ruta en el Gateway. Booking publica eventos después de confirmar la transacción de reserva; el servicio consume las confirmaciones y cancelaciones, registra los identificadores procesados en su propia base de datos y envía un correo por SMTP. La configuración local de [infra/docker-compose.yml](../infra/docker-compose.yml) levanta RabbitMQ, la base de datos PostgreSQL independiente de Notifications y Mailpit.
+Notifications no tiene una API pública ni una ruta en el Gateway. Booking publica eventos de confirmación y cancelación en RabbitMQ; Notifications consume las claves `booking.confirmed` y `booking.cancelled` desde la cola durable `notifications.booking.events`. El servicio registra los identificadores procesados en su propia base de datos y obtiene de Auth el correo y el nombre del usuario antes de preparar el correo.
+
+La integración HTTP con Auth tiene actualmente una limitación de seguridad: Notifications envía `X-Internal-Api-Key`, pero Auth protege `/internal/users/{userId}` con JWT y no valida esa cabecera. Por tanto, la consulta interna no queda autorizada con la configuración actual y la integración no funciona de extremo a extremo hasta resolver el mecanismo de autenticación entre servicios. La infraestructura local de RabbitMQ, PostgreSQL de Notifications y Mailpit se define en [infra/docker-compose.yml](../infra/docker-compose.yml).
 
 ## Servicios y responsabilidades
 
@@ -39,11 +46,11 @@ Notifications escucha la cola `notifications.booking.events` de RabbitMQ y no ti
 | **Booking Service** | Gestiona las reservas y la disponibilidad de habitaciones; consulta Hotels y Reviews cuando necesita sus datos. |
 | **Reviews Service** | Gestiona las valoraciones de los hoteles. |
 | **Auth Service** | Gestiona el registro, el inicio de sesión y los perfiles de usuario; su API define autenticación mediante JWT. |
-| **Notifications Service** | Consume eventos de confirmación y cancelación de reservas desde RabbitMQ, evita reprocesar identificadores registrados y envía correos SMTP; mantiene su propia base de datos. |
+| **Notifications Service** | Consume eventos de reserva confirmada o cancelada, registra eventos ya procesados y prepara notificaciones por correo con datos consultados a Auth. Mantiene su propia base de datos. |
 | **Gateway Service** | Enruta las solicitudes HTTP entrantes hacia las API de los servicios. |
 | **Config Server** | Ofrece configuración externa basada en los archivos de `config-repo`. La importación del servidor de configuración es opcional en los servicios que la declaran. |
 
-Las llamadas de Booking a Hotels y Reviews usan clientes HTTP basados en `RestClient`. Hotels consulta Reviews mediante OpenFeign. Para notificaciones asíncronas, Booking publica en el exchange topic durable `booking.events.exchange` después del commit de la transacción. Notifications enlaza a ese exchange la cola durable `notifications.booking.events` con las claves `booking.confirmed` y `booking.cancelled`, y procesa mensajes JSON. Los reintentos del listener están habilitados (hasta 3 intentos); la deduplicación se basa en `eventId` persistido en `notifications_db`. El correo se envía al destinatario predeterminado configurado, no a una dirección obtenida del usuario.
+Las llamadas de Booking a Hotels y Reviews usan clientes HTTP basados en `RestClient`. Hotels consulta Reviews mediante OpenFeign. Notifications consulta el resumen del usuario en Auth mediante OpenFeign; RabbitMQ se usa para los eventos asíncronos de reservas y no sustituye las consultas HTTP que necesitan una respuesta inmediata.
 
 ## Persistencia
 
@@ -71,7 +78,7 @@ En desarrollo local, `auth_db`, `hotels_db`, `booking_db` y `reviews_db` pueden 
 | Auth Service | 8083 |
 | Gateway Service | 8090 |
 | Config Server | 8888 |
-| Notifications Service | 8084 (consumidor interno; sin API REST pública) |
+| Notifications Service | 8084 (sin API pública) |
 
 ## Infraestructura de mensajería y correo
 
