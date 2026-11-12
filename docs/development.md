@@ -22,7 +22,7 @@ Como excepción deliberada, `HotelRepositoryTest` desactiva la inicialización S
 - Si un servicio necesita datos de demostración al iniciarse localmente, habilitar esa carga en una configuración o perfil de desarrollo explícito, en lugar de depender de ella en todos los entornos.
 - Al investigar errores de unicidad o resultados inesperados, comprobar qué perfil está activo y si se ejecutan scripts de inicialización antes de cada prueba.
 
-Los cuatro módulos de dominio configuran H2 para sus pruebas. H2 facilita pruebas rápidas, pero no reproduce necesariamente todas las diferencias de PostgreSQL. Para validar comportamiento específico de PostgreSQL puede añadirse una suite de integración con Testcontainers; aunque Hotels declara dependencias de Testcontainers, actualmente no hay pruebas que las utilicen.
+Hotels, Booking, Reviews, Auth y Notifications configuran H2 para sus pruebas. H2 facilita pruebas rápidas, pero no reproduce necesariamente todas las diferencias de PostgreSQL. Notifications también tiene una prueba de integración de RabbitMQ con Testcontainers; requiere Docker y se omite si Docker no está disponible.
 
 ## Manejo de errores HTTP
 
@@ -47,6 +47,7 @@ mvn -pl reviews-service test
 mvn -pl auth-service test
 mvn -pl gateway-service test
 mvn -pl configserver-service test
+mvn -pl notifications-service test
 ```
 
 Para ejecutar las pruebas de todo el reactor Maven:
@@ -73,9 +74,20 @@ La configuración actual no es una configuración de producción:
 | Booking Service | `update` |
 | Reviews Service | `update` |
 | Auth Service | `update` |
+| Notifications Service | `update` |
 
 `create-drop` crea el esquema al iniciar y lo elimina al cerrar el contexto de Hibernate; no debe utilizarse cuando se necesita conservar datos. `update` intenta adaptar el esquema automáticamente, pero no ofrece cambios versionados ni reproducibles entre entornos. Además, no garantiza el orden físico de las columnas: aunque un atributo esté declarado primero en una entidad, Hibernate y la base de datos no aseguran que aparezca primero en la tabla; con `update`, las columnas existentes tampoco se reordenan.
 
 El orden de las columnas es principalmente visual y no cambia las claves ni el resultado de las consultas. Si se necesita imponer un orden físico, hay que gestionar el esquema explícitamente mediante SQL o una estrategia de migraciones; no basta con cambiar el orden de los atributos Java. Para que las consultas devuelvan un orden predecible, se deben especificar las columnas en vez de depender de `SELECT *`.
 
 No hay migraciones Flyway o Liquibase configuradas actualmente. Antes de desplegar con datos persistentes, conviene definir una estrategia de migraciones versionadas y usar perfiles de configuración separados para desarrollo, pruebas y producción. No se debe presentar la configuración actual de inicialización o de generación de esquema como preparada para producción.
+
+## Notifications y comunicación con Auth
+
+Notifications usa `AUTH_SERVICE_URL` para localizar Auth (por defecto, `http://localhost:8083`) e `INTERNAL_API_KEY` para enviar `X-Internal-Api-Key`. La clave debe configurarse como variable de entorno y no guardarse en el repositorio. Actualmente Auth no comprueba esa cabecera: su configuración de seguridad exige JWT en `/internal/users/{userId}`. Hasta que ambos servicios acuerden y apliquen un mecanismo compatible, la consulta de usuario de Notifications puede fallar con HTTP 401.
+
+La prueba del cliente Auth utiliza un servidor HTTP local de prueba y no requiere levantar Auth. La prueba de topología RabbitMQ usa Testcontainers y Docker. Para validar el módulo:
+
+```bash
+mvn -pl notifications-service test
+```

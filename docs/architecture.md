@@ -24,12 +24,19 @@ Cliente ── HTTP ───────► │ Gateway (8090)     │
                                           │
                                           ▼
                                   Notifications Service
-                                  PostgreSQL + Mailpit
+                                   │       │
+                              HTTP/Feign  correo
+                                   ▼       ▼
+                              Auth Service Mailpit
+                                  │
+                               auth_db
 ```
 
 El gateway enruta las rutas de hoteles, reservas, valoraciones y autenticación al servicio correspondiente. Los servicios también pueden comunicarse directamente entre sí; por ejemplo, Booking consulta Hotels y Reviews, y Hotels consulta Reviews para obtener resúmenes de valoraciones.
 
-Notifications no tiene actualmente una API pública ni una ruta en el Gateway. Su configuración local se encuentra en [infra/docker-compose.yml](../infra/docker-compose.yml), que levanta RabbitMQ, la base de datos PostgreSQL independiente de Notifications y Mailpit. La publicación y el consumo funcional de eventos quedan fuera del esqueleto actual del servicio.
+Notifications no tiene una API pública ni una ruta en el Gateway. Booking publica eventos de confirmación y cancelación en RabbitMQ; Notifications consume las claves `booking.confirmed` y `booking.cancelled` desde la cola durable `notifications.booking.events`. El servicio registra los identificadores procesados en su propia base de datos y obtiene de Auth el correo y el nombre del usuario antes de preparar el correo.
+
+La integración HTTP con Auth tiene actualmente una limitación de seguridad: Notifications envía `X-Internal-Api-Key`, pero Auth protege `/internal/users/{userId}` con JWT y no valida esa cabecera. Por tanto, la consulta interna no queda autorizada con la configuración actual y la integración no funciona de extremo a extremo hasta resolver el mecanismo de autenticación entre servicios. La infraestructura local de RabbitMQ, PostgreSQL de Notifications y Mailpit se define en [infra/docker-compose.yml](../infra/docker-compose.yml).
 
 ## Servicios y responsabilidades
 
@@ -39,11 +46,11 @@ Notifications no tiene actualmente una API pública ni una ruta en el Gateway. S
 | **Booking Service** | Gestiona las reservas y la disponibilidad de habitaciones; consulta Hotels y Reviews cuando necesita sus datos. |
 | **Reviews Service** | Gestiona las valoraciones de los hoteles. |
 | **Auth Service** | Gestiona el registro, el inicio de sesión y los perfiles de usuario; su API define autenticación mediante JWT. |
-| **Notifications Service** | Servicio independiente para futuras notificaciones derivadas de eventos de reservas; mantiene su propia base de datos. |
+| **Notifications Service** | Consume eventos de reserva confirmada o cancelada, registra eventos ya procesados y prepara notificaciones por correo con datos consultados a Auth. Mantiene su propia base de datos. |
 | **Gateway Service** | Enruta las solicitudes HTTP entrantes hacia las API de los servicios. |
 | **Config Server** | Ofrece configuración externa basada en los archivos de `config-repo`. La importación del servidor de configuración es opcional en los servicios que la declaran. |
 
-Las llamadas de Booking a Hotels y Reviews usan clientes HTTP basados en `RestClient`. Hotels consulta Reviews mediante OpenFeign. RabbitMQ se reserva para eventos asíncronos entre servicios; no sustituye las consultas HTTP que necesitan una respuesta inmediata.
+Las llamadas de Booking a Hotels y Reviews usan clientes HTTP basados en `RestClient`. Hotels consulta Reviews mediante OpenFeign. Notifications consulta el resumen del usuario en Auth mediante OpenFeign; RabbitMQ se usa para los eventos asíncronos de reservas y no sustituye las consultas HTTP que necesitan una respuesta inmediata.
 
 ## Persistencia
 
@@ -71,7 +78,7 @@ En desarrollo local, `auth_db`, `hotels_db`, `booking_db` y `reviews_db` pueden 
 | Auth Service | 8083 |
 | Gateway Service | 8090 |
 | Config Server | 8888 |
-| Notifications Service | Sin API pública asignada actualmente |
+| Notifications Service | 8084 (sin API pública) |
 
 ## Infraestructura de mensajería y correo
 

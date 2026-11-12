@@ -1,0 +1,36 @@
+internalUser:
+  get:
+    tags:
+      - Usuarios
+    summary: Obtener resumen interno de usuario
+    description: Endpoint para consultas de otros servicios. No se enruta a través del Gateway y requiere JWT con la configuración de seguridad actual.
+    operationId: getUserById
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        description: Identificador del usuario
+        schema:
+          type: integer
+          format: int64
+    responses:
+      '200':
+        description: Resumen del usuario obtenido
+        content:
+          application/json:
+            schema:
+              $ref: '../components/auth-schemas.yaml#/InternalUserResponseDto'
+      '401':
+        description: JWT ausente o inválido
+        content:
+          application/json:
+            schema:
+              $ref: '../components/auth-schemas.yaml#/ErrorResponse'
+      '404':
+        description: Usuario no encontrado
+        content:
+          application/json:
+            schema:
+              $ref: '../components/auth-schemas.yaml#/ErrorResponse'
