@@ -49,7 +49,7 @@ flowchart LR
     Config -. configuración .-> Gateway
 ```
 
-Los servicios de dominio mantienen bases de datos PostgreSQL independientes. Las entidades JPA pertenecen a cada servicio; la comunicación entre ellos se realiza mediante HTTP o mensajería, no mediante acceso compartido a sus bases de datos. La integración de eventos entre Booking y Notifications está preparada en la infraestructura local, pero la publicación y el consumo funcional de eventos aún forman parte del trabajo pendiente. Booking obtiene del JWT el usuario asociado a las reservas y usa esa identidad para filtrar las consultas.
+Los servicios de dominio mantienen bases de datos PostgreSQL independientes. Las entidades JPA pertenecen a cada servicio; la comunicación entre ellos se realiza mediante HTTP o mensajería, no mediante acceso compartido a sus bases de datos. Booking publica eventos de confirmación y cancelación en RabbitMQ después de confirmar la transacción; Notifications los consume, evita volver a procesar identificadores ya registrados y envía el correo a la dirección configurada. Booking obtiene del JWT el usuario asociado a las reservas y usa esa identidad para filtrar las consultas.
 
 El Gateway es el punto de entrada previsto para las API en local. Solo el registro y el inicio de sesión están exentos de JWT en el filtro del Gateway; las demás rutas requieren un token Bearer válido. El endpoint de importación de ciudades requiere además el rol `ROLE_ADMIN`.
 
@@ -134,6 +134,7 @@ mvn -pl booking-service -am test
    mvn -pl hotels-service spring-boot:run
    mvn -pl reviews-service spring-boot:run
    mvn -pl booking-service spring-boot:run
+   mvn -pl notifications-service spring-boot:run
    mvn -pl gateway-service spring-boot:run
    ```
 
@@ -165,6 +166,8 @@ El archivo [infra/docker-compose.yml](./infra/docker-compose.yml) proporciona lo
 | PostgreSQL Notifications | `5433` | Base `notifications_db` |
 | Mailpit SMTP | `1025` | Captura de correo SMTP |
 | Mailpit Web | `8025` | Bandeja local de correos |
+
+Para procesar eventos, inicia Notifications además de esta infraestructura y de Booking. Notifications consume la cola `notifications.booking.events`, enlazada al exchange `booking.events.exchange` para las claves `booking.confirmed` y `booking.cancelled`. No expone rutas REST ni se enruta desde Gateway; consulta la [descripción de arquitectura](./docs/architecture.md) y el [contrato de mensajería](./docs/api-end-point.md).
 
 Para detener los contenedores sin borrar sus volúmenes:
 

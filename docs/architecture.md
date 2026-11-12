@@ -92,6 +92,8 @@ El Compose de [infraestructura](../infra/docker-compose.yml) define:
 | Mailpit SMTP | 1025 | Servidor SMTP local |
 | Mailpit Web | 8025 | Visualización de correos |
 
+El remitente y el destinatario predeterminado se configuran con `notifications.mail.from` y `notifications.mail.default-recipient`. Los hosts y puertos externos pueden ajustarse mediante variables de entorno; no se necesita configurar una ruta del Gateway para que Notifications consuma los mensajes.
+
 Para iniciar esta infraestructura:
 
 ```bash

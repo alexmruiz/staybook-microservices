@@ -11,7 +11,7 @@ Los datos de ejemplo se encuentran en recursos de aplicación:
 | Hotels Service | `hotels-service/src/main/resources/data.sql` | `spring.sql.init.data-locations=classpath:data.sql` |
 | Reviews Service | `reviews-service/src/main/resources/data.sql` | `spring.sql.init.data-locations=classpath:data.sql` |
 
-Los archivos `application-test.properties` de Hotels, Booking, Reviews y Auth configuran una base de datos H2 en memoria y también establecen `spring.sql.init.mode=always`. Algunos tests activan explícitamente el perfil `test`. Por tanto, cuando un contexto de prueba carga esos ajustes, Spring puede ejecutar los scripts SQL disponibles en `src/main/resources`; esto puede interferir con las pruebas que preparan sus propios registros o esperan una base vacía.
+Los archivos `application-test.properties` de Hotels, Booking, Reviews y Auth configuran una base de datos H2 en memoria y también establecen `spring.sql.init.mode=always`. Algunos tests activan explícitamente el perfil `test`. Por tanto, cuando un contexto de prueba carga esos ajustes, Spring puede ejecutar los scripts SQL disponibles en `src/main/resources`; esto puede interferir con las pruebas que preparan sus propios registros o esperan una base vacía. Notifications configura H2 en `src/test/resources/application.properties`, con `ddl-auto=create-drop`, y desactiva el inicio automático del listener RabbitMQ. Sus pruebas unitarias no necesitan servicios externos; la prueba de integración de configuración inicia RabbitMQ con Testcontainers cuando Docker está disponible y se omite si no lo está.
 
 Como excepción deliberada, `HotelRepositoryTest` desactiva la inicialización SQL con `@DataJpaTest(properties = "spring.sql.init.mode=never")`.
 
