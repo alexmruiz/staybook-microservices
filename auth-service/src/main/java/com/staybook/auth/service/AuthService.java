@@ -1,5 +1,15 @@
 package com.staybook.auth.service;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.time.Clock;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Base64;
+import java.util.HexFormat;
+
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -11,38 +21,48 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.staybook.auth.dto.request.LoginRequestDto;
 import com.staybook.auth.dto.request.RegisterRequestDto;
+import com.staybook.auth.dto.request.VerifyEmailRequest;
 import com.staybook.auth.dto.response.AuthResponseDto;
 import com.staybook.auth.dto.response.UserBookingResponseDto;
 import com.staybook.auth.dto.response.UserResponseDto;
 import com.staybook.auth.entity.Auth;
+import com.staybook.auth.entity.VerificationToken;
 import com.staybook.auth.enums.TypeRole;
 import com.staybook.auth.exception.EmailAlreadyExistsException;
+import com.staybook.auth.exception.ExpiredTokenException;
 import com.staybook.auth.exception.IdNotFoundException;
 import com.staybook.auth.exception.InvalidCredentialsException;
+import com.staybook.auth.exception.InvalidTokenException;
 import com.staybook.auth.mapper.AuthMapper;
 import com.staybook.auth.repository.AuthRepository;
+import com.staybook.auth.repository.VerificationTokenRepository;
 import com.staybook.auth.security.JwtService;
 
 /**
- * Servicio de autenticación y autorización.
- * Gestiona el registro, login y consulta de usuarios.
+ * Servicio de autenticación y autorización. Gestiona el registro, login y
+ * consulta de usuarios.
  */
 @Service
 public class AuthService {
 
     private final AuthRepository repository;
+    private final VerificationTokenRepository verificationTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthMapper mapper;
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
 
+    private final SecureRandom sr = new SecureRandom();
+
     public AuthService(AuthRepository repository, AuthMapper mapper, PasswordEncoder passwordEncoder,
-            AuthenticationManager authenticationManager, JwtService jwtService) {
+            AuthenticationManager authenticationManager, JwtService jwtService,
+            VerificationTokenRepository verificationTokenRepository) {
         this.repository = repository;
         this.mapper = mapper;
         this.passwordEncoder = passwordEncoder;
         this.authenticationManager = authenticationManager;
         this.jwtService = jwtService;
+        this.verificationTokenRepository = verificationTokenRepository;
     }
 
     /**
@@ -65,6 +85,7 @@ public class AuthService {
         user.setRole(TypeRole.ROLE_USER);
 
         Auth saved = repository.save(user);
+        String rawToken = createVerificationToken(saved);
 
         return mapper.toResponseDto(saved);
     }
@@ -80,8 +101,8 @@ public class AuthService {
     public AuthResponseDto login(LoginRequestDto request) {
         try {
             // Spring Security valida las credenciales contra la base de datos
-            Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(request.email(), request.password()));
+            Authentication authentication = authenticationManager
+                    .authenticate(new UsernamePasswordAuthenticationToken(request.email(), request.password()));
 
             UserDetails userDetails = (UserDetails) authentication.getPrincipal();
             Auth user = (Auth) userDetails;
@@ -118,8 +139,9 @@ public class AuthService {
     /**
      * Actualiza el perfil de un usuario existente.
      *
-     * @param email Email del usuario a actualizar
-     * @param requestDto Nuevos datos del perfil (email, nombre, apellido, contraseña)
+     * @param email      Email del usuario a actualizar
+     * @param requestDto Nuevos datos del perfil (email, nombre, apellido,
+     *                   contraseña)
      * @return Datos del usuario actualizado
      * @throws InvalidCredentialsException Si el email no existe en el sistema
      */
@@ -145,9 +167,59 @@ public class AuthService {
 
     public UserBookingResponseDto getUserById(Long userId) {
 
-        Auth auth = repository.findById(userId).orElseThrow(()-> new IdNotFoundException("Id no encontrado"));
+        Auth auth = repository.findById(userId).orElseThrow(() -> new IdNotFoundException("Id no encontrado"));
 
         return new UserBookingResponseDto(auth.getId(), auth.getEmail(), auth.getName(), auth.getSurname());
+    }
+
+    private String generateRawToken() {
+        byte[] bytes = new byte[32];
+        this.sr.nextBytes(bytes);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+    }
+
+    private String hashToken(String rawToken) {
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256").digest(rawToken.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(digest);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 no está disponible", e);
+        }
+    }
+
+    private String createVerificationToken(Auth user) {
+        String rawToken = generateRawToken();
+        String tokenHash = hashToken(rawToken);
+
+        VerificationToken token = verificationTokenRepository.findByUser_Id(user.getId())
+                .orElseGet(VerificationToken::new);
+
+        token.setUser(user);
+        token.setTokenHash(tokenHash);
+        token.setExpiresAt(LocalDateTime.now(ZoneId.systemDefault()).plusMinutes(30));
+        token.setUsedAt(null);
+
+        verificationTokenRepository.save(token);
+
+        return rawToken;
+    }
+
+    @Transactional 
+    public boolean verifyEmail(VerifyEmailRequest hash) {
+        VerificationToken token = verificationTokenRepository.findByTokenHash(hash.token())
+                .orElseThrow(() -> new InvalidTokenException("Token invalido, no se pudo verificar"));
+
+        if (token.getExpiresAt().isAfter(LocalDateTime.now(Clock.systemDefaultZone()))) {
+            throw new ExpiredTokenException("Token expirado");
+        }
+
+        if (token.getUsedAt() != null) {
+            throw new InvalidTokenException("El token ya ha sido verificado");
+        }
+
+        token.setUsedAt(LocalDateTime.now(ZoneId.systemDefault()));
+        token.getUser().setEmailVerified(true);
+        return true;
     }
 
 }

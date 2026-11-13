@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.staybook.auth.dto.request.LoginRequestDto;
 import com.staybook.auth.dto.request.RegisterRequestDto;
+import com.staybook.auth.dto.request.VerifyEmailRequest;
 import com.staybook.auth.dto.response.AuthResponseDto;
 import com.staybook.auth.dto.response.UserResponseDto;
 import com.staybook.auth.service.AuthService;
@@ -34,5 +35,10 @@ public class AuthController {
     @PostMapping("/login")
     public AuthResponseDto login(@Valid @RequestBody LoginRequestDto requestDto) {
         return service.login(requestDto);
+    }
+
+    @PostMapping ("/verify-email")
+    public void verifyEmail(@Valid @RequestBody VerifyEmailRequest hash) {
+        service.verifyEmail(hash);
     }
 }
