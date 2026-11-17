@@ -172,12 +172,26 @@ public class AuthService {
         return new UserBookingResponseDto(auth.getId(), auth.getEmail(), auth.getName(), auth.getSurname());
     }
 
+    /**
+     * Genera un token aleatorio usando 32 bytes y lo codifica en Base64 URL-safe
+     * para que pueda incluirse en enlaces sin codificación adicional.
+     *
+     * @return token en texto plano, que debe entregarse al usuario y no persistirse
+     */
     private String generateRawToken() {
         byte[] bytes = new byte[32];
         this.sr.nextBytes(bytes);
         return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
 
+    /**
+     * Calcula el SHA-256 del token recibido y devuelve el resultado en hexadecimal.
+     * Así se puede comparar o almacenar el token sin persistir su valor en texto plano.
+     *
+     * @param rawToken token original que se va a resumir
+     * @return hash SHA-256 del token en hexadecimal
+     * @throws IllegalStateException si SHA-256 no está disponible en la plataforma
+     */
     private String hashToken(String rawToken) {
         try {
             byte[] digest = MessageDigest.getInstance("SHA-256").digest(rawToken.getBytes(StandardCharsets.UTF_8));
@@ -187,6 +201,12 @@ public class AuthService {
         }
     }
 
+    /**
+     * Genera y guarda un token de verificación de correo para el usuario especificado.
+     * 
+     * @param user Usuario al que se le asignará el token de verificación
+     * @return El token en texto plano (sin hashear) para ser enviado por correo
+     */
     private String createVerificationToken(Auth user) {
         String rawToken = generateRawToken();
         String tokenHash = hashToken(rawToken);
@@ -204,12 +224,20 @@ public class AuthService {
         return rawToken;
     }
 
+    /**
+     * Verifica la validez de un token recibido y marca la cuenta del usuario como verificada.
+     * 
+     * @param hash Objeto request que contiene el token de verificación
+     * @return true si la verificación se completa con éxito
+     * @throws InvalidTokenException si el token no existe o ya fue utilizado
+     * @throws ExpiredTokenException si el token ha expirado
+     */
     @Transactional 
     public boolean verifyEmail(VerifyEmailRequest hash) {
-        VerificationToken token = verificationTokenRepository.findByTokenHash(hash.token())
+        VerificationToken token = verificationTokenRepository.findByTokenHash(hashToken(hash.token()))
                 .orElseThrow(() -> new InvalidTokenException("Token invalido, no se pudo verificar"));
 
-        if (token.getExpiresAt().isAfter(LocalDateTime.now(Clock.systemDefaultZone()))) {
+        if (!token.getExpiresAt().isAfter(LocalDateTime.now(Clock.systemDefaultZone()))) {
             throw new ExpiredTokenException("Token expirado");
         }
 

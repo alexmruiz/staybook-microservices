@@ -21,6 +21,7 @@ import com.staybook.auth.dto.request.RegisterRequestDto;
 import com.staybook.auth.entity.Auth;
 import com.staybook.auth.enums.TypeRole;
 import com.staybook.auth.repository.AuthRepository;
+import com.staybook.auth.repository.VerificationTokenRepository;
 
 @SpringBootTest
 @Import(com.staybook.auth.config.TestBeansConfig.class)
@@ -38,12 +39,16 @@ class AuthIntegrationTest {
     private AuthRepository authRepository;
 
     @Autowired
+    private VerificationTokenRepository verificationTokenRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     private RegisterRequestDto request;
 
     @BeforeEach
     void setUp() {
+        verificationTokenRepository.deleteAll();
         authRepository.deleteAll();
         request = new RegisterRequestDto("carlos@example.com", "password123", "name", "surname");
     }

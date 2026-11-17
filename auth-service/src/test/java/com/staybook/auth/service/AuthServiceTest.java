@@ -3,6 +3,7 @@ package com.staybook.auth.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -28,13 +29,18 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.staybook.auth.dto.request.LoginRequestDto;
 import com.staybook.auth.dto.request.RegisterRequestDto;
+import com.staybook.auth.dto.request.VerifyEmailRequest;
 import com.staybook.auth.dto.response.UserResponseDto;
 import com.staybook.auth.entity.Auth;
+import com.staybook.auth.entity.VerificationToken;
 import com.staybook.auth.enums.TypeRole;
 import com.staybook.auth.exception.EmailAlreadyExistsException;
+import com.staybook.auth.exception.ExpiredTokenException;
 import com.staybook.auth.exception.InvalidCredentialsException;
+import com.staybook.auth.exception.InvalidTokenException;
 import com.staybook.auth.mapper.AuthMapper;
 import com.staybook.auth.repository.AuthRepository;
+import com.staybook.auth.repository.VerificationTokenRepository;
 
 @ExtendWith(MockitoExtension.class)
 public class AuthServiceTest {
@@ -53,6 +59,9 @@ public class AuthServiceTest {
 
     @Mock
     private com.staybook.auth.security.JwtService jwtService;
+
+    @Mock
+    private VerificationTokenRepository verificationTokenRepository;
 
     @InjectMocks
     private AuthService service;
@@ -264,6 +273,75 @@ public class AuthServiceTest {
             verify(repository).findByEmail(email);
             verify(repository, never()).save(any());
             verify(passwordEncoder, never()).encode(any());
+        }
+    }
+
+    @Nested
+    @DisplayName("Test function verifyEmail()")
+    class VerifyEmail {
+
+        String tokenStr = "non-existent-token";
+        String tokenHash = "c6f82e93b9a87376355a9fe977200ba52a18bb46beacbe847845717fd8491014";
+        VerifyEmailRequest request = new VerifyEmailRequest(tokenStr);
+
+        @Test
+        void verifyEmail_WhentokenIsValid_ShouldVerifySuccessfully() {
+
+            VerificationToken token = new VerificationToken();
+            token.setTokenHash(tokenHash);
+            token.setExpiresAt(LocalDateTime.now().plusMinutes(15));
+            token.setUsedAt(null);
+            token.setUser(auth);
+
+            when(verificationTokenRepository.findByTokenHash(tokenHash)).thenReturn(Optional.of(token));
+
+            boolean result = service.verifyEmail(request);
+
+            assertTrue(result);
+            assertNotNull(token.getUsedAt());
+            assertTrue(auth.isEmailVerified());
+            verify(verificationTokenRepository).findByTokenHash(tokenHash);
+        }
+
+        @Test
+        void verifyEmail_WhenTokenNotFound_ShouldThrowInvalidTokenException() {
+
+            when(verificationTokenRepository.findByTokenHash(tokenHash)).thenReturn(Optional.empty());
+
+            assertThrows(InvalidTokenException.class, () -> service.verifyEmail(request));
+            assertFalse(auth.isEmailVerified());
+            verify(verificationTokenRepository).findByTokenHash(tokenHash);
+        }
+
+        @Test
+        void verifyEmail_WhenTokenExpired_ShouldThrowExpiredTokenException() {
+
+            VerificationToken token = new VerificationToken();
+            token.setTokenHash(tokenHash);
+            token.setExpiresAt(LocalDateTime.now().minusMinutes(1));
+            token.setUsedAt(null);
+            token.setUser(auth);
+
+            when(verificationTokenRepository.findByTokenHash(tokenHash)).thenReturn(Optional.of(token));
+
+            assertThrows(ExpiredTokenException.class, () -> service.verifyEmail(request));
+            assertFalse(auth.isEmailVerified());
+            assertNull(token.getUsedAt());
+        }
+
+        @Test
+        void verifyEmail_WhenTokenAlreadyUsed_ShouldThrowInvalidTokenException() {
+
+            VerificationToken token = new VerificationToken();
+            token.setTokenHash(tokenHash);
+            token.setExpiresAt(LocalDateTime.now().plusMinutes(10));
+            token.setUsedAt(LocalDateTime.now().minusMinutes(5));
+            token.setUser(auth);
+
+            when(verificationTokenRepository.findByTokenHash(tokenHash)).thenReturn(Optional.of(token));
+
+            assertThrows(InvalidTokenException.class, () -> service.verifyEmail(request));
+            assertFalse(auth.isEmailVerified());
         }
     }
 

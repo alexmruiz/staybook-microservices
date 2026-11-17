@@ -15,6 +15,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.staybook.auth.dto.request.RegisterRequestDto;
 import com.staybook.auth.repository.AuthRepository;
+import com.staybook.auth.repository.VerificationTokenRepository;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -30,10 +31,14 @@ class SecurityIntegrationTest {
     @Autowired
     private AuthRepository authRepository;
 
+    @Autowired
+    private VerificationTokenRepository verificationTokenRepository;
+
     private RegisterRequestDto request;
 
     @BeforeEach
     void setUp() {
+        verificationTokenRepository.deleteAll();
         authRepository.deleteAll();
         request = new RegisterRequestDto(
                 "carlos@example.com", "password123", "name", "surname");
