@@ -61,3 +61,31 @@ login:
           application/json:
             schema:
               $ref: '../components/auth-schemas.yaml#/ErrorResponse'
+
+verifyEmail:
+  post:
+    tags:
+      - Autenticación
+    summary: Verificar el correo electrónico
+    operationId: verifyEmail
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/auth-schemas.yaml#/VerifyEmailRequest'
+    responses:
+      '200':
+        description: Correo electrónico verificado correctamente
+      '400':
+        description: Código de verificación vacío o inválido
+        content:
+          application/json:
+            schema:
+              $ref: '../components/auth-schemas.yaml#/ErrorResponse'
+      '401':
+        description: Código de verificación inexistente, caducado o ya utilizado
+        content:
+          application/json:
+            schema:
+              $ref: '../components/auth-schemas.yaml#/ErrorResponse'

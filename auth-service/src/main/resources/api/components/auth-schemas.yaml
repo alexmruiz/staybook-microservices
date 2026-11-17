@@ -41,6 +41,17 @@ RegisterRequestDto:
     - name
     - surname
 
+VerifyEmailRequest:
+  type: object
+  properties:
+    token:
+      type: string
+      minLength: 1
+      pattern: '\S'
+      description: Código de verificación recibido por el usuario
+  required:
+    - token
+
 AuthResponseDto:
   type: object
   properties:

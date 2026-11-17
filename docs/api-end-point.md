@@ -6,7 +6,7 @@ Este documento resume las rutas implementadas por los controladores de StayBook.
 http://localhost:8090
 ```
 
-El Gateway enruta las rutas de cada servicio y exige un token JWT Bearer en todas ellas, excepto `POST /api/auth/register` y `POST /api/auth/login`. Los puertos directos de los servicios se reservan para ejecución y diagnóstico local; para una petición normal, usa la URL del Gateway.
+El Gateway enruta las rutas de cada servicio y exige un token JWT Bearer en todas ellas, excepto `POST /api/auth/register`, `POST /api/auth/login` y `POST /api/auth/verify-email`. Los puertos directos de los servicios se reservan para ejecución y diagnóstico local; para una petición normal, usa la URL del Gateway.
 
 Para autenticarse, envía el token devuelto por el inicio de sesión en la cabecera:
 
@@ -20,9 +20,12 @@ Authorization: Bearer <token>
 |---|---|---|
 | `POST` | `/api/auth/register` | Registra un usuario. No requiere token. |
 | `POST` | `/api/auth/login` | Autentica al usuario y devuelve un token JWT. No requiere token. |
+| `POST` | `/api/auth/verify-email` | Verifica el correo con el código recibido. No requiere token. |
 | `GET` | `/api/users/me` | Devuelve el perfil del usuario autenticado. |
 | `PUT` | `/api/users/me` | Actualiza el perfil del usuario autenticado. |
 | `GET` | `/internal/users/{userId}` | Consulta interna del resumen de un usuario para otros servicios. No se enruta por el Gateway. |
+
+`POST /api/auth/verify-email` recibe un JSON con el campo `token` y responde `200` al verificarlo. Los códigos inexistentes, caducados o ya utilizados responden `401`.
 
 Las dos rutas de `/api/users/me` requieren un token válido. La ruta interna también exige actualmente JWT porque Auth requiere autenticación para todas las rutas que no estén explícitamente permitidas. Devuelve `id`, `email`, `name` y `surname`, y responde 404 si no existe el identificador.
 
