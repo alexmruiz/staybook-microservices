@@ -5,11 +5,14 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Base64;
 import java.util.HexFormat;
+import java.util.UUID;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -19,20 +22,13 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.staybook.auth.dto.request.LoginRequestDto;
-import com.staybook.auth.dto.request.RegisterRequestDto;
-import com.staybook.auth.dto.request.VerifyEmailRequest;
-import com.staybook.auth.dto.response.AuthResponseDto;
-import com.staybook.auth.dto.response.UserBookingResponseDto;
-import com.staybook.auth.dto.response.UserResponseDto;
+import com.staybook.auth.dto.request.*;
+import com.staybook.auth.dto.response.*;
+
 import com.staybook.auth.entity.Auth;
 import com.staybook.auth.entity.VerificationToken;
 import com.staybook.auth.enums.TypeRole;
-import com.staybook.auth.exception.EmailAlreadyExistsException;
-import com.staybook.auth.exception.ExpiredTokenException;
-import com.staybook.auth.exception.IdNotFoundException;
-import com.staybook.auth.exception.InvalidCredentialsException;
-import com.staybook.auth.exception.InvalidTokenException;
+import com.staybook.auth.exception.*;
 import com.staybook.auth.mapper.AuthMapper;
 import com.staybook.auth.repository.AuthRepository;
 import com.staybook.auth.repository.VerificationTokenRepository;
@@ -51,18 +47,21 @@ public class AuthService {
     private final AuthMapper mapper;
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     private final SecureRandom sr = new SecureRandom();
 
     public AuthService(AuthRepository repository, AuthMapper mapper, PasswordEncoder passwordEncoder,
             AuthenticationManager authenticationManager, JwtService jwtService,
-            VerificationTokenRepository verificationTokenRepository) {
+            VerificationTokenRepository verificationTokenRepository,
+        ApplicationEventPublisher applicationEventPublisher) {
         this.repository = repository;
         this.mapper = mapper;
         this.passwordEncoder = passwordEncoder;
         this.authenticationManager = authenticationManager;
         this.jwtService = jwtService;
         this.verificationTokenRepository = verificationTokenRepository;
+        this.applicationEventPublisher = applicationEventPublisher;
     }
 
     /**
@@ -86,6 +85,7 @@ public class AuthService {
 
         Auth saved = repository.save(user);
         String rawToken = createVerificationToken(saved);
+        publishEvent(rawToken);
 
         return mapper.toResponseDto(saved);
     }
@@ -248,6 +248,18 @@ public class AuthService {
         token.setUsedAt(LocalDateTime.now(ZoneId.systemDefault()));
         token.getUser().setEmailVerified(true);
         return true;
+    }
+
+    private void publishEvent (String hash) {
+        AuthEventDto event = new AuthEventDto(
+            UUID.randomUUID().toString(),
+            "auth.verify",
+            1,
+            hash,
+            Instant.now()
+        );
+
+        applicationEventPublisher.publishEvent(event);
     }
 
 }
