@@ -13,6 +13,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -22,6 +23,7 @@ import com.staybook.auth.entity.Auth;
 import com.staybook.auth.enums.TypeRole;
 import com.staybook.auth.repository.AuthRepository;
 import com.staybook.auth.repository.VerificationTokenRepository;
+import com.staybook.auth.publisher.AuthEventPublisher;
 
 @SpringBootTest
 @Import(com.staybook.auth.config.TestBeansConfig.class)
@@ -43,6 +45,9 @@ class AuthIntegrationTest {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @MockitoBean
+    private AuthEventPublisher authEventPublisher;
 
     private RegisterRequestDto request;
 

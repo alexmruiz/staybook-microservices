@@ -19,9 +19,11 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
@@ -30,6 +32,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import com.staybook.auth.dto.request.LoginRequestDto;
 import com.staybook.auth.dto.request.RegisterRequestDto;
 import com.staybook.auth.dto.request.VerifyEmailRequest;
+import com.staybook.auth.dto.response.AuthEventDto;
 import com.staybook.auth.dto.response.UserResponseDto;
 import com.staybook.auth.entity.Auth;
 import com.staybook.auth.entity.VerificationToken;
@@ -63,6 +66,9 @@ public class AuthServiceTest {
     @Mock
     private VerificationTokenRepository verificationTokenRepository;
 
+    @Mock
+    private ApplicationEventPublisher applicationEventPublisher;
+
     @InjectMocks
     private AuthService service;
 
@@ -94,6 +100,7 @@ public class AuthServiceTest {
             when(passwordEncoder.encode(requestDto.password())).thenReturn("hashedPassword");
             when(repository.save(auth)).thenReturn(auth);
             when(mapper.toResponseDto(auth)).thenReturn(response);
+            when(verificationTokenRepository.findByUser_Id(auth.getId())).thenReturn(Optional.empty());
 
             UserResponseDto result = service.register(requestDto);
 
@@ -107,6 +114,18 @@ public class AuthServiceTest {
             // Verificamos que se encriptó la contraseña y se guardó en BD
             verify(passwordEncoder).encode(requestDto.password());
             verify(repository).save(auth);
+            verify(verificationTokenRepository).save(any(VerificationToken.class));
+
+            ArgumentCaptor<AuthEventDto> eventCaptor = ArgumentCaptor.forClass(AuthEventDto.class);
+            verify(applicationEventPublisher).publishEvent(eventCaptor.capture());
+            AuthEventDto event = eventCaptor.getValue();
+            assertNotNull(event.eventId());
+            assertEquals("auth.verify", event.eventType());
+            assertEquals(1, event.version());
+            assertEquals(auth.getEmail(), event.email());
+            assertNotNull(event.token());
+            assertFalse(event.token().isBlank());
+            assertNotNull(event.occurredAt());
 
         }
 
@@ -123,6 +142,7 @@ public class AuthServiceTest {
             // ya existía
             verify(repository, never()).save(any());
             verify(passwordEncoder, never()).encode(any());
+            verify(applicationEventPublisher, never()).publishEvent(any());
         }
     }
 
