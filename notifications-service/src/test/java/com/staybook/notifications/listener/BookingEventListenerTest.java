@@ -16,42 +16,42 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.staybook.notifications.dto.BookingEventDto;
 import com.staybook.notifications.enums.BookingEventType;
-import com.staybook.notifications.service.NotificationsService;
+import com.staybook.notifications.service.BookingService;
 
 @ExtendWith(MockitoExtension.class)
 class BookingEventListenerTest {
 
     @Mock
-    private NotificationsService notificationService;
+    private BookingService bookingService;
 
     private BookingEventListener listener;
 
     @BeforeEach
     void setUp() {
-        listener = new BookingEventListener(notificationService);
+        listener = new BookingEventListener(bookingService);
     }
 
     @Test
-    void onBookingEvent_whenEventIsValid_shouldDelegateToNotificationsService() {
+    void onBookingEvent_whenEventIsValid_shouldDelegateToBookingService() {
         BookingEventDto event = createEvent();
 
         listener.onBookingEvent(event);
 
-        verify(notificationService).sendBookingStatus(event);
+        verify(bookingService).sendBookingStatus(event);
     }
 
     @Test
-    void onBookingEvent_whenNotificationsServiceFails_shouldPropagateException() {
+    void onBookingEvent_whenBookingServiceFails_shouldPropagateException() {
         BookingEventDto event = createEvent();
         IllegalStateException serviceException = new IllegalStateException("No se pudo enviar la notificación");
-        doThrow(serviceException).when(notificationService).sendBookingStatus(event);
+        doThrow(serviceException).when(bookingService).sendBookingStatus(event);
 
         IllegalStateException exception = assertThrows(
                 IllegalStateException.class,
                 () -> listener.onBookingEvent(event));
 
         assertEquals(serviceException, exception);
-        verify(notificationService).sendBookingStatus(event);
+        verify(bookingService).sendBookingStatus(event);
     }
 
     private BookingEventDto createEvent() {

@@ -19,6 +19,18 @@ public class GlobalExceptionHandler {
         return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
     }
 
+    // 409 UNAUTHORIZED - Token
+    @ExceptionHandler(InvalidTokenException.class)
+    public ProblemDetail handleVerifyToken(InvalidTokenException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
+    }
+
+    // 409 UNAUTHORIZED - Token
+    @ExceptionHandler(ExpiredTokenException.class)
+    public ProblemDetail handleExpiredToken(ExpiredTokenException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
+    }
+
     // 404 NOT FOUND 
     @ExceptionHandler(IdNotFoundException.class)
     public ProblemDetail handleIdNotFound(IdNotFoundException ex) {

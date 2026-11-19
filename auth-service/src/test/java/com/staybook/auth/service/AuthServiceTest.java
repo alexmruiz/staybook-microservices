@@ -1,8 +1,11 @@
 package com.staybook.auth.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -16,22 +19,31 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.staybook.auth.dto.request.LoginRequestDto;
 import com.staybook.auth.dto.request.RegisterRequestDto;
+import com.staybook.auth.dto.request.VerifyEmailRequest;
+import com.staybook.auth.dto.response.AuthEventDto;
 import com.staybook.auth.dto.response.UserResponseDto;
 import com.staybook.auth.entity.Auth;
+import com.staybook.auth.entity.VerificationToken;
 import com.staybook.auth.enums.TypeRole;
 import com.staybook.auth.exception.EmailAlreadyExistsException;
+import com.staybook.auth.exception.ExpiredTokenException;
 import com.staybook.auth.exception.InvalidCredentialsException;
+import com.staybook.auth.exception.InvalidTokenException;
 import com.staybook.auth.mapper.AuthMapper;
 import com.staybook.auth.repository.AuthRepository;
+import com.staybook.auth.repository.VerificationTokenRepository;
 
 @ExtendWith(MockitoExtension.class)
 public class AuthServiceTest {
@@ -50,6 +62,12 @@ public class AuthServiceTest {
 
     @Mock
     private com.staybook.auth.security.JwtService jwtService;
+
+    @Mock
+    private VerificationTokenRepository verificationTokenRepository;
+
+    @Mock
+    private ApplicationEventPublisher applicationEventPublisher;
 
     @InjectMocks
     private AuthService service;
@@ -82,6 +100,7 @@ public class AuthServiceTest {
             when(passwordEncoder.encode(requestDto.password())).thenReturn("hashedPassword");
             when(repository.save(auth)).thenReturn(auth);
             when(mapper.toResponseDto(auth)).thenReturn(response);
+            when(verificationTokenRepository.findByUser_Id(auth.getId())).thenReturn(Optional.empty());
 
             UserResponseDto result = service.register(requestDto);
 
@@ -89,10 +108,24 @@ public class AuthServiceTest {
             assertEquals(1L, result.id());
             assertEquals("name", result.name());
             assertEquals("surname", result.surname());
+            assertFalse(auth.isEnabled());
+            assertFalse(auth.isEmailVerified());
 
             // Verificamos que se encriptó la contraseña y se guardó en BD
             verify(passwordEncoder).encode(requestDto.password());
             verify(repository).save(auth);
+            verify(verificationTokenRepository).save(any(VerificationToken.class));
+
+            ArgumentCaptor<AuthEventDto> eventCaptor = ArgumentCaptor.forClass(AuthEventDto.class);
+            verify(applicationEventPublisher).publishEvent(eventCaptor.capture());
+            AuthEventDto event = eventCaptor.getValue();
+            assertNotNull(event.eventId());
+            assertEquals("auth.verify", event.eventType());
+            assertEquals(1, event.version());
+            assertEquals(auth.getEmail(), event.email());
+            assertNotNull(event.token());
+            assertFalse(event.token().isBlank());
+            assertNotNull(event.occurredAt());
 
         }
 
@@ -109,6 +142,7 @@ public class AuthServiceTest {
             // ya existía
             verify(repository, never()).save(any());
             verify(passwordEncoder, never()).encode(any());
+            verify(applicationEventPublisher, never()).publishEvent(any());
         }
     }
 
@@ -121,8 +155,7 @@ public class AuthServiceTest {
             // Arrange
             LoginRequestDto login = new LoginRequestDto("email@email.com", "wrongpass");
 
-            when(authenticationManager.authenticate(any()))
-                    .thenThrow(new BadCredentialsException("Bad credentials"));
+            when(authenticationManager.authenticate(any())).thenThrow(new BadCredentialsException("Bad credentials"));
 
             // Act & Assert
             assertThrows(InvalidCredentialsException.class, () -> service.login(login));
@@ -133,11 +166,38 @@ public class AuthServiceTest {
             // Arrange
             LoginRequestDto login = new LoginRequestDto("noone@nowhere.com", "whatever");
 
-            when(authenticationManager.authenticate(any()))
-                    .thenThrow(new BadCredentialsException("Bad credentials"));
+            when(authenticationManager.authenticate(any())).thenThrow(new BadCredentialsException("Bad credentials"));
 
             // Act & Assert
             assertThrows(InvalidCredentialsException.class, () -> service.login(login));
+        }
+
+        @Test
+        void isEnabled_WhenEmailIsNotVerified_ShouldReturnFalse() {
+            Auth user = new Auth("email@email.com", "name", "surname");
+
+            assertFalse(user.isEmailVerified());
+            assertFalse(user.isEnabled());
+        }
+
+        @Test
+        void isEnabled_WhenEmailIsVerified_ShouldReturnTrue() {
+            Auth user = new Auth("email@email.com", "name", "surname");
+            user.setEmailVerified(true);
+
+            assertTrue(user.isEmailVerified());
+            assertTrue(user.isEnabled());
+        }
+
+        @Test
+        void login_WithUnverifiedAccount_ShouldNotGenerateJwt() {
+            LoginRequestDto login = new LoginRequestDto("email@email.com", "password123");
+
+            when(authenticationManager.authenticate(any())).thenThrow(new DisabledException("Account is disabled"));
+
+            assertThrows(InvalidCredentialsException.class, () -> service.login(login));
+
+            verify(jwtService, never()).generateToken(any(), any());
         }
     }
 
@@ -164,7 +224,7 @@ public class AuthServiceTest {
         void getEmailUser_shouldReturnInvalidCredentialsException() {
             when(repository.findByEmail(auth.getEmail())).thenReturn(Optional.empty());
 
-            assertThrows(InvalidCredentialsException.class,( ()->service.getEmailUser(auth.getEmail())));
+            assertThrows(InvalidCredentialsException.class, (() -> service.getEmailUser(auth.getEmail())));
 
             verify(repository).findByEmail(auth.getEmail());
             verify(mapper, never()).toResponseDto(auth);
@@ -172,14 +232,15 @@ public class AuthServiceTest {
     }
 
     @Nested
-    @DisplayName ("Test function updateuserProfile")
+    @DisplayName("Test function updateuserProfile")
     class UpdateUserProfileTest {
 
         @Test
         void updateUserProfile_WhenEmailExists_ShouldUpdateAndReturnResponse() {
             // Arrange
             String email = "carlos@example.com";
-            RegisterRequestDto updateRequestDto = new RegisterRequestDto("nuevo@example.com", "newPassword", "Carlos Updated", "Gómez Updated");
+            RegisterRequestDto updateRequestDto = new RegisterRequestDto("nuevo@example.com", "newPassword",
+                    "Carlos Updated", "Gómez Updated");
 
             Auth existingAuth = new Auth();
             existingAuth.setEmail(email);
@@ -194,9 +255,8 @@ public class AuthServiceTest {
             savedAuth.setPassword("encodedNewPassword");
             savedAuth.setRole(TypeRole.ROLE_USER);
 
-            UserResponseDto expectedResponse = new UserResponseDto(
-                1L, "nuevo@example.com", "Carlos Updated", "Gómez Updated", TypeRole.ROLE_USER, LocalDateTime.now(), LocalDateTime.now()
-            );
+            UserResponseDto expectedResponse = new UserResponseDto(1L, "nuevo@example.com", "Carlos Updated",
+                    "Gómez Updated", TypeRole.ROLE_USER, LocalDateTime.now(), LocalDateTime.now());
 
             when(repository.findByEmail(email)).thenReturn(Optional.of(existingAuth));
             when(passwordEncoder.encode("newPassword")).thenReturn("encodedNewPassword");
@@ -226,15 +286,82 @@ public class AuthServiceTest {
             when(repository.findByEmail(email)).thenReturn(Optional.empty());
 
             // Act & Assert
-            InvalidCredentialsException exception = assertThrows(
-                InvalidCredentialsException.class,
-                () -> service.updateUserProfile(email, requestDto)
-            );
+            InvalidCredentialsException exception = assertThrows(InvalidCredentialsException.class,
+                    () -> service.updateUserProfile(email, requestDto));
 
             assertEquals("Credenciales no validas", exception.getMessage());
             verify(repository).findByEmail(email);
             verify(repository, never()).save(any());
             verify(passwordEncoder, never()).encode(any());
+        }
+    }
+
+    @Nested
+    @DisplayName("Test function verifyEmail()")
+    class VerifyEmail {
+
+        String tokenStr = "non-existent-token";
+        String tokenHash = "c6f82e93b9a87376355a9fe977200ba52a18bb46beacbe847845717fd8491014";
+        VerifyEmailRequest request = new VerifyEmailRequest(tokenStr);
+
+        @Test
+        void verifyEmail_WhentokenIsValid_ShouldVerifySuccessfully() {
+
+            VerificationToken token = new VerificationToken();
+            token.setTokenHash(tokenHash);
+            token.setExpiresAt(LocalDateTime.now().plusMinutes(15));
+            token.setUsedAt(null);
+            token.setUser(auth);
+
+            when(verificationTokenRepository.findByTokenHash(tokenHash)).thenReturn(Optional.of(token));
+
+            boolean result = service.verifyEmail(request);
+
+            assertTrue(result);
+            assertNotNull(token.getUsedAt());
+            assertTrue(auth.isEmailVerified());
+            verify(verificationTokenRepository).findByTokenHash(tokenHash);
+        }
+
+        @Test
+        void verifyEmail_WhenTokenNotFound_ShouldThrowInvalidTokenException() {
+
+            when(verificationTokenRepository.findByTokenHash(tokenHash)).thenReturn(Optional.empty());
+
+            assertThrows(InvalidTokenException.class, () -> service.verifyEmail(request));
+            assertFalse(auth.isEmailVerified());
+            verify(verificationTokenRepository).findByTokenHash(tokenHash);
+        }
+
+        @Test
+        void verifyEmail_WhenTokenExpired_ShouldThrowExpiredTokenException() {
+
+            VerificationToken token = new VerificationToken();
+            token.setTokenHash(tokenHash);
+            token.setExpiresAt(LocalDateTime.now().minusMinutes(1));
+            token.setUsedAt(null);
+            token.setUser(auth);
+
+            when(verificationTokenRepository.findByTokenHash(tokenHash)).thenReturn(Optional.of(token));
+
+            assertThrows(ExpiredTokenException.class, () -> service.verifyEmail(request));
+            assertFalse(auth.isEmailVerified());
+            assertNull(token.getUsedAt());
+        }
+
+        @Test
+        void verifyEmail_WhenTokenAlreadyUsed_ShouldThrowInvalidTokenException() {
+
+            VerificationToken token = new VerificationToken();
+            token.setTokenHash(tokenHash);
+            token.setExpiresAt(LocalDateTime.now().plusMinutes(10));
+            token.setUsedAt(LocalDateTime.now().minusMinutes(5));
+            token.setUser(auth);
+
+            when(verificationTokenRepository.findByTokenHash(tokenHash)).thenReturn(Optional.of(token));
+
+            assertThrows(InvalidTokenException.class, () -> service.verifyEmail(request));
+            assertFalse(auth.isEmailVerified());
         }
     }
 

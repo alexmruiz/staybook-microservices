@@ -23,6 +23,9 @@ paths:
   /api/auth/login:
     $ref: './paths/auth-controller.yaml#/login'
 
+  /api/auth/verify-email:
+    $ref: './paths/auth-controller.yaml#/verifyEmail'
+
   /api/users/me:
     $ref: './paths/user-controller.yaml#/userProfile'
 
@@ -36,6 +39,9 @@ components:
 
     RegisterRequestDto:
       $ref: './components/auth-schemas.yaml#/RegisterRequestDto'
+
+    VerifyEmailRequest:
+      $ref: './components/auth-schemas.yaml#/VerifyEmailRequest'
 
     AuthResponseDto:
       $ref: './components/auth-schemas.yaml#/AuthResponseDto'

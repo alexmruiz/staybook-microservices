@@ -1,5 +1,18 @@
 package com.staybook.auth.service;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Base64;
+import java.util.HexFormat;
+import java.util.UUID;
+
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -9,40 +22,46 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.staybook.auth.dto.request.LoginRequestDto;
-import com.staybook.auth.dto.request.RegisterRequestDto;
-import com.staybook.auth.dto.response.AuthResponseDto;
-import com.staybook.auth.dto.response.UserBookingResponseDto;
-import com.staybook.auth.dto.response.UserResponseDto;
+import com.staybook.auth.dto.request.*;
+import com.staybook.auth.dto.response.*;
+
 import com.staybook.auth.entity.Auth;
+import com.staybook.auth.entity.VerificationToken;
 import com.staybook.auth.enums.TypeRole;
-import com.staybook.auth.exception.EmailAlreadyExistsException;
-import com.staybook.auth.exception.IdNotFoundException;
-import com.staybook.auth.exception.InvalidCredentialsException;
+import com.staybook.auth.exception.*;
 import com.staybook.auth.mapper.AuthMapper;
 import com.staybook.auth.repository.AuthRepository;
+import com.staybook.auth.repository.VerificationTokenRepository;
 import com.staybook.auth.security.JwtService;
 
 /**
- * Servicio de autenticación y autorización.
- * Gestiona el registro, login y consulta de usuarios.
+ * Servicio de autenticación y autorización. Gestiona el registro, login y
+ * consulta de usuarios.
  */
 @Service
 public class AuthService {
 
     private final AuthRepository repository;
+    private final VerificationTokenRepository verificationTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthMapper mapper;
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
+    private final ApplicationEventPublisher applicationEventPublisher;
+
+    private final SecureRandom sr = new SecureRandom();
 
     public AuthService(AuthRepository repository, AuthMapper mapper, PasswordEncoder passwordEncoder,
-            AuthenticationManager authenticationManager, JwtService jwtService) {
+            AuthenticationManager authenticationManager, JwtService jwtService,
+            VerificationTokenRepository verificationTokenRepository,
+        ApplicationEventPublisher applicationEventPublisher) {
         this.repository = repository;
         this.mapper = mapper;
         this.passwordEncoder = passwordEncoder;
         this.authenticationManager = authenticationManager;
         this.jwtService = jwtService;
+        this.verificationTokenRepository = verificationTokenRepository;
+        this.applicationEventPublisher = applicationEventPublisher;
     }
 
     /**
@@ -65,6 +84,8 @@ public class AuthService {
         user.setRole(TypeRole.ROLE_USER);
 
         Auth saved = repository.save(user);
+        String rawToken = createVerificationToken(saved);
+        publishEvent(rawToken, saved);
 
         return mapper.toResponseDto(saved);
     }
@@ -80,8 +101,8 @@ public class AuthService {
     public AuthResponseDto login(LoginRequestDto request) {
         try {
             // Spring Security valida las credenciales contra la base de datos
-            Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(request.email(), request.password()));
+            Authentication authentication = authenticationManager
+                    .authenticate(new UsernamePasswordAuthenticationToken(request.email(), request.password()));
 
             UserDetails userDetails = (UserDetails) authentication.getPrincipal();
             Auth user = (Auth) userDetails;
@@ -118,8 +139,9 @@ public class AuthService {
     /**
      * Actualiza el perfil de un usuario existente.
      *
-     * @param email Email del usuario a actualizar
-     * @param requestDto Nuevos datos del perfil (email, nombre, apellido, contraseña)
+     * @param email      Email del usuario a actualizar
+     * @param requestDto Nuevos datos del perfil (email, nombre, apellido,
+     *                   contraseña)
      * @return Datos del usuario actualizado
      * @throws InvalidCredentialsException Si el email no existe en el sistema
      */
@@ -145,9 +167,100 @@ public class AuthService {
 
     public UserBookingResponseDto getUserById(Long userId) {
 
-        Auth auth = repository.findById(userId).orElseThrow(()-> new IdNotFoundException("Id no encontrado"));
+        Auth auth = repository.findById(userId).orElseThrow(() -> new IdNotFoundException("Id no encontrado"));
 
         return new UserBookingResponseDto(auth.getId(), auth.getEmail(), auth.getName(), auth.getSurname());
+    }
+
+    /**
+     * Genera un token aleatorio usando 32 bytes y lo codifica en Base64 URL-safe
+     * para que pueda incluirse en enlaces sin codificación adicional.
+     *
+     * @return token en texto plano, que debe entregarse al usuario y no persistirse
+     */
+    private String generateRawToken() {
+        byte[] bytes = new byte[32];
+        this.sr.nextBytes(bytes);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+    }
+
+    /**
+     * Calcula el SHA-256 del token recibido y devuelve el resultado en hexadecimal.
+     * Así se puede comparar o almacenar el token sin persistir su valor en texto plano.
+     *
+     * @param rawToken token original que se va a resumir
+     * @return hash SHA-256 del token en hexadecimal
+     * @throws IllegalStateException si SHA-256 no está disponible en la plataforma
+     */
+    private String hashToken(String rawToken) {
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256").digest(rawToken.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(digest);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 no está disponible", e);
+        }
+    }
+
+    /**
+     * Genera y guarda un token de verificación de correo para el usuario especificado.
+     * 
+     * @param user Usuario al que se le asignará el token de verificación
+     * @return El token en texto plano (sin hashear) para ser enviado por correo
+     */
+    private String createVerificationToken(Auth user) {
+        String rawToken = generateRawToken();
+        String tokenHash = hashToken(rawToken);
+
+        VerificationToken token = verificationTokenRepository.findByUser_Id(user.getId())
+                .orElseGet(VerificationToken::new);
+
+        token.setUser(user);
+        token.setTokenHash(tokenHash);
+        token.setExpiresAt(LocalDateTime.now(ZoneId.systemDefault()).plusMinutes(30));
+        token.setUsedAt(null);
+
+        verificationTokenRepository.save(token);
+
+        return rawToken;
+    }
+
+    /**
+     * Verifica la validez de un token recibido y marca la cuenta del usuario como verificada.
+     * 
+     * @param hash Objeto request que contiene el token de verificación
+     * @return true si la verificación se completa con éxito
+     * @throws InvalidTokenException si el token no existe o ya fue utilizado
+     * @throws ExpiredTokenException si el token ha expirado
+     */
+    @Transactional 
+    public boolean verifyEmail(VerifyEmailRequest hash) {
+        VerificationToken token = verificationTokenRepository.findByTokenHash(hashToken(hash.token()))
+                .orElseThrow(() -> new InvalidTokenException("Token invalido, no se pudo verificar"));
+
+        if (!token.getExpiresAt().isAfter(LocalDateTime.now(Clock.systemDefaultZone()))) {
+            throw new ExpiredTokenException("Token expirado");
+        }
+
+        if (token.getUsedAt() != null) {
+            throw new InvalidTokenException("El token ya ha sido verificado");
+        }
+
+        token.setUsedAt(LocalDateTime.now(ZoneId.systemDefault()));
+        token.getUser().setEmailVerified(true);
+        return true;
+    }
+
+    private void publishEvent (String token, Auth auth) {
+        AuthEventDto event = new AuthEventDto(
+            UUID.randomUUID().toString(),
+            "auth.verify",
+            1,
+            auth.getEmail(),
+            token,
+            Instant.now()
+        );
+
+        applicationEventPublisher.publishEvent(event);
     }
 
 }
