@@ -57,10 +57,10 @@ class AuthServiceTest {
                 FROM,
                 event.email(),
                 "Confirme su cuenta",
-                "Hola.<br><br>Haga clic en el enlace para verificar su cuenta:<br>"
-                        + "<a href=\"" + VERIFICATION_URL
-                        + "?token=abc%2B123%2F%3D%3D\" target=\"_blank\" rel=\"noopener noreferrer\">"
-                        + "Verificar cuenta</a>");
+                "Hola.\n\n"
+                        + "Haga clic en el siguiente enlace para verificar su cuenta:\n"
+                        + VERIFICATION_URL
+                        + "?token=abc%2B123%2F%3D%3D");
     }
 
     @Test

@@ -51,8 +51,8 @@ public class AuthService {
         String link = verificationUrl + "?token="
                 + URLEncoder.encode(event.token(), StandardCharsets.UTF_8);
 
-        return "Hola.<br><br>" + "Haga clic en el enlace para verificar su cuenta:<br>"
-                + "<a href=\"" + link
-                + "\" target=\"_blank\" rel=\"noopener noreferrer\">" + "Verificar cuenta" + "</a>";
+        return "Hola.\n\n"
+                + "Haga clic en el siguiente enlace para verificar su cuenta:\n"
+                + link;
     }
 }
