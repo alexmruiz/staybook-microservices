@@ -65,8 +65,8 @@ class BookingControllerTest {
         Long userId = 1L;
         Long hotelId = 2L;
         Long roomTypeId = 3L;
-        LocalDate checkIn = LocalDate.of(2026, 11, 5);
-        LocalDate checkOut = LocalDate.of(2026, 11, 5);
+        LocalDate checkIn = LocalDate.now().plusDays(1);
+        LocalDate checkOut = checkIn.plusDays(1);
         BookingStatus status = BookingStatus.CONFIRMED;
         BigDecimal price = BigDecimal.valueOf(100.00);
         LocalDateTime createdAt = LocalDateTime.of(2026, 11, 1, 10, 0);
