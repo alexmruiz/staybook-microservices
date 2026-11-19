@@ -52,9 +52,9 @@ class RabbitMqConfigIntegrationTest {
 
         BookingEventDto event = createEvent(eventType);
         String routingKey = routingKeyFor(eventType);
-        rabbitTemplate.convertAndSend(RabbitMqConfig.BOOKING_EVENTS_EXCHANGE, routingKey, event);
+        rabbitTemplate.convertAndSend(BookingEventsConfig.BOOKING_EVENTS_EXCHANGE, routingKey, event);
 
-        Message receivedMessage = rabbitTemplate.receive(RabbitMqConfig.BOOKING_EVENTS_QUEUE, 5_000);
+        Message receivedMessage = rabbitTemplate.receive(BookingEventsConfig.BOOKING_EVENTS_QUEUE, 5_000);
 
         assertNotNull(receivedMessage, "RabbitMQ no entregó el evento a la cola configurada");
         assertEquals(routingKey, receivedMessage.getMessageProperties().getReceivedRoutingKey());
@@ -88,7 +88,7 @@ class RabbitMqConfigIntegrationTest {
     }
 
     @Configuration
-    @Import(RabbitMqConfig.class)
+    @Import({ BookingEventsConfig.class, RabbitMessageConverterConfig.class })
     static class TestRabbitConfig {
 
         @Bean

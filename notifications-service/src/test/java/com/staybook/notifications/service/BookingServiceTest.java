@@ -22,8 +22,6 @@ import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mail.MailSendException;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
 
 import com.staybook.notifications.client.AuthClient;
 import com.staybook.notifications.dto.BookingEventDto;
@@ -33,13 +31,10 @@ import com.staybook.notifications.enums.BookingEventType;
 import com.staybook.notifications.repository.ProcessedEventRepository;
 
 @ExtendWith(MockitoExtension.class)
-class NotificationsServiceTest {
+class BookingServiceTest {
 
     private static final String FROM = "no-reply@staybook.com";
     private static final String RECIPIENT = "customer@example.com";
-
-    @Mock
-    private JavaMailSender mailSender;
 
     @Mock
     private ProcessedEventRepository processedEventRepository;
@@ -47,11 +42,14 @@ class NotificationsServiceTest {
     @Mock
     private AuthClient authClient;
 
-    private NotificationsService service;
+    @Mock
+    private EmailService emailService;
+
+    private BookingService service;
 
     @BeforeEach
     void setUp() {
-        service = new NotificationsService(mailSender, processedEventRepository, FROM, authClient);
+        service = new BookingService(processedEventRepository, FROM, authClient, emailService);
     }
 
     @Test
@@ -66,16 +64,14 @@ class NotificationsServiceTest {
         assertEquals(event.eventId(), savedEvent.getEventId());
         assertNotNull(savedEvent.getProcessedAt());
 
-        SimpleMailMessage sentMessage = captureSentMessage();
-        assertEquals(FROM, sentMessage.getFrom());
-        assertEquals(RECIPIENT, sentMessage.getTo()[0]);
-        assertEquals("Reserva confirmada - StayBook", sentMessage.getSubject());
-        assertEquals(
+        verify(emailService).sendEmail(
+                FROM,
+                RECIPIENT,
+                "Reserva confirmada - StayBook",
                 ("Hola Ada Lovelace. Su reserva SB-ABC12345 ha sido confirmada.%n"
-                        + "Entrada: 2026-11-05%nSalida: 2026-11-07").formatted(),
-                sentMessage.getText());
+                        + "Entrada: 2026-11-05%nSalida: 2026-11-07").formatted());
         verify(authClient).getUserById(event.userId());
-        verifySaveHappensBeforeMailSend();
+        verifySaveHappensBeforeEmail();
     }
 
     @Test
@@ -86,20 +82,14 @@ class NotificationsServiceTest {
 
         service.sendBookingStatus(event);
 
-        ProcessedEvent savedEvent = captureSavedEvent();
-        assertEquals(event.eventId(), savedEvent.getEventId());
-        assertNotNull(savedEvent.getProcessedAt());
-
-        SimpleMailMessage sentMessage = captureSentMessage();
-        assertEquals(FROM, sentMessage.getFrom());
-        assertEquals(RECIPIENT, sentMessage.getTo()[0]);
-        assertEquals("Reserva cancelada - StayBook", sentMessage.getSubject());
-        assertEquals(
+        captureSavedEvent();
+        verify(emailService).sendEmail(
+                FROM,
+                RECIPIENT,
+                "Reserva cancelada - StayBook",
                 ("Hola Ada Lovelace. Su reserva SB-ABC12345 ha sido cancelada.%n"
-                        + "Entrada: 2026-11-05%nSalida: 2026-11-07").formatted(),
-                sentMessage.getText());
-        verify(authClient).getUserById(event.userId());
-        verifySaveHappensBeforeMailSend();
+                        + "Entrada: 2026-11-05%nSalida: 2026-11-07").formatted());
+        verifySaveHappensBeforeEmail();
     }
 
     @Test
@@ -111,7 +101,7 @@ class NotificationsServiceTest {
 
         verify(processedEventRepository).existsByEventId(event.eventId());
         verify(processedEventRepository, never()).saveAndFlush(any(ProcessedEvent.class));
-        verifyNoInteractions(mailSender);
+        verifyNoInteractions(emailService);
         verifyNoInteractions(authClient);
     }
 
@@ -127,7 +117,7 @@ class NotificationsServiceTest {
                 () -> service.sendBookingStatus(event));
 
         assertEquals("No se pudo guardar el evento", exception.getMessage());
-        verifyNoInteractions(mailSender);
+        verifyNoInteractions(authClient, emailService);
     }
 
     @Test
@@ -136,13 +126,13 @@ class NotificationsServiceTest {
         when(processedEventRepository.existsByEventId(event.eventId())).thenReturn(false);
         when(authClient.getUserById(event.userId())).thenReturn(createUser());
         doThrow(new MailSendException("SMTP no disponible"))
-                .when(mailSender).send(any(SimpleMailMessage.class));
+                .when(emailService).sendEmail(any(), any(), any(), any());
 
         assertThrows(MailSendException.class, () -> service.sendBookingStatus(event));
 
         verify(processedEventRepository).saveAndFlush(any(ProcessedEvent.class));
         verify(authClient).getUserById(event.userId());
-        verify(mailSender).send(any(SimpleMailMessage.class));
+        verify(emailService).sendEmail(any(), any(), any(), any());
     }
 
     @Test
@@ -157,7 +147,7 @@ class NotificationsServiceTest {
 
         assertEquals("Auth no disponible", exception.getMessage());
         verify(authClient).getUserById(event.userId());
-        verifyNoInteractions(mailSender);
+        verifyNoInteractions(emailService);
     }
 
     private ProcessedEvent captureSavedEvent() {
@@ -166,16 +156,10 @@ class NotificationsServiceTest {
         return eventCaptor.getValue();
     }
 
-    private SimpleMailMessage captureSentMessage() {
-        ArgumentCaptor<SimpleMailMessage> messageCaptor = ArgumentCaptor.forClass(SimpleMailMessage.class);
-        verify(mailSender).send(messageCaptor.capture());
-        return messageCaptor.getValue();
-    }
-
-    private void verifySaveHappensBeforeMailSend() {
-        InOrder inOrder = inOrder(processedEventRepository, mailSender);
+    private void verifySaveHappensBeforeEmail() {
+        InOrder inOrder = inOrder(processedEventRepository, emailService);
         inOrder.verify(processedEventRepository).saveAndFlush(any(ProcessedEvent.class));
-        inOrder.verify(mailSender).send(any(SimpleMailMessage.class));
+        inOrder.verify(emailService).sendEmail(any(), any(), any(), any());
     }
 
     private UserSummaryResponseDto createUser() {
