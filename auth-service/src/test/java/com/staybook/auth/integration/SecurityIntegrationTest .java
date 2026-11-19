@@ -10,10 +10,12 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.staybook.auth.dto.request.RegisterRequestDto;
+import com.staybook.auth.publisher.AuthEventPublisher;
 import com.staybook.auth.repository.AuthRepository;
 import com.staybook.auth.repository.VerificationTokenRepository;
 
@@ -33,6 +35,9 @@ class SecurityIntegrationTest {
 
     @Autowired
     private VerificationTokenRepository verificationTokenRepository;
+
+    @MockitoBean
+    private AuthEventPublisher authEventPublisher;
 
     private RegisterRequestDto request;
 
