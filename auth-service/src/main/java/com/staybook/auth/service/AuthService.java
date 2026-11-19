@@ -85,7 +85,7 @@ public class AuthService {
 
         Auth saved = repository.save(user);
         String rawToken = createVerificationToken(saved);
-        publishEvent(rawToken);
+        publishEvent(rawToken, saved);
 
         return mapper.toResponseDto(saved);
     }
@@ -250,12 +250,13 @@ public class AuthService {
         return true;
     }
 
-    private void publishEvent (String hash) {
+    private void publishEvent (String token, Auth auth) {
         AuthEventDto event = new AuthEventDto(
             UUID.randomUUID().toString(),
             "auth.verify",
             1,
-            hash,
+            auth.getEmail(),
+            token,
             Instant.now()
         );
 

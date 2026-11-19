@@ -6,7 +6,8 @@ public record AuthEventDto(
     String eventId,
     String eventType,
     Integer version,
-    String hash,
+    String email,
+    String token,
     Instant occurredAt
 ) {
     
