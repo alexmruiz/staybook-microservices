@@ -20,9 +20,9 @@ Cliente ── HTTP ───────► │ Gateway (8090)     │
 
                          Auth Service (8083)
 
-                 Booking ── eventos ──► RabbitMQ
-                                          │
-                                          ▼
+                 Auth ── auth.verify ──► RabbitMQ
+                 Booking ── eventos ──►    │
+                                           ▼
                                   Notifications Service
                                    │       │
                               HTTP/Feign  correo
@@ -34,7 +34,7 @@ Cliente ── HTTP ───────► │ Gateway (8090)     │
 
 El gateway enruta las rutas de hoteles, reservas, valoraciones y autenticación al servicio correspondiente. Los servicios también pueden comunicarse directamente entre sí; por ejemplo, Booking consulta Hotels y Reviews, y Hotels consulta Reviews para obtener resúmenes de valoraciones.
 
-Notifications no tiene una API pública ni una ruta en el Gateway. Booking publica eventos de confirmación y cancelación en RabbitMQ; Notifications consume las claves `booking.confirmed` y `booking.cancelled` desde la cola durable `notifications.booking.events`. El servicio registra los identificadores procesados en su propia base de datos y obtiene de Auth el correo y el nombre del usuario antes de preparar el correo.
+Notifications no tiene una API pública ni una ruta en el Gateway. Booking publica eventos de confirmación y cancelación en RabbitMQ; Notifications consume las claves `booking.confirmed` y `booking.cancelled` desde la cola durable `notifications.booking.events`. Auth publica el evento `auth.verify` después de confirmar el registro, y Notifications lo consume desde `notifications.auth.events` para enviar el correo de verificación. En ambos flujos registra los identificadores procesados en su propia base de datos. Para los avisos de reservas, además obtiene de Auth el correo y el nombre del usuario antes de preparar el correo.
 
 La integración HTTP con Auth tiene actualmente una limitación de seguridad: Notifications envía `X-Internal-Api-Key`, pero Auth protege `/internal/users/{userId}` con JWT y no valida esa cabecera. Por tanto, la consulta interna no queda autorizada con la configuración actual y la integración no funciona de extremo a extremo hasta resolver el mecanismo de autenticación entre servicios. La infraestructura local de RabbitMQ, PostgreSQL de Notifications y Mailpit se define en [infra/docker-compose.yml](../infra/docker-compose.yml).
 
@@ -45,8 +45,8 @@ La integración HTTP con Auth tiene actualmente una limitación de seguridad: No
 | **Hotels Service** | Gestiona el catálogo de hoteles, ciudades y servicios disponibles. |
 | **Booking Service** | Gestiona las reservas y la disponibilidad de habitaciones; consulta Hotels y Reviews cuando necesita sus datos. |
 | **Reviews Service** | Gestiona las valoraciones de los hoteles. |
-| **Auth Service** | Gestiona el registro, el inicio de sesión y los perfiles de usuario; su API define autenticación mediante JWT. |
-| **Notifications Service** | Consume eventos de reserva confirmada o cancelada, registra eventos ya procesados y prepara notificaciones por correo con datos consultados a Auth. Mantiene su propia base de datos. |
+| **Auth Service** | Gestiona el registro, la verificación del correo, el inicio de sesión y los perfiles de usuario; solo permite autenticar cuentas verificadas y emite JWT. |
+| **Notifications Service** | Consume eventos de verificación de cuenta y de reserva confirmada o cancelada, registra eventos ya procesados y envía correos SMTP. Mantiene su propia base de datos. |
 | **Gateway Service** | Enruta las solicitudes HTTP entrantes hacia las API de los servicios. |
 | **Config Server** | Ofrece configuración externa basada en los archivos de `config-repo`. La importación del servidor de configuración es opcional en los servicios que la declaran. |
 
@@ -86,13 +86,13 @@ El Compose de [infraestructura](../infra/docker-compose.yml) define:
 
 | Componente | Puerto | Propósito |
 |---|---:|---|
-| RabbitMQ | 5672 | Broker AMQP |
+| RabbitMQ | 5672 | Broker AMQP para eventos de Auth y Booking |
 | RabbitMQ Management | 15672 | Panel web |
 | PostgreSQL Notifications | 5433 | Persistencia de Notifications |
 | Mailpit SMTP | 1025 | Servidor SMTP local |
 | Mailpit Web | 8025 | Visualización de correos |
 
-El remitente y el destinatario predeterminado se configuran con `notifications.mail.from` y `notifications.mail.default-recipient`. Los hosts y puertos externos pueden ajustarse mediante variables de entorno; no se necesita configurar una ruta del Gateway para que Notifications consuma los mensajes.
+El remitente se configura con `notifications.mail.from`; el host y puerto SMTP se pueden ajustar mediante `MAIL_HOST` y `MAIL_PORT`. Para construir el enlace enviado al verificar una cuenta, Notifications usa `NOTIFICATIONS_VERIFICATION_URL` (por defecto, `http://localhost:3000/verify-email`) y agrega el token como parámetro `token`. En desarrollo local, Mailpit captura el correo y permite verlo en `http://localhost:8025`. No se necesita una ruta del Gateway para que Notifications consuma los mensajes.
 
 Para iniciar esta infraestructura:
 

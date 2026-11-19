@@ -40,7 +40,7 @@ public class Auth implements UserDetails{
 	@Column(nullable = false)
 	private String surname;
 
-	@Column(nullable = false)
+	@Column(name = "email_verified", nullable = false)
 	private boolean emailVerified = false;
 
 	@Enumerated(EnumType.STRING)

@@ -3,6 +3,7 @@ register:
     tags:
       - Autenticación
     summary: Registrar nuevo usuario
+    description: Crea una cuenta sin verificar y provoca el envío asíncrono de un correo de verificación. El inicio de sesión requiere completar la verificación.
     operationId: register
     requestBody:
       required: true
@@ -12,7 +13,7 @@ register:
             $ref: '../components/auth-schemas.yaml#/RegisterRequestDto'
     responses:
       '201':
-        description: Usuario registrado exitosamente
+        description: Usuario registrado; el correo de verificación se procesa de forma asíncrona
         content:
           application/json:
             schema:
@@ -56,7 +57,7 @@ login:
             schema:
               $ref: '../components/auth-schemas.yaml#/ErrorResponse'
       '401':
-        description: Email o contraseña incorrectos
+        description: Email o contraseña incorrectos, o cuenta aún no verificada
         content:
           application/json:
             schema:
@@ -67,6 +68,7 @@ verifyEmail:
     tags:
       - Autenticación
     summary: Verificar el correo electrónico
+    description: Verifica la cuenta usando el token de un solo uso recibido por correo. El token caduca a los 30 minutos.
     operationId: verifyEmail
     requestBody:
       required: true
@@ -78,7 +80,7 @@ verifyEmail:
       '200':
         description: Correo electrónico verificado correctamente
       '400':
-        description: Código de verificación vacío o inválido
+        description: El campo token falta o está vacío
         content:
           application/json:
             schema:

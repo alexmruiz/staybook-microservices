@@ -25,7 +25,24 @@ Authorization: Bearer <token>
 | `PUT` | `/api/users/me` | Actualiza el perfil del usuario autenticado. |
 | `GET` | `/internal/users/{userId}` | Consulta interna del resumen de un usuario para otros servicios. No se enruta por el Gateway. |
 
-`POST /api/auth/verify-email` recibe un JSON con el campo `token` y responde `200` al verificarlo. Los códigos inexistentes, caducados o ya utilizados responden `401`.
+### Verificación de cuenta por correo
+
+El registro responde `201` con los datos del usuario, pero la cuenta queda inicialmente sin verificar y la respuesta no incluye el token de verificación. Auth publica el evento `auth.verify` en RabbitMQ después de guardar el usuario; Notifications consume ese evento y envía un correo con un enlace para confirmar la cuenta. El inicio de sesión de una cuenta no verificada responde `401` y no devuelve un JWT.
+
+Al abrir el enlace del correo, el cliente debe enviar el token recibido a Auth:
+
+```http
+POST /api/auth/verify-email
+Content-Type: application/json
+
+{
+  "token": "<token recibido por correo>"
+}
+```
+
+La respuesta es `200` sin cuerpo. El token es de un solo uso y caduca a los 30 minutos. Un token vacío o ausente responde `400`; uno desconocido, caducado o ya utilizado responde `401`. Actualmente no existe un endpoint para reenviar el correo de verificación.
+
+En local, Notifications construye el enlace con `NOTIFICATIONS_VERIFICATION_URL` (por defecto, `http://localhost:3000/verify-email`) y añade el token como parámetro `token`. Si no hay una aplicación cliente disponible en esa URL, copia el valor de ese parámetro del mensaje en Mailpit y envíalo en la petición anterior. La configuración de RabbitMQ, SMTP y Mailpit se describe en [desarrollo y validación](./development.md).
 
 Las dos rutas de `/api/users/me` requieren un token válido. La ruta interna también exige actualmente JWT porque Auth requiere autenticación para todas las rutas que no estén explícitamente permitidas. Devuelve `id`, `email`, `name` y `surname`, y responde 404 si no existe el identificador.
 
@@ -101,6 +118,14 @@ Notifications no expone endpoints HTTP ni se publica a través del Gateway. Su i
 | `booking.events.exchange` | `notifications.booking.events` | `booking.confirmed`, `booking.cancelled` |
 
 Booking publica estos eventos después de confirmar la transacción. El mensaje contiene `eventId`, `eventType`, `version`, `occurredAt`, `bookingId`, `bookingReference`, `userId`, `checkInDate` y `checkOutDate`; las fechas se serializan como valores ISO. Notifications valida los campos, registra `eventId` para ignorar eventos ya procesados y envía un correo al destinatario configurado. Actualmente el destinatario es un valor de configuración único; `userId` no se resuelve a una dirección de correo.
+
+Auth también publica eventos de verificación por separado:
+
+| Exchange | Cola | Clave de enrutamiento |
+|---|---|---|
+| `auth.events.exchange` | `notifications.auth.events` | `auth.verify` |
+
+El evento incluye el correo destinatario y el token de verificación. Notifications registra el identificador del evento para evitar procesarlo más de una vez y envía un correo con el enlace de confirmación. Este flujo no requiere la consulta de perfil de usuario que Notifications utiliza para los avisos de reservas.
 
 ## Contratos OpenAPI
 

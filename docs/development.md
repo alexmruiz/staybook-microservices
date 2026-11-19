@@ -91,3 +91,16 @@ La prueba del cliente Auth utiliza un servidor HTTP local de prueba y no requier
 ```bash
 mvn -pl notifications-service test
 ```
+
+### Verificación de cuentas por correo
+
+Auth crea las cuentas nuevas como no verificadas y, una vez confirmada la transacción de registro, publica en RabbitMQ el evento `auth.verify`. Notifications consume ese evento y envía un correo con el enlace de verificación; el usuario debe verificar la cuenta antes de poder iniciar sesión. Este flujo de correo no usa la consulta interna de perfil de usuario mencionada arriba.
+
+Para probarlo localmente:
+
+1. Inicia RabbitMQ, la base de datos de Notifications y Mailpit con `docker compose -f infra/docker-compose.yml up -d`.
+2. Inicia Auth con la configuración de RabbitMQ y Notifications con acceso a RabbitMQ, a su base de datos y al SMTP local (`MAIL_HOST=localhost`, `MAIL_PORT=1025`).
+3. Registra una cuenta y abre [Mailpit](http://localhost:8025). El correo de confirmación contiene un enlace con el token.
+4. Envía el token a `POST /api/auth/verify-email` como `{"token":"..."}`. Después de verificarlo, el inicio de sesión devuelve el JWT habitual.
+
+Notifications usa `NOTIFICATIONS_VERIFICATION_URL` como base del enlace (por defecto, `http://localhost:3000/verify-email`) y agrega el token en el parámetro `token`. Si no existe un cliente en esa dirección, se puede copiar el token del enlace y llamar directamente al endpoint. El token caduca a los 30 minutos y solo puede utilizarse una vez. No hay un endpoint de reenvío implementado actualmente.

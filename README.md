@@ -13,8 +13,8 @@ StayBook modela un flujo de reservas mediante microservicios independientes: cat
 | **Hotels Service** | Gestiona hoteles, ciudades y servicios; consulta reseñas para ofrecer detalles y valoraciones agregadas. |
 | **Booking Service** | Consulta disponibilidad y gestiona la creación, consulta, confirmación y cancelación de reservas; usa el JWT para asignar el usuario y filtrar las consultas. |
 | **Reviews Service** | Gestiona reseñas y proporciona consultas por hotel y resúmenes de valoraciones. |
-| **Auth Service** | Registra usuarios, autentica credenciales, emite JWT y permite consultar o actualizar el perfil propio. Incluye una consulta interna de resumen de usuario para Notifications. |
-| **Notifications Service** | Consume eventos de reserva confirmada o cancelada, registra los eventos procesados y prepara correos personalizados con los datos del usuario obtenidos de Auth. |
+| **Auth Service** | Registra usuarios, requiere verificar el correo antes de permitir el inicio de sesión, emite JWT y permite consultar o actualizar el perfil propio. Incluye una consulta interna de resumen de usuario para Notifications. |
+| **Notifications Service** | Consume eventos de verificación de cuenta y de reserva confirmada o cancelada, registra los eventos procesados y envía correos mediante SMTP. |
 | **Gateway Service** | Enruta las solicitudes a los servicios y comprueba los JWT de las rutas protegidas. |
 | **Config Server** | Proporciona configuración externa a los servicios que usan Spring Cloud Config. |
 
@@ -22,7 +22,7 @@ StayBook modela un flujo de reservas mediante microservicios independientes: cat
 
 ```mermaid
 flowchart LR
-    Client[Cliente REST] -->|HTTP; JWT salvo registro e inicio de sesión| Gateway[Gateway :8090]
+    Client[Cliente REST] -->|HTTP; JWT salvo registro, login y verificación| Gateway[Gateway :8090]
     Gateway --> Auth[Auth :8083]
     Gateway --> Hotels[Hotels :8080]
     Gateway --> Booking[Booking :8082]
@@ -31,8 +31,9 @@ flowchart LR
     Booking -->|HTTP / RestClient| Hotels
     Booking -->|HTTP / RestClient| Reviews
     Hotels -->|HTTP / OpenFeign| Reviews
+    Auth -->|evento auth.verify| Rabbit
     Booking -->|eventos confirmados y cancelados| Rabbit[RabbitMQ]
-    Rabbit -->|consumo de eventos| Notifications[Notifications :8084]
+    Rabbit -->|eventos de Auth y Booking| Notifications[Notifications :8084]
     Notifications -->|HTTP / OpenFeign: datos del usuario| Auth
     Notifications --> NotificationsDB[(notifications_db)]
     Notifications -. correo local .-> Mailpit[Mailpit :8025]
@@ -49,9 +50,9 @@ flowchart LR
     Config -. configuración .-> Gateway
 ```
 
-Los servicios de dominio mantienen bases de datos PostgreSQL independientes. Las entidades JPA pertenecen a cada servicio; la comunicación entre ellos se realiza mediante HTTP o mensajería, no mediante acceso compartido a sus bases de datos. Booking publica eventos de confirmación y cancelación en RabbitMQ después de confirmar la transacción; Notifications los consume, evita volver a procesar identificadores ya registrados y envía el correo a la dirección configurada. Booking obtiene del JWT el usuario asociado a las reservas y usa esa identidad para filtrar las consultas.
+Los servicios de dominio mantienen bases de datos PostgreSQL independientes. Las entidades JPA pertenecen a cada servicio; la comunicación entre ellos se realiza mediante HTTP o mensajería, no mediante acceso compartido a sus bases de datos. Al registrar una cuenta, Auth la deja sin verificar y publica el evento `auth.verify` después de confirmar la transacción. Notifications consume el evento y envía al usuario un enlace de verificación; el inicio de sesión solo funciona tras completar la verificación. Booking también publica eventos de confirmación y cancelación en RabbitMQ, que Notifications procesa para enviar avisos. Booking obtiene del JWT el usuario asociado a las reservas y usa esa identidad para filtrar las consultas.
 
-El Gateway es el punto de entrada previsto para las API en local. Solo el registro y el inicio de sesión están exentos de JWT en el filtro del Gateway; las demás rutas requieren un token Bearer válido. El endpoint de importación de ciudades requiere además el rol `ROLE_ADMIN`.
+El Gateway es el punto de entrada previsto para las API en local. El registro, el inicio de sesión y la verificación de correo están exentos de JWT en el filtro del Gateway; las demás rutas requieren un token Bearer válido. El endpoint de importación de ciudades requiere además el rol `ROLE_ADMIN`.
 
 ## Tecnologías
 
