@@ -3,6 +3,8 @@ package com.hotelsbook.services.com_hotelsbook_services.service;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -62,6 +64,7 @@ public class CityService implements CrudService<CityRequestDto, CityResponseDto>
      * @return CityResponseDto
      */
     @Override
+    @Cacheable(value = "cities", key = "#id")
     public CityResponseDto findById(Long id) {
         City city = cityRepository.findById(id).orElseThrow(() -> new EntityNotFoundException(CITY_NOT_FOUND + id));
         return cityMapper.toResponseDto(city);
@@ -75,6 +78,7 @@ public class CityService implements CrudService<CityRequestDto, CityResponseDto>
      * @return CityResponseDto
      */
     @Override
+    @CacheEvict(value = "cities", key = "#id")
     public CityResponseDto update(Long id, CityRequestDto request) {
         // Comprobar si existe
         City existCity = cityRepository.findById(id)
@@ -95,6 +99,7 @@ public class CityService implements CrudService<CityRequestDto, CityResponseDto>
      * @param Long id
      */
     @Override
+    @CacheEvict(value = "cities", key = "#id")
     public void deleteById(Long id) {
         City existCity = cityRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException(CITY_NOT_FOUND + id));
