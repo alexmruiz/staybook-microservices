@@ -8,6 +8,12 @@ spring:
     username: ${RABBITMQ_USERNAME:staybook}
     password: ${RABBITMQ_PASSWORD:staybook-dev}
     connection-timeout: 2s
+  
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      timeout: 2s
 
   # Configuracion de la base de datos
   datasource:

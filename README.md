@@ -37,6 +37,8 @@ flowchart LR
     Notifications -->|HTTP / OpenFeign: datos del usuario| Auth
     Notifications --> NotificationsDB[(notifications_db)]
     Notifications -. correo local .-> Mailpit[Mailpit :8025]
+    Auth -. caché de perfiles .-> Redis[(Redis :6379)]
+    Hotels -. caché de ciudades .-> Redis
 
     Auth --> AuthDB[(auth_db)]
     Hotels --> HotelsDB[(hotels_db)]
@@ -63,6 +65,7 @@ El Gateway es el punto de entrada previsto para las API en local. El registro, e
 - **Spring Cloud Gateway** para el enrutamiento de API
 - **Spring Cloud OpenFeign** y **Spring `RestClient`** para comunicación HTTP entre servicios
 - **RabbitMQ** para publicar y consumir eventos de reserva confirmada o cancelada
+- **Redis** para cachear ciudades en Hotels y perfiles de usuario en Auth
 - **Mailpit** para capturar correos durante el desarrollo local
 - **Resilience4j** para tolerancia a fallos en llamadas remotas
 - **Springdoc OpenAPI** para documentar los contratos REST
@@ -119,7 +122,7 @@ mvn -pl booking-service -am test
    docker compose -f infra/docker-compose.yml up -d
    ```
 
-   Este Compose levanta RabbitMQ, PostgreSQL para `notifications_db` y Mailpit. No levanta todos los servicios de StayBook ni sustituye las bases de datos existentes de los servicios de dominio.
+   Este Compose levanta RabbitMQ, PostgreSQL para `notifications_db`, Mailpit y Redis. No levanta todos los servicios de StayBook ni sustituye las bases de datos existentes de los servicios de dominio.
 
 3. Inicia Config Server desde la raíz:
 
@@ -140,6 +143,19 @@ mvn -pl booking-service -am test
    ```
 
 Hotels y Reviews importan configuración del Config Server de forma opcional; para el funcionamiento normal, inicia Config Server antes que esos servicios. La configuración específica de cada uno está en `configserver-service/src/main/resources/config-repo/`. Para conectar cada proceso a PostgreSQL, configura `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME` y `SPRING_DATASOURCE_PASSWORD`; esas variables de entorno pueden sobrescribir la configuración remota. Notifications utiliza por defecto `localhost:5433/notifications_db`, que corresponde al puerto publicado por el Compose. También usa `AUTH_SERVICE_URL` (por defecto `http://localhost:8083`) para consultar Auth y `INTERNAL_API_KEY` para añadir la cabecera `X-Internal-Api-Key`. **Actualmente Auth no valida esa cabecera y exige JWT en la ruta interna; por eso esta llamada de Notifications necesita resolver la autenticación entre servicios antes de funcionar de extremo a extremo.** Usa la base de datos correspondiente a cada servicio y no guardes credenciales reales en el repositorio. Auth, Hotels, Booking y Gateway deben utilizar el mismo `JWT_SECRET` para emitir y validar tokens; consulta la [guía de configuración JWT](./docs/JWT-DEV.md).
+
+Auth y Hotels se conectan al Redis local mediante `REDIS_HOST` (por defecto, `localhost`) y `REDIS_PORT` (por defecto, `6379`). El Compose de desarrollo no configura contraseña para Redis. Si el entorno utiliza autenticación, configura también `REDIS_PASSWORD` y el servidor Redis correspondiente. No expongas Redis públicamente ni guardes sus credenciales en el repositorio.
+
+### Caché Redis
+
+Redis se utiliza como caché, no como fuente principal de datos. PostgreSQL continúa siendo la fuente de verdad y las entradas de caché tienen expiración:
+
+| Servicio | Cachés | TTL | Invalidación |
+|---|---|---:|---|
+| Hotels | `cities` por ID y `citiesByName` por nombre normalizado | 30 minutos | Actualizar o eliminar una ciudad |
+| Auth | `users` por email normalizado y `usersbooking` por ID | 5 minutos | Actualizar el perfil; se elimina el email anterior cuando cambia |
+
+Hotels normaliza los nombres de ciudad eliminando espacios y sin distinguir mayúsculas y minúsculas. Auth guarda únicamente DTOs de respuesta, sin contraseñas. Las operaciones de actualización y eliminación invalidan las entradas afectadas para evitar devolver datos obsoletos.
 
 > **Persistencia local:** la configuración actual usa `ddl-auto=create-drop` en Hotels y `ddl-auto=update` en Booking, Reviews, Auth y Notifications. No conectes esta configuración a datos que deban conservarse ni la consideres preparada para producción. Consulta [desarrollo y validación](./docs/development.md).
 
@@ -167,6 +183,7 @@ El archivo [infra/docker-compose.yml](./infra/docker-compose.yml) proporciona lo
 | PostgreSQL Notifications | `5433` | Base `notifications_db` |
 | Mailpit SMTP | `1025` | Captura de correo SMTP |
 | Mailpit Web | `8025` | Bandeja local de correos |
+| Redis | `6379` | Caché de ciudades y perfiles |
 
 Para procesar eventos, inicia Notifications además de esta infraestructura y de Booking. Notifications consume la cola `notifications.booking.events`, enlazada al exchange `booking.events.exchange` para las claves `booking.confirmed` y `booking.cancelled`. No expone rutas REST ni se enruta desde Gateway; consulta la [descripción de arquitectura](./docs/architecture.md) y el [contrato de mensajería](./docs/api-end-point.md).
 
@@ -188,7 +205,7 @@ No uses `down -v` salvo que quieras borrar también los datos persistidos de Rab
 
 El workflow de [SonarCloud](./.github/workflows/sonar.yml) ejecuta `mvn verify` y el análisis estático al actualizar `main` o abrir/actualizar un pull request. Para que el análisis remoto funcione, el repositorio debe tener configurado `SONAR_TOKEN` como secreto de GitHub Actions.
 
-La contenerización es parcial: existen Dockerfiles para Hotels y Reviews, y `infra/docker-compose.yml` levanta la infraestructura de Notifications, pero no la plataforma completa ni sus servicios. Las bases de datos de Hotels, Booking, Reviews y Auth continúan siendo responsabilidad de la configuración local existente.
+La contenerización es parcial: existen Dockerfiles para Hotels y Reviews, y `infra/docker-compose.yml` levanta la infraestructura de Notifications y Redis, pero no la plataforma completa ni sus servicios. Las bases de datos de Hotels, Booking, Reviews y Auth continúan siendo responsabilidad de la configuración local existente.
 
 Antes de un despliegue productivo todavía habría que definir, entre otros aspectos, migraciones versionadas de base de datos, gestión segura de secretos y una orquestación completa del entorno. Más notas y decisiones están en la carpeta [docs](./docs/).
 

@@ -20,7 +20,6 @@ import com.hotelsbook.services.com_hotelsbook_services.entity.City;
 import com.hotelsbook.services.com_hotelsbook_services.entity.Hotel;
 import com.hotelsbook.services.com_hotelsbook_services.entity.RoomType;
 import com.hotelsbook.services.com_hotelsbook_services.exception.EntityNotFoundException;
-import com.hotelsbook.services.com_hotelsbook_services.mapper.CityMapper;
 import com.hotelsbook.services.com_hotelsbook_services.mapper.HotelMapper;
 import com.hotelsbook.services.com_hotelsbook_services.mapper.RoomTypeMapper;
 import com.hotelsbook.services.com_hotelsbook_services.repository.AmenityRepository;
@@ -40,7 +39,6 @@ public class HotelService implements CrudService<HotelRequestDto, HotelResponseD
     private final RoomTypeMapper roomTypeMapper;
     private final AmenityRepository amenityRepository;
     private final CityRepository cityRepository;
-    private final CityMapper cityMapper;
     private final ExternalReviewService externalReviewService;
     private final CityService cityService;
 
@@ -58,14 +56,13 @@ public class HotelService implements CrudService<HotelRequestDto, HotelResponseD
      * @param externalReviewService Hace la llamada a review-service
      */
     public HotelService(HotelMapper mapper, HotelRepository repository, AmenityRepository amenityRepository,
-            RoomTypeMapper roomTypeMapper, CityRepository cityRepository, CityMapper cityMapper,
+            RoomTypeMapper roomTypeMapper, CityRepository cityRepository,
             ExternalReviewService externalReviewService, CityService cityService) {
         this.mapper = mapper;
         this.repository = repository;
         this.amenityRepository = amenityRepository;
         this.roomTypeMapper = roomTypeMapper;
         this.cityRepository = cityRepository;
-        this.cityMapper = cityMapper;
         this.externalReviewService = externalReviewService;
         this.cityService = cityService;
     }
