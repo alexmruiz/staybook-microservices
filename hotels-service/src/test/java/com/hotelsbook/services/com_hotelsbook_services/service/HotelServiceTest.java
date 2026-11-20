@@ -67,6 +67,8 @@ class HotelServiceTest {
     private CityRepository cityRepository;
     @Mock
     private CityMapper cityMapper;
+    @Mock
+    private CityService cityService;
 
     @Mock
     private RoomTypeMapper roomTypeMapper;
@@ -129,7 +131,7 @@ class HotelServiceTest {
             Amenity amenity = new Amenity("Wi-Fi", "Wi-Fi de alta velocidad");
 
             when(mapper.toEntity(request)).thenReturn(hotel);
-            when(cityRepository.findByName("Madrid")).thenReturn(Optional.of(city));
+            when(cityService.findOrCreate(request.address().city())).thenReturn(city);
             when(amenityRepository.findAllById(Set.of(1L))).thenReturn(List.of(amenity));
             when(repository.save(hotel)).thenReturn(hotel);
             when(mapper.toResponseDto(hotel)).thenReturn(response);
@@ -143,7 +145,7 @@ class HotelServiceTest {
             assertEquals("Hotel Gran Vía", result.name());
 
             // Verify
-            verify(cityRepository).findByName("Madrid");
+            verify(cityService).findOrCreate(request.address().city());
             verify(cityRepository, never()).save(any());
             verify(amenityRepository).findAllById(Set.of(1L));
             verify(repository).save(hotel);
@@ -153,8 +155,7 @@ class HotelServiceTest {
         void create_WhenCityDoesNotExist_ShouldSaveNewCity() {
             // Arrange
             when(mapper.toEntity(request)).thenReturn(hotel);
-            when(cityRepository.findByName("Madrid")).thenReturn(Optional.empty());
-            when(cityMapper.toEntity(any())).thenReturn(city);
+            when(cityService.findOrCreate(request.address().city())).thenReturn(city);
             when(amenityRepository.findAllById(Set.of(1L))).thenReturn(List.of());
             when(repository.save(hotel)).thenReturn(hotel);
             when(mapper.toResponseDto(hotel)).thenReturn(response);
@@ -164,8 +165,8 @@ class HotelServiceTest {
 
             // Asset
             assertNotNull(result);
-            verify(cityRepository).findByName("Madrid");
-            verify(cityRepository).save(city);
+            verify(cityService).findOrCreate(request.address().city());
+            verify(cityRepository, never()).save(any());
             verify(repository).save(hotel);
         }
 
@@ -322,7 +323,7 @@ class HotelServiceTest {
                     Set.of(1L));
 
             when(repository.findById(hotelId)).thenReturn(Optional.of(hotel));
-            when(cityRepository.findByName("Madrid")).thenReturn(Optional.of(city));
+            when(cityService.findOrCreate(updateRequest.address().city())).thenReturn(city);
             when(roomTypeMapper.toEntity(any(RoomTypeRequestDto.class)))
                     .thenAnswer(inv -> {
                         RoomTypeRequestDto dto = inv.getArgument(0);
@@ -339,7 +340,7 @@ class HotelServiceTest {
             assertEquals("Hotel Gran Vía", result.name());
 
             verify(repository).findById(hotelId);
-            verify(cityRepository).findByName("Madrid");
+            verify(cityService).findOrCreate(updateRequest.address().city());
             verify(roomTypeMapper).toEntity(newRoomDto);
             verify(amenityRepository).findAllById(Set.of(1L));
             verify(repository).save(hotel);

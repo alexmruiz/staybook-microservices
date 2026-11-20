@@ -12,6 +12,10 @@ import java.util.Base64;
 import java.util.HexFormat;
 import java.util.UUID;
 
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -125,6 +129,8 @@ public class AuthService {
      * @return Datos del usuario (sin contraseña), o null si el email es null
      * @throws InvalidCredentialsException Si el email no existe en el sistema
      */
+    @Cacheable(value = "users", key = "#email.trim().toLowerCase(T(java.util.Locale).ROOT)",
+            condition = "#email != null", unless = "#result == null")
     public UserResponseDto getEmailUser(String email) {
         if (email == null) {
             return null;
@@ -146,6 +152,17 @@ public class AuthService {
      * @throws InvalidCredentialsException Si el email no existe en el sistema
      */
     @Transactional
+    @Caching(
+            put = @CachePut(value = "users",
+                    key = "#result.email().trim().toLowerCase(T(java.util.Locale).ROOT)",
+                    condition = "#result != null"),
+            evict = {
+                    @CacheEvict(value = "users",
+                            key = "#email.trim().toLowerCase(T(java.util.Locale).ROOT)",
+                            condition = "#email != null && !#email.equalsIgnoreCase(#requestDto.email())"),
+                    @CacheEvict(value = "usersbooking", key = "#result.id()",
+                            condition = "#result != null && #result.id() != null")
+            })
     public UserResponseDto updateUserProfile(String email, RegisterRequestDto requestDto) {
         if (email == null) {
             return null;
@@ -165,6 +182,7 @@ public class AuthService {
         return mapper.toResponseDto(result);
     }
 
+    @Cacheable(value = "usersbooking", key = "#userId")
     public UserBookingResponseDto getUserById(Long userId) {
 
         Auth auth = repository.findById(userId).orElseThrow(() -> new IdNotFoundException("Id no encontrado"));

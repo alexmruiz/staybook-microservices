@@ -9,6 +9,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.hotelsbook.services.com_hotelsbook_services.dto.request.CityRequestDto;
 import com.hotelsbook.services.com_hotelsbook_services.dto.request.HotelRequestDto;
 import com.hotelsbook.services.com_hotelsbook_services.dto.response.HotelDetailResponseDto;
 import com.hotelsbook.services.com_hotelsbook_services.dto.response.HotelResponseDto;
@@ -19,7 +20,6 @@ import com.hotelsbook.services.com_hotelsbook_services.entity.City;
 import com.hotelsbook.services.com_hotelsbook_services.entity.Hotel;
 import com.hotelsbook.services.com_hotelsbook_services.entity.RoomType;
 import com.hotelsbook.services.com_hotelsbook_services.exception.EntityNotFoundException;
-import com.hotelsbook.services.com_hotelsbook_services.mapper.CityMapper;
 import com.hotelsbook.services.com_hotelsbook_services.mapper.HotelMapper;
 import com.hotelsbook.services.com_hotelsbook_services.mapper.RoomTypeMapper;
 import com.hotelsbook.services.com_hotelsbook_services.repository.AmenityRepository;
@@ -39,8 +39,8 @@ public class HotelService implements CrudService<HotelRequestDto, HotelResponseD
     private final RoomTypeMapper roomTypeMapper;
     private final AmenityRepository amenityRepository;
     private final CityRepository cityRepository;
-    private final CityMapper cityMapper;
     private final ExternalReviewService externalReviewService;
+    private final CityService cityService;
 
     private static final String HOTEL_NOT_FOUND = "Hotel no encontrado con el id indicado";
 
@@ -56,15 +56,15 @@ public class HotelService implements CrudService<HotelRequestDto, HotelResponseD
      * @param externalReviewService Hace la llamada a review-service
      */
     public HotelService(HotelMapper mapper, HotelRepository repository, AmenityRepository amenityRepository,
-            RoomTypeMapper roomTypeMapper, CityRepository cityRepository, CityMapper cityMapper,
-            ExternalReviewService externalReviewService) {
+            RoomTypeMapper roomTypeMapper, CityRepository cityRepository,
+            ExternalReviewService externalReviewService, CityService cityService) {
         this.mapper = mapper;
         this.repository = repository;
         this.amenityRepository = amenityRepository;
         this.roomTypeMapper = roomTypeMapper;
         this.cityRepository = cityRepository;
-        this.cityMapper = cityMapper;
         this.externalReviewService = externalReviewService;
+        this.cityService = cityService;
     }
 
     /**
@@ -80,7 +80,7 @@ public class HotelService implements CrudService<HotelRequestDto, HotelResponseD
     public HotelResponseDto create(HotelRequestDto request) {
         Hotel hotel = mapper.toEntity(request);
 
-        City city = this.resolveCity(request);
+        City city = this.resolveCity(request.address().city());
 
         hotel.getAddress().setCity(city);
 
@@ -104,9 +104,8 @@ public class HotelService implements CrudService<HotelRequestDto, HotelResponseD
      * @param HotelRequestDto request
      * @return City
      */
-    private City resolveCity(HotelRequestDto request) {
-        return cityRepository.findByName(request.address().city().name())
-                .orElseGet(() -> cityRepository.save(cityMapper.toEntity(request.address().city())));
+    private City resolveCity(CityRequestDto cityRequest) {
+        return cityService.findOrCreate(cityRequest);
     }
 
     /**
@@ -174,7 +173,7 @@ public class HotelService implements CrudService<HotelRequestDto, HotelResponseD
 
         // Actualización opcional de la dirección (Address)
         if (request.address() != null) {
-            City city = this.resolveCity(request);
+            City city = this.resolveCity(request.address().city());
 
             Address address = hotel.getAddress();
             address.setStreet(request.address().street());

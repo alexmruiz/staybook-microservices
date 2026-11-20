@@ -3,6 +3,9 @@ package com.hotelsbook.services.com_hotelsbook_services.service;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -62,6 +65,7 @@ public class CityService implements CrudService<CityRequestDto, CityResponseDto>
      * @return CityResponseDto
      */
     @Override
+    @Cacheable(value = "cities", key = "#id")
     public CityResponseDto findById(Long id) {
         City city = cityRepository.findById(id).orElseThrow(() -> new EntityNotFoundException(CITY_NOT_FOUND + id));
         return cityMapper.toResponseDto(city);
@@ -75,6 +79,10 @@ public class CityService implements CrudService<CityRequestDto, CityResponseDto>
      * @return CityResponseDto
      */
     @Override
+    @Caching(evict = {
+        @CacheEvict(value = "cities", key = "#id"),
+        @CacheEvict(value = "citiesByName", allEntries = true)
+    })
     public CityResponseDto update(Long id, CityRequestDto request) {
         // Comprobar si existe
         City existCity = cityRepository.findById(id)
@@ -95,6 +103,10 @@ public class CityService implements CrudService<CityRequestDto, CityResponseDto>
      * @param Long id
      */
     @Override
+    @Caching(evict = {
+        @CacheEvict(value = "cities", key = "#id"),
+        @CacheEvict(value = "citiesByName", allEntries = true)
+    })
     public void deleteById(Long id) {
         City existCity = cityRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException(CITY_NOT_FOUND + id));
@@ -143,6 +155,19 @@ public class CityService implements CrudService<CityRequestDto, CityResponseDto>
 
         return new CityImportResponseDto(countryName, insertedCount, discardedCount);
 
+    }
+
+    @Cacheable(value = "citiesByName", key = "#request.name().trim().toLowerCase(T(java.util.Locale).ROOT)")
+    public City findOrCreate(CityRequestDto request) {
+        String cityName = request.name().trim();
+
+        return cityRepository.findByNameIgnoreCase(cityName)
+                .orElseGet(() -> {
+                    City city = cityMapper.toEntity(
+                            new CityRequestDto(cityName, request.country().trim()));
+
+                    return cityRepository.save(city);
+                });
     }
 
 }
