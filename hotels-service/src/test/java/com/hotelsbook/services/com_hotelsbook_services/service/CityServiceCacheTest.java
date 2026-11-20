@@ -74,6 +74,21 @@ class CityServiceCacheTest {
     }
 
     @Test
+    void findOrCreate_WhenNameOnlyDiffersInCaseOrSpaces_ShouldUseSameCacheEntry() {
+        CityRequestDto firstRequest = new CityRequestDto(" Madrid ", "España");
+        CityRequestDto secondRequest = new CityRequestDto("mAdRiD", "España");
+
+        when(cityRepository.findByNameIgnoreCase("Madrid")).thenReturn(Optional.of(city));
+
+        City firstResult = cityService.findOrCreate(firstRequest);
+        City secondResult = cityService.findOrCreate(secondRequest);
+
+        assertEquals(city, firstResult);
+        assertEquals(city, secondResult);
+        verify(cityRepository, times(1)).findByNameIgnoreCase("Madrid");
+    }
+
+    @Test
     void update_WhenCityWasCached_ShouldEvictCachedValue() {
         when(cityRepository.findById(CITY_ID)).thenReturn(Optional.of(city));
         when(cityMapper.toResponseDto(city)).thenReturn(cityResponseDto);
@@ -119,7 +134,7 @@ class CityServiceCacheTest {
 
         @Bean
         CacheManager cacheManager() {
-            return new ConcurrentMapCacheManager("cities");
+            return new ConcurrentMapCacheManager("cities", "citiesByName");
         }
 
         @Bean
